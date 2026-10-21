@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Giả lập tiền số</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f9; --surface:#ffffff; --surface2:#eef0f6; --ink:#131a2c; --muted:#5a6380; --line:#dde2ee;
+  --btc:#c8770a; --btc-soft:#fcf0dd; --eth:#5d4fd0; --eth-soft:#ecebfd; --ok:#11805a; --ok-soft:#dff3ea;
+  --bad:#bd3434; --bad-soft:#fbe5e5; --warn:#9a6a00; --warn-soft:#fff4d6; --accent:#1d5cf0; --accent-soft:#e3ebff;
+  --shadow:0 1px 2px rgba(19,26,44,.05),0 6px 18px rgba(19,26,44,.05);
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0f1e; --surface:#111a2e; --surface2:#17213a; --ink:#e7ebf7; --muted:#95a0bf; --line:#243150;
+    --btc:#f5a524; --btc-soft:rgba(245,165,36,.13); --eth:#a598ff; --eth-soft:rgba(165,152,255,.14);
+    --ok:#3fcf92; --ok-soft:rgba(63,207,146,.12); --bad:#ff6f6f; --bad-soft:rgba(255,111,111,.12);
+    --warn:#ffc94d; --warn-soft:rgba(255,201,77,.12); --accent:#7aa2ff; --accent-soft:rgba(122,162,255,.14);
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e; --surface:#111a2e; --surface2:#17213a; --ink:#e7ebf7; --muted:#95a0bf; --line:#243150;
+  --btc:#f5a524; --btc-soft:rgba(245,165,36,.13); --eth:#a598ff; --eth-soft:rgba(165,152,255,.14);
+  --ok:#3fcf92; --ok-soft:rgba(63,207,146,.12); --bad:#ff6f6f; --bad-soft:rgba(255,111,111,.12);
+  --warn:#ffc94d; --warn-soft:rgba(255,201,77,.12); --accent:#7aa2ff; --accent-soft:rgba(122,162,255,.14);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+body{padding-bottom:max(24px,env(safe-area-inset-bottom))}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;padding:12px 0 6px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--btc),var(--eth));display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;flex:none}
+.brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
+.brand .sub{font-size:12.5px;color:var(--muted)}
+.brand .sp{flex:1}
+.iconbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;height:32px;min-width:32px;padding:0 9px;cursor:pointer;font:inherit;font-size:13px}
+.status{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.status::-webkit-scrollbar{display:none}
+.chip{flex:none;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip b{color:var(--ink);font-weight:600}
+.chip.btc b{color:var(--btc)} .chip.eth b{color:var(--eth)}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-bottom:-1px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{flex:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:500;padding:9px 12px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav.tabs button.hide{display:none}
+main{padding-top:18px}
+section.tab{display:none}
+section.tab.on{display:block}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:15.5px;margin:0 0 10px;font-weight:650;display:flex;align-items:center;gap:8px}
+.card h3{font-size:13.5px;margin:14px 0 6px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.big{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.2}
+.btcc{color:var(--btc)} .ethc{color:var(--eth)} .okc{color:var(--ok)} .badc{color:var(--bad)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13.5px}
+.kv dt{color:var(--muted)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.mono,.hash{font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
+.hash .z{color:var(--btc);font-weight:600}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--ink)}
+.note b{font-weight:650}
+.note.btc{background:var(--btc-soft)} .note.eth{background:var(--eth-soft)} .note.warn{background:var(--warn-soft)}
+.banner{border-radius:12px;padding:10px 14px;font-size:13.5px;margin-bottom:14px;background:var(--warn-soft);color:var(--ink);display:none}
+.banner.show{display:block}
+label.f{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px;font-weight:500}
+input,select{width:100%;font:inherit;font-size:14.5px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+.row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;background:var(--accent);color:#fff;white-space:nowrap}
+.btn.sec{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn.btcb{background:var(--btc);color:#fff} .btn.ethb{background:var(--eth);color:#fff}
+.btn.okb{background:var(--ok);color:#fff} .btn.badb{background:var(--bad);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%;margin-top:12px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:none;font:inherit;font-size:13px;padding:6px 12px;border-radius:7px;color:var(--muted);cursor:pointer;font-weight:500}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;color:var(--muted);font-weight:500;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.r,.tbl th.r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr.click{cursor:pointer} .tbl tr.click:hover td{background:var(--surface2)}
+.tbl tr.sel td{background:var(--accent-soft)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tall{max-height:420px;overflow-y:auto}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.wait{background:var(--warn-soft);color:var(--warn)} .pill.btc{background:var(--btc-soft);color:var(--btc)}
+.pill.eth{background:var(--eth-soft);color:var(--eth)} .pill.gray{background:var(--surface2);color:var(--muted)}
+.empty{padding:22px 10px;text-align:center;color:var(--muted);font-size:13.5px}
+.minebox{background:var(--surface2);border-radius:12px;padding:14px;font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
+.minebox .lbl{font-family:var(--sans);color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px}
+.minebox .lbl:first-child{margin-top:0}
+.minebox .val{font-size:13.5px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.stat .l{font-size:11.5px;color:var(--muted)} .stat .v{font-size:18px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.log{font-size:13px;display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto}
+.log div{padding:7px 10px;border-radius:9px;background:var(--surface2)}
+.log .ok{background:var(--ok-soft)} .log .bad{background:var(--bad-soft)}
+.seed{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.seed span{background:var(--surface2);border-radius:8px;padding:6px 8px;font-family:var(--mono);font-size:12.5px}
+.seed span i{color:var(--muted);font-style:normal;margin-right:4px;font-size:11px}
+.price{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+svg.spark{width:100%;height:56px;display:block;margin-top:6px}
+.chain{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px}
+.blk{flex:none;width:148px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface2);font-size:12px;cursor:pointer;position:relative}
+.blk.sel{outline:2px solid var(--accent)}
+.blk .hh{font-weight:700;font-size:14px}
+.blk.orph{opacity:.7;border-style:dashed}
+.blk.inv{border-color:var(--bad);background:var(--bad-soft)}
+.toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;z-index:50;max-width:calc(100% - 32px);box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.hidden{display:none!important}
+#netDot[data-s="ok"]{color:var(--ok)} #netDot[data-s="down"]{color:var(--bad)} #netDot[data-s="connecting"]{color:var(--warn)}
+@media (max-width:560px){#netDot{display:none}}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--eth);border-radius:99px}
+.code{background:var(--surface2);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;margin:0}
+.code .k{color:var(--eth);font-weight:600} .code .c{color:var(--muted)} .code .hl{background:var(--btc-soft);display:inline-block;width:100%;border-radius:4px}
+.gauge{position:relative;height:12px;border-radius:99px;background:var(--surface2);overflow:visible;margin:22px 0 18px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:99px}
+.gauge .mk{position:absolute;top:-6px;bottom:-6px;width:2px;background:var(--ink);opacity:.5}
+.gauge .mk span{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:10.5px;white-space:nowrap;color:var(--muted)}
+.esc{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:var(--surface)}
+.steps{display:flex;gap:4px;margin:8px 0;flex-wrap:wrap}
+.steps span{font-size:11.5px;padding:3px 8px;border-radius:99px;background:var(--surface2);color:var(--muted)}
+.steps span.on{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.steps span.end{background:var(--eth-soft);color:var(--eth);font-weight:600}
+.mt{margin-top:12px}
+.flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+@media (max-width:560px){ .brand .sub{display:none} .big{font-size:22px} .card{padding:14px} .seed{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">₿</div>
+      <div><h1>Làng Tiền Số</h1><div class="sub">Mô phỏng ví · giao dịch · đào (PoW) · đặt cọc (PoS) · sàn — theo cơ chế Bitcoin &amp; Ethereum</div></div>
+      <div class="sp"></div>
+      <span class="chip" id="netDot" data-s="connecting">● Đang kết nối…</span>
+      <button class="iconbtn" id="gvLoginBtn" title="Đăng nhập dành cho giảng viên">Giảng viên</button>
+      <button class="iconbtn" id="themeBtn" title="Đổi giao diện sáng/tối">Sáng/Tối</button>
+    </div>
+    <div class="status" id="statusBar"></div>
+    <nav class="tabs" id="tabs" role="tablist">
+      <button data-tab="vi">Ví của tôi</button>
+      <button data-tab="chuyen">Chuyển tiền</button>
+      <button data-tab="dao">Đào (PoW)</button>
+      <button data-tab="socai">Sổ cái</button>
+      <button data-tab="san">Sàn giao dịch</button>
+      <button data-tab="pos">Đặt cọc (PoS)</button>
+      <button data-tab="hd">Hợp đồng thông minh</button>
+      <button data-tab="gv" class="hide" id="tabGV">Giảng viên</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card hidden" id="gvLoginBox" style="margin-bottom:14px;max-width:420px">
+    <h2>Đăng nhập giảng viên</h2>
+    <label class="f" for="gvPass">Mật khẩu giảng viên</label><input id="gvPass" type="password" autocomplete="current-password">
+    <button class="btn full" id="gvLoginGo">Đăng nhập</button><div class="small muted mt" id="gvLoginMsg">Học viên không cần đăng nhập.</div>
+  </div>
+  <div class="banner" id="banner"></div>
+
+  <!-- ============ VÍ ============ -->
+  <section class="tab" id="t-vi">
+    <div class="card" id="joinCard">
+      <h2>Tạo ví để tham gia làng</h2>
+      <p class="muted small" style="margin:0">Trình duyệt của bạn sẽ sinh một <b>cặp khóa thật</b> (ECDSA). Khóa riêng chỉ lưu trong vùng riêng của bạn; mọi người chỉ thấy <b>địa chỉ</b> và <b>khóa công khai</b>. Mỗi ví mới được cấp sẵn một ít BTC trong khối nguyên thủy, cùng VND ảo và ETH trên sàn để thực hành.</p>
+      <label class="f" for="joinName">Tên hiển thị trong lớp</label>
+      <div class="row"><input id="joinName" maxlength="28" placeholder="Ví dụ: Lan – nhóm 3"><button class="btn" id="joinBtn">Tạo ví</button></div>
+      <div class="small muted mt" id="joinMsg"></div>
+    </div>
+    <div class="grid g2" id="walletArea">
+      <div class="card">
+        <h2><span class="pill btc">BTC</span> Ví tự giữ khóa (trên chuỗi)</h2>
+        <div class="big btcc" id="wBTC">—</div>
+        <div class="small muted" id="wBTCsub"></div>
+        <dl class="kv mt">
+          <dt>Tên</dt><dd id="wName">—</dd>
+          <dt>Địa chỉ</dt><dd><span class="mono" id="wAddr">—</span> <button class="iconbtn" id="copyAddr" style="height:24px;font-size:12px">Sao chép</button></dd>
+          <dt>Khóa công khai</dt><dd class="mono" id="wPub">—</dd>
+        </dl>
+        <div class="btns"><button class="btn sec" id="seedBtn">Hiện 12 từ khôi phục</button></div>
+        <div id="seedBox" class="hidden">
+          <div class="note warn mt small"><b>Mô phỏng.</b> Ngoài đời, ai có 12–24 từ này sẽ lấy được toàn bộ tiền trong ví; mất chúng là mất tiền vĩnh viễn, không có “quên mật khẩu”.</div>
+          <div class="seed" id="seedWords"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Tổng tài sản</h2>
+        <div class="big" id="wTotal">—</div>
+        <div class="small muted">Quy đổi theo giá hiện tại trên sàn</div>
+        <div class="scroll mt"><table class="tbl" id="wAssets"></table></div>
+        <div class="note mt small">Số dư BTC <b>không phải một con số lưu ở đâu đó</b>: mọi máy trong lớp tự cộng trừ từ khối nguyên thủy đến khối mới nhất để tính ra. Số dư trên sàn thì ngược lại — chỉ là một dòng trong cơ sở dữ liệu của sàn.</div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2>Lịch sử giao dịch BTC của tôi</h2>
+        <div class="scroll tall" id="wHist"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHUYỂN ============ -->
+  <section class="tab" id="t-chuyen">
+    <div class="grid g2">
+      <div class="card">
+        <h2>Gửi BTC</h2>
+        <label class="f" for="txTo">Người nhận</label>
+        <select id="txTo"></select>
+        <div class="row">
+          <div><label class="f" for="txAmt">Số BTC</label><input id="txAmt" inputmode="decimal" placeholder="0,05"></div>
+          <div><label class="f" for="txFee">Phí trả cho thợ đào</label>
+            <select id="txFee"><option value="500">Thấp · 0,000005 BTC</option><option value="2000" selected>Vừa · 0,00002 BTC</option><option value="10000">Cao · 0,0001 BTC</option></select></div>
+        </div>
+        <button class="btn btcb full" id="txSend">Ký và phát giao dịch</button>
+        <div class="small muted mt">Giao dịch được <b>ký bằng khóa riêng</b> của bạn rồi đưa vào <b>hàng chờ (mempool)</b>. Nó chỉ thật sự xảy ra khi một thợ đào đưa vào khối. Phí cao → thợ đào ưu tiên.</div>
+      </div>
+      <div class="card">
+        <h2>Thử gian lận — mạng có bắt được không?</h2>
+        <h3>1. Giả mạo chữ ký</h3>
+        <p class="small muted" style="margin:0 0 6px">Tạo giao dịch rút tiền <b>từ ví người khác</b>, nhưng ký bằng khóa của bạn.</p>
+        <div class="row"><select id="fkFrom"></select><button class="btn sec" id="fkBtn" style="flex:0 0 auto">Thử</button></div>
+        <h3>2. Chi tiêu kép (double-spend)</h3>
+        <p class="small muted" style="margin:0 0 6px">Gửi cùng lúc <b>hai giao dịch</b>, mỗi cái tiêu 80% số dư cho hai người khác nhau.</p>
+        <button class="btn sec" id="dsBtn">Thử chi tiêu kép</button>
+        <div class="note small mt">Quan sát cột <b>Trạng thái</b> ở hàng chờ: mọi máy tự kiểm tra chữ ký và số dư, thợ đào trung thực sẽ bỏ qua giao dịch sai. Nếu ai đó cố nhét giao dịch sai vào khối, cả khối bị các máy khác từ chối.</div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2>Hàng chờ (mempool) <span class="pill gray" id="mpCount">0</span></h2>
+        <div class="scroll tall" id="mpList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ĐÀO ============ -->
+  <section class="tab" id="t-dao">
+    <div class="grid g2">
+      <div class="card">
+        <h2>Máy đào của tôi</h2>
+        <div class="stats" id="mStats"></div>
+        <div class="btns">
+          <button class="btn btcb" id="mineBtn">Bắt đầu đào</button>
+          <label class="flex small muted" style="gap:6px"><input type="checkbox" id="mineAuto" checked style="width:auto"> Tự đào tiếp khối sau</label>
+        </div>
+        <div class="minebox mt" id="mBox"></div>
+        <h3>Nhật ký</h3>
+        <div class="log" id="mLog"><div class="muted">Chưa có sự kiện.</div></div>
+      </div>
+      <div class="card">
+        <h2>Thử tay: tìm nonce</h2>
+        <p class="small muted" style="margin:0">Thợ đào <b>không chọn được hash</b>. Họ chỉ đổi <b>nonce</b> (con số may mắn) rồi băm cả khối; hash sinh ra ngẫu nhiên. Hãy tự đổi nonce và xem.</p>
+        <div class="minebox mt">
+          <div class="lbl">Dữ liệu khối (đầu khối) — của riêng bạn</div>
+          <div class="val" id="hdHeader">—</div>
+        </div>
+        <div class="row mt">
+          <div><label class="f" for="hdNonce">Nonce</label><input id="hdNonce" inputmode="numeric" value="0"></div>
+          <div><label class="f" for="hdZeros">Yêu cầu tập dượt</label>
+            <select id="hdZeros"><option value="1">Bắt đầu bằng 0 (1/16)</option><option value="2" selected>Bắt đầu bằng 00 (1/256)</option><option value="3">Bắt đầu bằng 000 (1/4.096)</option><option value="4">Bắt đầu bằng 0000 (1/65.536)</option></select></div>
+        </div>
+        <div class="minebox mt">
+          <div class="lbl">Hash = SHA-256(dữ liệu khối + nonce)</div>
+          <div class="val" id="hdHash">—</div>
+          <div class="lbl">Kết quả</div>
+          <div class="val" id="hdRes" style="font-family:var(--sans)">—</div>
+        </div>
+        <div class="btns"><button class="btn sec" id="hdNext">Nonce + 1</button><button class="btn sec" id="hdAuto">Cho máy thử liên tục đến khi trúng</button></div>
+        <div class="note btc small mt" id="daoNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SỔ CÁI ============ -->
+  <section class="tab" id="t-socai">
+    <div class="card">
+      <h2>Toàn mạng</h2>
+      <div class="stats" id="netStats"></div>
+    </div>
+    <div class="card mt">
+      <div class="flex"><h2 style="margin:0">Chuỗi khối</h2><span class="spacer"></span><span class="small muted">Bấm vào một khối để xem chi tiết</span></div>
+      <div class="chain mt" id="chainStrip"></div>
+      <div class="small muted" id="forkInfo"></div>
+    </div>
+    <div class="grid g2 mt">
+      <div class="card" id="blkDetail"><div class="empty">Chọn một khối ở trên.</div></div>
+      <div class="card">
+        <h2>Bảng xếp hạng tài sản</h2>
+        <div class="scroll tall" id="board"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SÀN ============ -->
+  <section class="tab" id="t-san">
+    <div class="grid g3">
+      <div class="card"><div class="flex"><span class="pill btc">BTC</span><span class="small muted">Giá sàn</span></div><div class="price mt"><span class="big btcc" id="pBTC">—</span><span class="small" id="pBTCch"></span></div><svg class="spark" id="spBTC" preserveAspectRatio="none" viewBox="0 0 100 40"></svg></div>
+      <div class="card"><div class="flex"><span class="pill eth">ETH</span><span class="small muted">Giá sàn</span></div><div class="price mt"><span class="big ethc" id="pETH">—</span><span class="small" id="pETHch"></span></div><svg class="spark" id="spETH" preserveAspectRatio="none" viewBox="0 0 100 40"></svg></div>
+      <div class="card"><h2>Tài khoản trên sàn của tôi</h2><dl class="kv" id="sanBal"></dl><div class="small muted mt">Sàn giữ hộ (custodial) — khóa riêng là của sàn.</div></div>
+    </div>
+    <div class="grid g2 mt">
+      <div class="card">
+        <h2>Mua / bán</h2>
+        <div class="flex"><div class="seg" id="trSide"><button data-v="buy" class="on">Mua</button><button data-v="sell">Bán</button></div><div class="seg" id="trAsset"><button data-v="btc" class="on">BTC</button><button data-v="eth">ETH</button></div></div>
+        <label class="f" for="trQty">Số lượng</label>
+        <input id="trQty" inputmode="decimal" placeholder="0,01">
+        <div class="small muted mt" id="trQuote">—</div>
+        <button class="btn full" id="trBtn">Đặt lệnh</button>
+        <div class="small muted mt">Phí/chênh lệch mua–bán: <span id="trSpread"></span>. Lệnh khớp ngay với sàn theo giá niêm yết.</div>
+      </div>
+      <div class="card">
+        <h2>Nạp / rút BTC giữa ví và sàn</h2>
+        <div class="row">
+          <div><label class="f" for="dpAmt">Nạp lên sàn (BTC)</label><input id="dpAmt" inputmode="decimal" placeholder="0,1"></div>
+          <button class="btn sec" id="dpBtn" style="flex:0 0 auto">Nạp</button>
+        </div>
+        <div class="row">
+          <div><label class="f" for="wdAmt">Rút về ví (BTC)</label><input id="wdAmt" inputmode="decimal" placeholder="0,1"></div>
+          <button class="btn sec" id="wdBtn" style="flex:0 0 auto">Rút</button>
+        </div>
+        <div class="small muted mt" id="dpPending"></div>
+        <div class="note small mt" id="sanNote"></div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2>Lệnh gần đây trên sàn</h2>
+        <div class="scroll tall" id="trFeed"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ POS ============ -->
+  <section class="tab" id="t-pos">
+    <div class="grid g2">
+      <div class="card">
+        <h2><span class="pill eth">ETH</span> Đặt cọc để làm người xác thực</h2>
+        <dl class="kv" id="posMine"></dl>
+        <div class="row mt">
+          <div><label class="f" for="stAmt">Số ETH</label><input id="stAmt" inputmode="decimal" placeholder="1"></div>
+          <button class="btn ethb" id="stBtn" style="flex:0 0 auto">Đặt cọc</button>
+          <button class="btn sec" id="unBtn" style="flex:0 0 auto">Rút cọc</button>
+        </div>
+        <div class="note eth small mt" id="posNote"></div>
+      </div>
+      <div class="card">
+        <h2>So sánh năng lượng: PoW và PoS</h2>
+        <div class="stats" id="posCmp"></div>
+        <div class="small muted mt">PoW: mỗi khối cần trung bình 2<sup>độ khó</sup> phép băm, mọi thợ đào cùng chạy. PoS: người đề xuất được rút thăm theo tỷ lệ cọc, gần như không tốn phép tính.</div>
+      </div>
+      <div class="card">
+        <h2>Người xác thực</h2>
+        <div class="scroll tall" id="valList"></div>
+      </div>
+      <div class="card">
+        <h2>Các slot gần đây</h2>
+        <div class="scroll tall" id="roundList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HỢP ĐỒNG THÔNG MINH ============ -->
+  <section class="tab" id="t-hd">
+    <div class="note eth" style="margin-bottom:14px"><b>Hợp đồng thông minh</b> là đoạn mã nằm trên blockchain Ethereum: giữ tiền và tự thi hành đúng điều kiện đã viết, không cần ngân hàng hay trọng tài. Mỗi lần gọi hợp đồng phải trả <b>phí gas</b> bằng ETH (ở lớp: <span id="ctGas"></span> ETH/lần) — kể cả khi lệnh bị <b>hoàn tác (revert)</b> vì không thỏa điều kiện <span class="mono">require</span>. Mã chạy đúng như viết, kể cả khi viết sai: vụ The DAO (6/2016) mất khoảng 3,6 triệu ETH vì một lỗ hổng trong mã.</div>
+    <div class="grid g2">
+      <div class="card">
+        <h2>1. Hợp đồng ký quỹ (escrow)</h2>
+        <p class="small muted" style="margin:0">Người mua khóa ETH vào hợp đồng. Người bán báo đã giao hàng → người mua xác nhận → tiền tự chuyển cho người bán. Quá hạn mà người bán chưa giao → người mua tự rút lại. Đã giao mà người mua im lặng quá hạn → người bán tự nhận tiền.</p>
+        <label class="f" for="esSeller">Người bán</label><select id="esSeller"></select>
+        <div class="row">
+          <div><label class="f" for="esAmt">Số ETH ký quỹ</label><input id="esAmt" inputmode="decimal" placeholder="0,5"></div>
+          <div><label class="f" for="esMin">Hạn chót (phút)</label><input id="esMin" inputmode="numeric" value="3"></div>
+        </div>
+        <label class="f" for="esNote">Mua gì?</label><input id="esNote" maxlength="40" placeholder="Ví dụ: 1 bộ giáo trình">
+        <button class="btn ethb full" id="esBtn">Triển khai hợp đồng &amp; nạp ETH</button>
+        <h3>Hợp đồng của tôi</h3>
+        <div id="esList"></div>
+      </div>
+      <div class="card">
+        <h2>Mã hợp đồng ký quỹ (rút gọn)</h2>
+<pre class="code" id="esCode"></pre>
+        <div class="small muted mt">Dòng tô màu là hàm vừa được gọi gần nhất trong các hợp đồng của bạn.</div>
+      </div>
+      <div class="card">
+        <h2>2. Stablecoin VNDS (thế chấp bằng ETH)</h2>
+        <p class="small muted" style="margin:0">Mô phỏng cơ chế kiểu DAI/MakerDAO: khóa ETH làm tài sản thế chấp, rồi tự “in” VNDS (1 VNDS ≈ 1 VND) với tỷ lệ thế chấp tối thiểu <span id="vMin"></span>. Giá ETH lấy từ <b>oracle</b> (ở lớp: giá sàn do giảng viên đặt). Nếu giá ETH giảm làm tỷ lệ xuống dưới <span id="vLiq"></span>, bất kỳ ai cũng được <b>thanh lý</b> két: trả nợ thay và nhận ETH thế chấp kèm thưởng <span id="vBonus"></span>.</p>
+        <div class="stats mt" id="vStats"></div>
+        <div class="gauge" id="vGauge"></div>
+        <div class="row">
+          <div><label class="f" for="vEth">ETH thế chấp</label><input id="vEth" inputmode="decimal" placeholder="1"></div>
+          <button class="btn ethb" id="vLock" style="flex:0 0 auto">Khóa</button><button class="btn sec" id="vFree" style="flex:0 0 auto">Rút</button>
+        </div>
+        <div class="row">
+          <div><label class="f" for="vAmt">VNDS (triệu)</label><input id="vAmt" inputmode="decimal" placeholder="20"></div>
+          <button class="btn okb" id="vMint" style="flex:0 0 auto">Phát hành</button><button class="btn sec" id="vRepay" style="flex:0 0 auto">Trả nợ</button>
+        </div>
+        <div class="row">
+          <div><label class="f" for="vTo">Chuyển VNDS cho</label><select id="vTo"></select></div>
+          <div><label class="f" for="vSend">Số VNDS (triệu)</label><input id="vSend" inputmode="decimal" placeholder="5"></div>
+          <button class="btn sec" id="vSendBtn" style="flex:0 0 auto">Chuyển</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Két có thể thanh lý</h2>
+        <div id="vLiqList"></div>
+        <h3>Ba loại stablecoin (chuẩn bị cho Bài 3)</h3>
+        <div class="scroll"><table class="tbl small">
+          <tr><th>Loại</th><th>Bảo chứng</th><th>Ví dụ</th><th>Rủi ro chính</th></tr>
+          <tr><td>Pháp định</td><td>Tiền gửi, trái phiếu chính phủ ngắn hạn do một công ty giữ</td><td>USDT, USDC</td><td>Tổ chức phát hành, dự trữ (USDC lệch giá khi SVB sụp, 3/2023)</td></tr>
+          <tr><td>Thế chấp tiền mã hóa</td><td>ETH… khóa trong hợp đồng, thế chấp vượt mức</td><td>DAI (Maker), VNDS ở đây</td><td>Giá tài sản thế chấp lao dốc, lỗi oracle</td></tr>
+          <tr><td>Thuật toán</td><td>Cơ chế đúc/đốt với token khác, không có tài sản bảo chứng đủ</td><td>TerraUSD (UST)</td><td>Vòng xoáy tử thần: UST sụp 5/2022, ~40 tỷ USD bốc hơi</td></tr>
+        </table></div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2>Nhật ký gọi hợp đồng (toàn lớp)</h2>
+        <div class="scroll tall" id="ctLog"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GIẢNG VIÊN ============ -->
+  <section class="tab" id="t-gv">
+    <div class="grid g2">
+      <div class="card">
+        <h2>Điều khiển mạng Bitcoin</h2>
+        <div class="small muted" id="gvNow"></div>
+        <div class="row">
+          <div><label class="f" for="gvBits">Đặt độ khó cho khối kế tiếp (bit)</label><input id="gvBits" inputmode="decimal" placeholder="18"></div>
+          <div><label class="f" for="gvTarget">Mục tiêu giây/khối</label><input id="gvTarget" inputmode="numeric" placeholder="30"></div>
+        </div>
+        <label class="flex small muted mt" style="gap:6px"><input type="checkbox" id="gvAuto" style="width:auto"> Tự điều chỉnh độ khó theo tốc độ đào</label>
+        <button class="btn btcb full" id="gvDiffBtn">Áp dụng từ khối kế tiếp</button>
+        <h3>Phiên mới (đặt lại toàn bộ)</h3>
+        <div class="row">
+          <div><label class="f" for="nsBits">Độ khó ban đầu</label><input id="nsBits" inputmode="decimal"></div>
+          <div><label class="f" for="nsReward">Thưởng khối (BTC)</label><input id="nsReward" inputmode="decimal"></div>
+          <div><label class="f" for="nsHalving">Halving mỗi … khối</label><input id="nsHalving" inputmode="numeric"></div>
+        </div>
+        <div class="row">
+          <div><label class="f" for="nsGrantBTC">Cấp mỗi ví (BTC)</label><input id="nsGrantBTC" inputmode="decimal"></div>
+          <div><label class="f" for="nsGrantETH">Cấp mỗi ví (ETH)</label><input id="nsGrantETH" inputmode="decimal"></div>
+          <div><label class="f" for="nsGrantVND">Cấp mỗi ví (triệu VND)</label><input id="nsGrantVND" inputmode="numeric"></div>
+        </div>
+        <button class="btn badb full" id="nsBtn">Bắt đầu phiên mới</button>
+        <div class="small muted mt">Phiên mới xóa trắng chuỗi, sàn và đặt cọc; người học bấm “Tạo ví” lại (giữ nguyên khóa).</div>
+        <button class="btn sec full" id="gvRepub">Phát lại toàn bộ dữ liệu lên trạm</button>
+        <div class="small muted mt">Dùng khi học viên vào sau thấy thiếu dữ liệu: máy giảng viên gửi lại mọi bản ghi (vẫn giữ chữ ký gốc).</div>
+      </div>
+      <div class="card">
+        <h2>Điều khiển sàn</h2>
+        <div class="row">
+          <div><label class="f" for="gvPB">Giá BTC (VND)</label><input id="gvPB" inputmode="numeric"></div>
+          <div><label class="f" for="gvPE">Giá ETH (VND)</label><input id="gvPE" inputmode="numeric"></div>
+        </div>
+        <button class="btn full" id="gvPriceBtn">Cập nhật giá</button>
+        <h3>Cú sốc thị trường</h3>
+        <div class="btns" style="margin-top:4px">
+          <button class="btn sec" data-shock="1.2">+20%</button><button class="btn sec" data-shock="0.8">−20%</button>
+          <button class="btn sec" data-shock="1.5">+50%</button><button class="btn sec" data-shock="0.5">−50%</button>
+        </div>
+        <h3>Ethereum PoS</h3>
+        <div class="btns" style="margin-top:4px"><button class="btn ethb" id="gvSlot">Chạy 1 slot</button><label class="flex small muted" style="gap:6px"><input type="checkbox" id="gvAutoSlot" style="width:auto"> Tự chạy mỗi 12 giây (khi trang này mở)</label></div>
+        <div class="row mt"><select id="gvSlashWho"></select><button class="btn badb" id="gvSlash" style="flex:0 0 auto">Phạt (slashing)</button></div>
+        <div class="small muted mt">Phạt mô phỏng hành vi ký hai khối mâu thuẫn: cắt <span id="gvSlashPct"></span>% số cọc.</div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2>Gợi ý kịch bản lớp học (≈ 45 phút)</h2>
+        <ol class="small" style="margin:0;padding-left:18px">
+          <li><b>Tạo ví (5’)</b>: gửi link cho học viên; mọi người tạo ví, xem 12 từ khôi phục.</li>
+          <li><b>Thử tay (5’)</b>: tab Đào → đổi nonce cho đến khi hash bắt đầu bằng 00; thảo luận vì sao không “đặt sẵn 000”.</li>
+          <li><b>Đào thật (10’)</b>: cả lớp bấm Bắt đầu đào; quan sát độ khó tự tăng, khối mồ côi khi hai người trúng gần nhau, halving.</li>
+          <li><b>Giao dịch (10’)</b>: chuyển BTC cho nhau với các mức phí; thử giả mạo chữ ký và chi tiêu kép.</li>
+          <li><b>Sàn (8’)</b>: mua bán, nạp/rút chờ xác nhận; giảng viên tạo cú sốc −50% → so sánh tài sản trên ví và trên sàn.</li>
+          <li><b>Hợp đồng thông minh (10’, buổi sau hoặc nối Bài 3)</b>: lập ký quỹ theo cặp; mỗi người in VNDS rồi giảng viên tạo cú sốc −50% để kích hoạt thanh lý.</li>
+          <li><b>PoS (7’)</b>: đặt cọc ETH, chạy slot, phạt một người xác thực; so sánh năng lượng PoW–PoS.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+window.__ADMIN__={"pub": "Mn34_GOPZppCKUVTvxdVIDhtLm4zZ58os0XW46zfcqs.9eoo_Yv9TRnT_qvKC7zroVzb291sM5IBn9ntgdBupZw", "salt": "csKahcDEFB5SBOSuNuFYPg==", "iv": "5toMVqrbCHG2/am4", "ct": "4dbX4hfzKxlDpIjo9H5FnDKKheP34WNfqhTmSKPj/kjGj7O7/Iscbi5u/e1UutpxxIOoD5ghxQLzNoLmbyrhDznGL43IZh1WipnLqlRi7m8JJf/TkIokGEVldhK0myua48ts3zSmp1dqJ0GQ+pjOS4Nps1S/Ncqe4F/vSjPdI8p8k9ntWGGohubyaxUa9yt/TFQm1qy0gkZ8ulOaao0oTILiIZZFB+4QIrc3sKG0xnApzcSUTNuh+RwzpOD+95btS9uDeUwl2x+9nePjEOJXJ+JsKqNiKiqI0Nn8pWqv", "room": "V9XTGCvO"};
+function sha256(str){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var bytes=new TextEncoder().encode(str),l=bytes.length,n=((l+9+63)>>6)<<6,m=new Uint8Array(n);
+  m.set(bytes);m[l]=0x80;var dv=new DataView(m.buffer);dv.setUint32(n-4,(l*8)>>>0);dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],W=new Int32Array(64);
+  for(var i=0;i<n;i+=64){
+    for(var t=0;t<16;t++)W[t]=dv.getUint32(i+t*4);
+    for(t=16;t<64;t++){var x=W[t-15],y=W[t-2];W[t]=(W[t-16]+(rr(x,7)^rr(x,18)^(x>>>3))+W[t-7]+(rr(y,17)^rr(y,19)^(y>>>10)))|0;}
+    var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(t=0;t<64;t++){var t1=(h+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[t]+W[t])|0;var t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  var s='';for(i=0;i<8;i++)s+=(H[i]>>>0).toString(16).padStart(8,'0');return s;
+}
+function zeroBits(hex){var n=0;for(var i=0;i<hex.length;i++){var v=parseInt(hex[i],16);if(v===0){n+=4;continue;}return n+Math.clz32(v)-28;}return n;}
+
+/* ===== Lớp kết nối: trạm trung chuyển MQTT công cộng, không cần tài khoản =====
+   Mỗi bản ghi được ký số bằng khóa của người tạo; mọi máy tự kiểm tra chữ ký. */
+(function(){
+  const A=window.__ADMIN__;const ROOT='gialapPhamDinhTuan/'+A.room;
+  const qs=new URLSearchParams(location.search);
+  const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+  const BROKER=qs.get('broker')||BROKERS[0];const PV=+(qs.get('v')||5);
+  const enc=new TextEncoder(),sub=crypto.subtle;
+  const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const ub64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
+  const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const ls={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},del:k=>{try{localStorage.removeItem(k);}catch(e){}}};
+  const P={status:'connecting',isAdmin:false};window.__P2P=P;
+  const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'};
+  const pubCache=new Map();
+  async function pubKey(pub){let k=pubCache.get(pub);if(!k){const[x,y]=pub.split('.');k=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},EC,false,['verify']);pubCache.set(pub,k);}return k;}
+  async function privKey(j){return sub.importKey('jwk',{kty:'EC',crv:'P-256',x:j.x,y:j.y,d:j.d,ext:true},EC,false,['sign']);}
+  const uidOf=pub=>'u'+sha256('id:'+pub).slice(0,24);
+  // Danh tính của trình duyệt này
+  async function identity(){let j=null;try{j=JSON.parse(ls.get('gl-id')||'null');}catch(e){}
+    if(!j||!j.d){const k=await sub.generateKey(EC,true,['sign','verify']);j=await sub.exportKey('jwk',k.privateKey);ls.set('gl-id',JSON.stringify(j));}
+    return{jwk:j,pub:j.x+'.'+j.y,key:await privKey(j)};}
+  async function adminKey(){try{const j=JSON.parse(ls.get('gl-admin-'+A.room)||'null');if(j&&(j.x+'.'+j.y)===A.pub)return{pub:A.pub,key:await privKey(j)};}catch(e){}return null;}
+  P.unlock=async pw=>{const base=await sub.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+    const aes=await sub.deriveKey({name:'PBKDF2',salt:ub64(A.salt),iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+    const pt=await sub.decrypt({name:'AES-GCM',iv:ub64(A.iv)},aes,ub64(A.ct));ls.set('gl-admin-'+A.room,new TextDecoder().decode(pt));};
+  P.lock=()=>ls.del('gl-admin-'+A.room);
+
+  // Kho dữ liệu cục bộ
+  const store=new Map();            // path -> {d, env, t}
+  const docSubs=new Map(),qSubs=new Set();let dirty=new Set(),flushT=null;
+  const CK='gl-cache-'+A.room;
+  function saveCache(){clearTimeout(saveCache.t);saveCache.t=setTimeout(()=>{const s=curSession();const arr=[];
+    for(const[p,v]of store){if(!v.env)continue;if(p.startsWith('config/')||(v.d&&v.d.session===s))arr.push([p,v.env]);}ls.set(CK,JSON.stringify(arr));},1500);}
+  function changed(path){dirty.add(path);if(!flushT)flushT=setTimeout(flush,40);}
+  function flush(){flushT=null;const ds=dirty;dirty=new Set();const cols=new Set();
+    for(const p of ds){const a=p.split('/');cols.add(a.slice(0,-1).join('/'));const subs=docSubs.get(p);if(subs)subs.forEach(cb=>cb(snap(p)));}
+    qSubs.forEach(s=>{if(cols.has(s.col))s.cb(qsnap(s));});saveCache();}
+  const meta={fromCache:false,hasPendingWrites:false};
+  function snap(p){const v=store.get(p);const d=v?v.d:undefined;return{id:p.split('/').pop(),exists:!!v,data:()=>d,metadata:meta};}
+  function qsnap(s){const docs=[];for(const[p,v]of store){const a=p.split('/');if(a.slice(0,-1).join('/')!==s.col)continue;if(s.w&&v.d[s.w[0]]!==s.w[2])continue;docs.push(snap(p));}
+    return{docs,size:docs.length,empty:!docs.length,docChanges:()=>[],metadata:meta};}
+  const curSession=()=>{const c=store.get('config/main');return c&&c.d&&c.d.session||1;};
+
+  // Kiểm tra quyền ghi theo chữ ký
+  const IMM=['txs','blocks','trades','stakes','contracts'];
+  function allowed(path,d,pub){const col=path.split('/')[0],id=path.split('/')[1],u=uidOf(pub);
+    if(col==='config'||col==='rounds')return pub===A.pub;
+    if(col==='wallets')return id===u&&d.uid===u;
+    if(col==='blocks')return d.miner===u;
+    if(IMM.includes(col))return d.uid===u;
+    return false;}
+  async function accept(env,fromNet){
+    let m;try{m=JSON.parse(env.m);}catch(e){return;}const{path,d,t}=m;if(!path||!d||typeof d!=='object')return;
+    const cur=store.get(path);if(cur&&cur.env&&cur.env.s===env.s)return;
+    if(cur&&IMM.includes(path.split('/')[0]))return; // bản ghi bất biến: giữ bản đầu tiên
+    if(cur&&cur.t>t)return;
+    if(fromNet){if(!allowed(path,d,env.p))return;try{if(!await sub.verify(SG,await pubKey(env.p),ub64u(env.s),enc.encode(env.m)))return;}catch(e){return;}}
+    store.set(path,{d,env,t});changed(path);
+    if(path==='config/main')resubscribe();
+  }
+  // Kết nối MQTT
+  let client=null,subTopic=null,me=null,adm=null;
+  const topicOf=(path,d)=>path.startsWith('config/')?ROOT+'/cfg/'+path.slice(7):ROOT+'/s'+d.session+'/'+path;
+  function pathOf(topic){const r=topic.slice(ROOT.length+1);if(r.startsWith('cfg/'))return'config/'+r.slice(4);const i=r.indexOf('/');return r.slice(i+1);}
+  function resubscribe(){if(!client||!client.connected)return;const t=ROOT+'/s'+curSession()+'/#';if(t===subTopic)return;
+    if(subTopic)client.unsubscribe(subTopic);subTopic=t;client.subscribe(t,{qos:1});}
+  function setStatus(s){P.status=s;const el=document.getElementById('netDot');if(el){el.dataset.s=s;el.textContent=s==='ok'?'● Đã kết nối':s==='connecting'?'● Đang kết nối…':'● Mất kết nối – đang thử lại';}}
+  function pub(path,d,env){client&&client.publish(topicOf(path,d),JSON.stringify(env),PV===5?{qos:1,retain:true,properties:{messageExpiryInterval:14*86400}}:{qos:1,retain:true});}
+  async function write(path,d){
+    d=JSON.parse(JSON.stringify(d));
+    if(path.startsWith('data/users/')){ls.set('gl-priv:'+path,JSON.stringify(d));store.set(path,{d,t:Date.now()});changed(path);return;}
+    const col=path.split('/')[0];const signer=(col==='config'||col==='rounds')?adm:me;
+    if(!signer)throw{code:'permission_denied',message:'Cần đăng nhập giảng viên'};
+    if(!client||!client.connected)throw{code:'unavailable',message:'Chưa kết nối'};
+    const m=JSON.stringify({path,d,t:Date.now()});const s=b64u(await sub.sign(SG,signer.key,enc.encode(m)));
+    const env={m,p:signer.pub,s};await accept(env,false);pub(path,d,env);}
+  P.republish=()=>{let n=0;const s=curSession();for(const[p,v]of store){if(!v.env)continue;if(p.startsWith('config/')||(v.d&&v.d.session===s)){pub(p,v.d,v.env);n++;}}return n;};
+
+  const ready=(async()=>{
+    me=await identity();adm=await adminKey();P.isAdmin=!!adm;P.uid=uidOf(me.pub);
+    try{for(const[p,env]of JSON.parse(ls.get(CK)||'[]'))await accept(env,true);}catch(e){}
+    if(typeof mqtt==='undefined'){setStatus('down');return{};}
+    client=mqtt.connect(BROKER,{protocolVersion:PV,clean:true,reconnectPeriod:2500,connectTimeout:10000,clientId:'gl_'+P.uid.slice(1,9)+'_'+Math.random().toString(36).slice(2,6)});
+    client.on('connect',()=>{setStatus('ok');subTopic=null;client.subscribe(ROOT+'/cfg/#',{qos:1});resubscribe();});
+    client.on('reconnect',()=>setStatus('connecting'));client.on('offline',()=>setStatus('down'));client.on('error',e=>console.warn('mqtt',e&&e.message));
+    client.on('message',(topic,buf)=>{if(!buf||!buf.length)return;let env;try{env=JSON.parse(new TextDecoder().decode(buf));}catch(e){return;}
+      if(!env||!env.m||!env.p||!env.s)return;try{if(JSON.parse(env.m).path!==pathOf(topic))return;}catch(e){return;}accept(env,true);});
+    await new Promise(r=>{let done=false;const fin=()=>{if(!done){done=true;r();}};client.once('connect',()=>setTimeout(fin,1200));setTimeout(fin,6000);});
+    const docRef=path=>({id:path.split('/').pop(),path,
+      get:async()=>{if(path.startsWith('data/users/')&&!store.has(path)){try{const d=JSON.parse(ls.get('gl-priv:'+path)||'null');if(d)store.set(path,{d,t:0});}catch(e){}}return snap(path);},
+      set:d=>write(path,d),update:async d=>{const c=store.get(path);if(!c)throw{code:'invalid_argument',message:'not found'};await write(path,{...c.d,...d});},
+      delete:async()=>{},onSnapshot:(cb)=>{let s=docSubs.get(path);if(!s)docSubs.set(path,s=new Set());s.add(cb);setTimeout(()=>cb(snap(path)),0);return()=>s.delete(cb);}});
+    const q=(col,w)=>({where:(f,o,v)=>q(col,[f,o,v]),limit:()=>q(col,w),orderBy:()=>q(col,w),
+      onSnapshot:(cb)=>{const s={col,w,cb};qSubs.add(s);setTimeout(()=>cb(qsnap(s)),0);return()=>qSubs.delete(s);},get:async()=>qsnap({col,w}),doc:id=>docRef(col+'/'+id)});
+    const db={doc:docRef,collection:c=>q(c,null)};
+    const user={id:async()=>P.uid,isOwner:async()=>P.isAdmin,canEdit:async()=>P.isAdmin,can:async()=>true,me:async()=>({id:P.uid,name:'',guest:false}),profiles:async()=>({}),search:async()=>[],name:async()=>'',avatarUrl:async()=>null,email:async()=>null};
+    return{db,user};
+  })().catch(e=>{console.error(e);setStatus('down');return{};});
+  window.claude={use:n=>ready.then(x=>(x&&x[n])||null)};
+})();
+/* ===== Đăng nhập giảng viên ===== */
+document.addEventListener('DOMContentLoaded',()=>{
+  const btn=document.getElementById('gvLoginBtn'),box=document.getElementById('gvLoginBox'),P=window.__P2P;
+  const sync=()=>{btn.textContent=P.isAdmin?'Thoát giảng viên':'Giảng viên';};setTimeout(sync,300);setTimeout(sync,1500);
+  btn.onclick=()=>{if(P.isAdmin){P.lock();location.reload();return;}box.classList.toggle('hidden');};
+  const go=async()=>{const m=document.getElementById('gvLoginMsg');m.textContent='Đang kiểm tra…';
+    try{await P.unlock(document.getElementById('gvPass').value);location.reload();}catch(e){m.textContent='Sai mật khẩu.';}};
+  document.getElementById('gvLoginGo').onclick=go;document.getElementById('gvPass').onkeydown=e=>{if(e.key==='Enter')go();};
+  const rp=document.getElementById('gvRepub');if(rp)rp.onclick=()=>{const n=P.republish();rp.textContent='Đã phát lại '+n+' bản ghi';setTimeout(()=>{rp.textContent='Phát lại toàn bộ dữ liệu lên trạm';},3000);};
+});
+
+</script>
+<script>
+function sha256(str){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var bytes=new TextEncoder().encode(str),l=bytes.length,n=((l+9+63)>>6)<<6,m=new Uint8Array(n);
+  m.set(bytes);m[l]=0x80;var dv=new DataView(m.buffer);dv.setUint32(n-4,(l*8)>>>0);dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],W=new Int32Array(64);
+  for(var i=0;i<n;i+=64){
+    for(var t=0;t<16;t++)W[t]=dv.getUint32(i+t*4);
+    for(t=16;t<64;t++){var x=W[t-15],y=W[t-2];W[t]=(W[t-16]+(rr(x,7)^rr(x,18)^(x>>>3))+W[t-7]+(rr(y,17)^rr(y,19)^(y>>>10)))|0;}
+    var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(t=0;t<64;t++){var t1=(h+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[t]+W[t])|0;var t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  var s='';for(i=0;i<8;i++)s+=(H[i]>>>0).toString(16).padStart(8,'0');return s;
+}
+function zeroBits(hex){var n=0;for(var i=0;i<hex.length;i++){var v=parseInt(hex[i],16);if(v===0){n+=4;continue;}return n+Math.clz32(v)-28;}return n;}
+
+/* ================== HẰNG SỐ & TIỆN ÍCH ================== */
+const SAT=1e8, MU=1e6, GEN='0'.repeat(64);
+const DEF={session:1,startedAt:0,
+  params:{bits0:20,target:30,N:4,auto:true,reward:3.125,halving:20,grantBTC:0.5,grantETH:4,grantVND:300000000,sanBTC:1000,depConf:2,maxTx:12},
+  diffEvents:[],prices:{btc:2500000000,eth:90000000},priceHist:[],pos:{reward:0.05,slashPct:10,minStake:1},ct:{gas:0.0005,minRatio:1.5,liqRatio:1.3,bonus:0.1},spread:0.003};
+function cfgOf(d){d=d||{};return{...DEF,...d,params:{...DEF.params,...(d.params||{})},prices:{...DEF.prices,...(d.prices||{})},
+  pos:{...DEF.pos,...(d.pos||{})},ct:{...DEF.ct,...(d.ct||{})},diffEvents:Array.isArray(d.diffEvents)?d.diffEvents:[],priceHist:Array.isArray(d.priceHist)?d.priceHist:[]};}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=s=>{s=String(s??'').trim().replace(/\s/g,'');if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');return parseFloat(s.replace(',','.'));};
+const fB=s=>(s/SAT).toLocaleString('vi-VN',{maximumFractionDigits:8});
+const fE=m=>(m/MU).toLocaleString('vi-VN',{maximumFractionDigits:4});
+const fV=v=>Math.round(v).toLocaleString('vi-VN')+' ₫';
+const fD=(x,d=1)=>Number(x).toLocaleString('vi-VN',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fN=n=>Math.round(n).toLocaleString('vi-VN');
+const fBig=n=>n>=1e12?(n/1e12).toLocaleString('vi-VN',{maximumFractionDigits:1})+' nghìn tỷ':n>=1e9?(n/1e9).toLocaleString('vi-VN',{maximumFractionDigits:1})+' tỷ':n>=1e6?(n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:1})+' triệu':fN(n);
+const fT=t=>t?new Date(t).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+const short=(a,n=10)=>a?(a.length>n+4?a.slice(0,n)+'…'+a.slice(-4):a):'—';
+const rid=()=>{const a=new Uint8Array(8);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('');};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function hashHTML(h,n=18){if(!h)return'—';const z=Math.min(h.match(/^0*/)[0].length,n);const s=h.slice(0,n);return`<span class="hash"><span class="z">${s.slice(0,z)}</span>${s.slice(z)}${n<h.length?'…':''}</span>`;}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3200);}
+const meets=(h,b)=>parseInt(h.slice(0,13),16)<Math.pow(2,52-b);
+const rewardAt=(h,P)=>Math.floor(Math.round(P.reward*SAT)/Math.pow(2,Math.floor(h/P.halving)));
+const txMsg=t=>`${t.id}|${t.from}|${t.to}|${t.amount}|${t.fee}|${t.time}`+(t.inp?'|'+t.inp:'');
+const txRoot=(txs,addr,cb)=>sha256(txs.map(t=>txMsg(t)+'#'+t.sig).join(',')+'|coinbase:'+addr+':'+cb);
+const header=(h,prev,root,time,bits,nonce)=>`${h}|${prev}|${root}|${time}|${bits}|${nonce}`;
+const addrOf=pub=>'bc1q'+sha256(pub).slice(0,30);
+const nameOfAddr=a=>a==='SAN'?'Ví nóng của Sàn':(S.D&&S.D.addrMap[a]?S.D.addrMap[a].name:short(a,8));
+const nameOfUid=u=>(S.D&&S.D.uidMap[u])?S.D.uidMap[u].name:'(chưa rõ)';
+
+/* ================== KHÓA & CHỮ KÝ (ECDSA P-256 thật) ================== */
+const hasSubtle=!!(window.crypto&&crypto.subtle);
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const ub64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;};
+async function genKeys(){
+  if(hasSubtle){try{const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);
+    const priv=await crypto.subtle.exportKey('jwk',k.privateKey);return{priv,pub:priv.x+'.'+priv.y,real:true};}catch(e){}}
+  const d=rid()+rid()+rid()+rid();return{priv:{d},pub:'sim.'+sha256('pub'+d),real:false};
+}
+const keyCache=new Map();
+async function signMsg(keys,msg){
+  if(keys.real){let k=keyCache.get('priv:'+keys.pub);
+    if(!k){k=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x:keys.priv.x,y:keys.priv.y,d:keys.priv.d,ext:true},{name:'ECDSA',namedCurve:'P-256'},false,['sign']);keyCache.set('priv:'+keys.pub,k);}
+    return b64u(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},k,new TextEncoder().encode(msg)));}
+  return'sim:'+sha256(keys.priv.d+msg);
+}
+async function verifySig(pub,msg,sig){
+  if(pub.startsWith('sim.'))return sig.startsWith('sim:');
+  if(!hasSubtle||!sig||sig.startsWith('sim:'))return false;
+  try{let k=keyCache.get(pub);if(!k){const[x,y]=pub.split('.');k=await crypto.subtle.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},{name:'ECDSA',namedCurve:'P-256'},false,['verify']);keyCache.set(pub,k);}
+    return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},k,ub64u(sig),new TextEncoder().encode(msg));}catch(e){return false;}
+}
+const WL='abandon ability able about above absent absorb abstract absurd access accident account accuse achieve acid acoustic acquire across act action actor actual adapt add address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle animal ankle announce annual another answer antenna antique any apart appear apple approve april arch arctic area arena argue arm armor army around arrange arrive arrow art artist artwork ask aspect asset assist assume athlete atom attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome axis'.split(' ');
+const seedWords=keys=>{const h=sha256('seed:'+(keys.priv.d||''));return Array.from({length:12},(_,i)=>WL[parseInt(h.slice(i*4,i*4+4),16)%WL.length]);};
+
+/* ================== TRẠNG THÁI ================== */
+const S={db:null,user:null,uid:null,admin:false,canWrite:null,myName:'',cfg:cfgOf(null),cfgExists:false,subscribed:false,
+  wallets:[],txs:[],blocks:[],trades:[],stakes:[],rounds:[],contracts:[],keys:null,me:null,D:null,unsubs:[],tab:'vi',readOnly:false,sel:null,tplKey:'',tplDirty:false};
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
+/* ================== ĐỘ KHÓ ================== */
+function paramsAt(h,P,evs){let target=P.target,auto=P.auto,bits=null;
+  for(const e of evs){if(e.h>h)break;if(e.target!=null)target=e.target;if(e.auto!=null)auto=e.auto;if(e.h===h&&e.bits!=null)bits=e.bits;}
+  return{target,auto,bits};}
+function expBits(par,h,P,evs){
+  const pa=paramsAt(h,P,evs);if(pa.bits!=null)return pa.bits;
+  if(!par||par.h===0)return P.bits0;
+  if(pa.auto&&h%P.N===0&&par.h>=P.N){
+    let a=par;for(let i=0;i<P.N&&a.parent&&a.parent.h>0;i++)a=a.parent;
+    const blocks=par.h-a.h,span=Math.max(par.time-a.time,1000);
+    if(blocks>0){const r=Math.max(-2,Math.min(2,Math.log2(pa.target*1000*blocks/span)));return Math.round(Math.max(8,Math.min(40,par.bits+r))*100)/100;}
+  }
+  return par.bits;
+}
+
+/* ================== TÍNH LẠI SỔ CÁI (mọi máy tự làm) ================== */
+const verCache=new Map();
+async function verifyAll(list,addrMap){
+  const jobs=[];
+  for(const t of list){if(!t||!t.id)continue;const k=txMsg(t)+'|'+t.sig;if(verCache.has(k))continue;
+    if(t.from==='SAN'){verCache.set(k,t.kind==='withdraw'&&t.sig==='SAN'?true:'Chữ ký sàn không hợp lệ');continue;}
+    const w=addrMap[t.from];if(!w)continue;
+    jobs.push(verifySig(w.pub,txMsg(t),t.sig||'').then(r=>verCache.set(k,r?true:'Chữ ký số không khớp khóa công khai của địa chỉ gửi')));}
+  await Promise.all(jobs);
+}
+function txCheck(t,addrMap,wdReq){
+  if(t.from==='SAN'){if(!wdReq.has(t.id))return'Không có lệnh rút tương ứng trên sàn';}
+  else if(!addrMap[t.from])return'Địa chỉ gửi không thuộc ví nào';
+  const v=verCache.get(txMsg(t)+'|'+t.sig);return v===undefined?'Đang kiểm tra chữ ký':v;
+}
+function validateBlock(b,par,P,evs,addrMap,wdReq){
+  const n={b,h:par.h+1,hash:b.hash,time:+b.time||0,parent:par,invalid:null};
+  const fail=r=>{n.invalid=r;return n;};
+  if(b.height!==n.h)return fail('Sai số thứ tự khối');
+  const txs=Array.isArray(b.txs)?b.txs:[];
+  if(txs.length>P.maxTx)return fail('Quá nhiều giao dịch trong khối');
+  const root=txRoot(txs,b.addr,b.coinbase);
+  if(sha256(header(b.height,b.prev,root,b.time,b.bits,b.nonce))!==b.hash)return fail('Hash không khớp nội dung khối (đã bị sửa?)');
+  const eb=expBits(par,n.h,P,evs);
+  if(Math.abs(+b.bits-eb)>1e-9)return fail(`Sai độ khó (${b.bits} ≠ ${eb})`);
+  if(!meets(b.hash,eb))return fail('Hash không đạt độ khó yêu cầu');
+  n.bits=eb;const bal={...par.bal},inc=new Set(par.inc);let fees=0;
+  for(const t of txs){
+    if(!t||!t.id)return fail('Giao dịch hỏng');
+    if(inc.has(t.id))return fail('Giao dịch '+t.id.slice(0,6)+' đã nằm ở khối trước');
+    if(t.inp&&inc.has('inp:'+t.inp))return fail('Chi tiêu kép: đồng tiền đã được tiêu ở giao dịch khác');
+    const a=+t.amount,f=+t.fee;if(!(Number.isInteger(a)&&a>0&&Number.isInteger(f)&&f>=0))return fail('Số tiền không hợp lệ');
+    const ck=txCheck(t,addrMap,wdReq);if(ck!==true)return fail('Giao dịch '+t.id.slice(0,6)+': '+ck);
+    if((bal[t.from]||0)<a+f)return fail('Giao dịch '+t.id.slice(0,6)+': không đủ số dư');
+    bal[t.from]-=a+f;bal[t.to]=(bal[t.to]||0)+a;fees+=f;inc.add(t.id);if(t.inp)inc.add('inp:'+t.inp);}
+  if(+b.coinbase!==rewardAt(n.h,P)+fees)return fail('Phần thưởng khối khai sai');
+  bal[b.addr]=(bal[b.addr]||0)+b.coinbase;
+  n.bal=bal;n.inc=inc;n.fees=fees;n.cum=par.cum+Math.pow(2,eb);return n;
+}
+let rcBusy=false,rcAgain=false;
+async function recompute(){
+  if(rcBusy){rcAgain=true;return;}rcBusy=true;
+  try{do{rcAgain=false;await recomputeOnce();}while(rcAgain);}catch(e){console.error(e);}
+  rcBusy=false;render();
+}
+async function recomputeOnce(){
+  const C=S.cfg,P=C.params,evs=[...C.diffEvents].sort((a,b)=>a.h-b.h);
+  const addrMap={},uidMap={};
+  for(const w of S.wallets){if(!w.pub||!w.address||addrOf(w.pub)!==w.address||!w.uid)continue;addrMap[w.address]=w;uidMap[w.uid]=w;}
+  S.me=S.uid?(uidMap[S.uid]||null):null;
+  const wdReq=new Set(S.txs.filter(t=>t.kind==='withdraw'&&t.from==='SAN').map(t=>t.id));
+  const all=[...S.txs];for(const b of S.blocks)if(Array.isArray(b.txs))all.push(...b.txs);
+  await verifyAll(all,addrMap);
+  // khối nguyên thủy
+  const gBal={SAN:Math.round(P.sanBTC*SAT)},grant=Math.round(P.grantBTC*SAT);
+  for(const a in addrMap)gBal[a]=(gBal[a]||0)+grant;
+  const root={h:0,hash:GEN,time:C.startedAt||0,bits:P.bits0,cum:0,bal:gBal,inc:new Set(),parent:null,root:true};
+  const byParent={},seen=new Set();
+  for(const b of S.blocks){if(!b||typeof b.hash!=='string'||seen.has(b.hash))continue;seen.add(b.hash);(byParent[b.prev]||(byParent[b.prev]=[])).push(b);}
+  const nodes=[],q=[root];
+  while(q.length){const par=q.shift();const kids=(byParent[par.hash]||[]).sort((a,b)=>a.time-b.time);
+    for(const b of kids){const n=validateBlock(b,par,P,evs,addrMap,wdReq);nodes.push(n);if(!n.invalid)q.push(n);}}
+  const reach=new Set(nodes.map(n=>n.hash));
+  const lost=S.blocks.filter(b=>b&&b.hash&&!reach.has(b.hash));
+  let tip=root;
+  for(const n of nodes){if(n.invalid)continue;
+    if(n.cum>tip.cum||(n.cum===tip.cum&&(n.time<tip.time||(n.time===tip.time&&n.hash<tip.hash))))tip=n;}
+  const chain=[];for(let n=tip;n&&!n.root;n=n.parent)chain.push(n);chain.reverse();
+  const inBest=new Set(chain.map(n=>n.hash));
+  const txConf=new Map();for(const n of chain)for(const t of n.b.txs||[])txConf.set(t.id,{h:n.h,time:n.time});
+  const conf=h=>tip.h-h+1;
+
+  // --------- Sổ sách của SÀN (cơ sở dữ liệu tập trung) ---------
+  const san={};const acct=u=>san[u]||(san[u]={vnd:Math.round(P.grantVND),btc:0,eth:Math.round(P.grantETH*MU),stk:0,slashed:0,rewards:0,esc:0,coll:0,debt:0,vnds:0,gas:0,liqLoss:0});
+  for(const u in uidMap)acct(u);
+  const ev=[],depPending=[];
+  for(const tr of S.trades)if(uidMap[tr.uid])ev.push({t:+tr.time,k:'trade',d:tr});
+  for(const t of S.txs){
+    if(t.to==='SAN'&&addrMap[t.from]){const c=txConf.get(t.id);const u=addrMap[t.from].uid;
+      if(c&&conf(c.h)>=P.depConf)ev.push({t:c.time,k:'dep',u,amt:+t.amount,id:t.id});
+      else depPending.push({u,t,confs:c?conf(c.h):0});}
+    if(t.kind==='withdraw'&&t.from==='SAN'&&uidMap[t.uid])ev.push({t:+t.time,k:'wd',u:t.uid,amt:(+t.amount)+(+t.fee),id:t.id});
+  }
+  for(const s of S.stakes)if(uidMap[s.uid])ev.push({t:+s.time,k:'stake',d:s});
+  for(const r of S.rounds)ev.push({t:+r.time,k:'round',d:r});
+  for(const c of S.contracts)if(uidMap[c.uid])ev.push({t:+c.time,k:'ct',d:c});
+  ev.sort((a,b)=>a.t-b.t);
+  const bad=new Map(),escrows={},ctRes=new Map(),CT=C.ct,gas=Math.round(CT.gas*MU);
+  const hist=[...C.priceHist].sort((a,b)=>a.t-b.t);
+  const priceAt=t=>{let p=hist.length?hist[0].eth:C.prices.eth;for(const x of hist){if(x.t<=t)p=x.eth;else break;}return p;};
+  function runCt(d){const u=d.uid,a=san[u];const ok=m=>{ctRes.set(d._id,{ok:true,msg:m});},rv=m=>{ctRes.set(d._id,{ok:false,msg:m});};
+    if(a.eth<gas)return rv('Không đủ ETH trả phí gas');a.eth-=gas;a.gas+=gas;
+    const E=d.eid?escrows[d.eid]:null,p=priceAt(+d.time);
+    const finish=(to,st)=>{san[to].eth+=E.amt;san[E.buyer].esc-=E.amt;E.state=st;E.endT=+d.time;};
+    switch(d.type){
+      case'esc_create':{const x=+d.amt;if(!san[d.seller]||d.seller===u)return rv('require: người bán không hợp lệ');if(!(x>0))return rv('require: số tiền > 0');
+        if(a.eth<x)return rv('require: không đủ ETH để nạp');a.eth-=x;a.esc+=x;
+        escrows[d._id]={id:d._id,buyer:u,seller:d.seller,amt:x,deadline:+d.deadline,state:'funded',created:+d.time,note:d.note||'',last:'create'};return ok(`Triển khai ký quỹ ${fE(x)} ETH`);}
+      case'esc_ship':if(!E)return rv('Không có hợp đồng');if(u!==E.seller)return rv('require: chỉ người bán được gọi giaoHang()');if(E.state!=='funded')return rv('require: trạng thái phải là ĐÃ NẠP');E.state='shipped';E.last='ship';return ok('Người bán báo đã giao hàng');
+      case'esc_confirm':if(!E)return rv('Không có hợp đồng');if(u!==E.buyer)return rv('require: chỉ người mua được gọi xacNhan()');if(E.state!=='funded'&&E.state!=='shipped')return rv('require: hợp đồng đã kết thúc');E.last='confirm';finish(E.seller,'released');return ok(`Chuyển ${fE(E.amt)} ETH cho người bán`);
+      case'esc_refund':if(!E)return rv('Không có hợp đồng');if(u!==E.buyer)return rv('require: chỉ người mua được gọi hoanTien()');if(E.state!=='funded')return rv('require: người bán đã giao hoặc hợp đồng đã kết thúc');if(+d.time<=E.deadline)return rv('require: chưa quá hạn chót');E.last='refund';finish(E.buyer,'refunded');return ok(`Hoàn ${fE(E.amt)} ETH cho người mua`);
+      case'esc_claim':if(!E)return rv('Không có hợp đồng');if(u!==E.seller)return rv('require: chỉ người bán được gọi nhanTien()');if(E.state!=='shipped')return rv('require: phải ở trạng thái ĐÃ GIAO');if(+d.time<=E.deadline)return rv('require: chưa quá hạn chót');E.last='claim';finish(E.seller,'claimed');return ok(`Người bán tự nhận ${fE(E.amt)} ETH sau hạn`);
+      case'v_lock':{const x=+d.amt;if(x>0){if(a.eth<x)return rv('require: không đủ ETH');a.eth-=x;a.coll+=x;return ok(`Khóa ${fE(x)} ETH làm thế chấp`);}
+        const w=-x;if(!(w>0)||a.coll<w)return rv('require: không đủ ETH trong két');if(a.debt>0&&(a.coll-w)/MU*p<a.debt*CT.minRatio)return rv('require: rút xong tỷ lệ thế chấp < '+Math.round(CT.minRatio*100)+'%');
+        a.coll-=w;a.eth+=w;return ok(`Rút ${fE(w)} ETH khỏi két`);}
+      case'v_mint':{const x=Math.round(+d.vnd);if(!(x>0))return rv('require: số lượng > 0');if(a.coll/MU*p<(a.debt+x)*CT.minRatio)return rv('require: tỷ lệ thế chấp sau khi in < '+Math.round(CT.minRatio*100)+'%');a.debt+=x;a.vnds+=x;return ok(`In ${fBig(x)} VNDS`);}
+      case'v_repay':{const x=Math.round(+d.vnd);if(!(x>0)||x>a.debt)return rv('require: trả không vượt quá nợ');if(a.vnds<x)return rv('require: không đủ VNDS');a.vnds-=x;a.debt-=x;return ok(`Trả nợ ${fBig(x)} VNDS (VNDS bị đốt)`);}
+      case'v_send':{const x=Math.round(+d.vnd);if(!san[d.to]||d.to===u)return rv('require: người nhận không hợp lệ');if(!(x>0)||a.vnds<x)return rv('require: không đủ VNDS');a.vnds-=x;san[d.to].vnds+=x;return ok(`Chuyển ${fBig(x)} VNDS`);}
+      case'v_liq':{const o=san[d.owner];if(!o||o.debt<=0)return rv('require: két không có nợ');const r=o.coll/MU*p/o.debt;if(r>=CT.liqRatio)return rv(`require: tỷ lệ ${Math.round(r*100)}% ≥ ngưỡng ${Math.round(CT.liqRatio*100)}%`);
+        if(a.vnds<o.debt)return rv('require: không đủ VNDS để trả nợ thay');const debt=o.debt,seize=Math.min(o.coll,Math.round(debt*(1+CT.bonus)/p*MU));
+        a.vnds-=debt;a.eth+=seize;o.eth+=o.coll-seize;o.liqLoss+=seize;o.coll=0;o.debt=0;return ok(`Thanh lý két: trả ${fBig(debt)} VNDS, nhận ${fE(seize)} ETH`);}
+    }
+    return rv('Hàm không tồn tại');}
+  for(const e of ev){
+    if(e.k==='trade'){const d=e.d,a=acct(d.uid),q=+d.qty,v=+d.vnd,key=d.asset==='btc'?'btc':'eth';
+      if(!(q>0&&v>0)){bad.set(d._id,'Lệnh hỏng');continue;}
+      if(d.side==='buy'){if(a.vnd<v){bad.set(d._id,'Không đủ VND');continue;}a.vnd-=v;a[key]+=q;}
+      else{if(a[key]<q){bad.set(d._id,'Không đủ '+key.toUpperCase());continue;}a[key]-=q;a.vnd+=v;}}
+    else if(e.k==='dep'){acct(e.u).btc+=e.amt;}
+    else if(e.k==='wd'){const a=acct(e.u);if(a.btc<e.amt){bad.set(e.id,'Sàn từ chối: không đủ BTC trên sàn');continue;}a.btc-=e.amt;}
+    else if(e.k==='stake'){const d=e.d,a=acct(d.uid),x=+d.amt;
+      if(x>0){if(a.eth<x){bad.set(d._id,'Không đủ ETH');continue;}a.eth-=x;a.stk+=x;}
+      else{if(a.stk<-x){bad.set(d._id,'Không đủ cọc');continue;}a.stk+=x;a.eth-=x;}}
+    else if(e.k==='round'){const d=e.d;
+      if(d.type==='propose'&&san[d.proposer]){san[d.proposer].stk+=(+d.reward||0);san[d.proposer].rewards+=(+d.reward||0);}
+      if(d.type==='slash'&&san[d.uid]){const a=san[d.uid],cut=Math.floor(a.stk*(+d.pct||0)/100);a.stk-=cut;a.slashed+=cut;}}
+    else if(e.k==='ct'){runCt(e.d);}
+  }
+
+  // --------- Hàng chờ: mô phỏng như thợ đào sẽ làm ---------
+  const pend=S.txs.filter(t=>!txConf.has(t.id)).sort((a,b)=>(b.fee-a.fee)||(a.time-b.time));
+  const sim={...tip.bal},mempool=[],template=[],usedInp=new Set();
+  for(const t of pend){let r=txCheck(t,addrMap,wdReq);
+    if(r===true&&t.kind==='withdraw'&&bad.has(t.id))r=bad.get(t.id);
+    if(r===true&&t.inp&&(tip.inc.has('inp:'+t.inp)||usedInp.has(t.inp)))r='Chi tiêu kép: đồng tiền này đã được tiêu ở giao dịch khác';
+    if(r===true){const a=+t.amount,f=+t.fee;if(!(a>0&&f>=0))r='Số tiền không hợp lệ';else if((sim[t.from]||0)<a+f)r='Không đủ số dư (có thể là chi tiêu kép)';
+      else{sim[t.from]-=a+f;sim[t.to]=(sim[t.to]||0)+a;if(t.inp)usedInp.add(t.inp);if(template.length<P.maxTx)template.push(t);}}
+    mempool.push({t,ok:r===true,why:r===true?'':r});}
+  const key=template.map(t=>t.id).join(',');if(key!==S.tplKey){S.tplKey=key;S.tplDirty=true;}
+
+  // --------- Thống kê ---------
+  const workBest=chain.reduce((s,n)=>s+Math.pow(2,n.bits),0);
+  const valid=nodes.filter(n=>!n.invalid);
+  const workAll=valid.reduce((s,n)=>s+Math.pow(2,n.bits),0);
+  const last=chain.slice(-11);let avg=0;if(last.length>1)avg=(last[last.length-1].time-last[0].time)/(last.length-1)/1000;
+  const nextBits=expBits(tip,tip.h+1,P,evs);
+  const board=Object.values(uidMap).map(w=>{const a=san[w.uid]||acct(w.uid);const on=tip.bal[w.address]||0;
+    const val=(on+a.btc)/SAT*C.prices.btc+(a.eth+a.stk+a.esc+a.coll)/MU*C.prices.eth+a.vnd+a.vnds-a.debt;
+    return{w,on,a,val,mined:chain.filter(n=>n.b.miner===w.uid).length};}).sort((x,y)=>y.val-x.val);
+  S.D={escrows,ctRes,addrMap,uidMap,nodes,tip,chain,inBest,txConf,conf,mempool,template,san,bad,depPending,lost,evs,
+    stats:{workBest,workAll,avg,nextBits,orphans:valid.length-chain.length,invalid:nodes.filter(n=>n.invalid).length},board};
+}
+
+/* ================== KẾT NỐI DỮ LIỆU ================== */
+let rafQ=false;function schedule(){if(rafQ)return;rafQ=true;setTimeout(()=>{rafQ=false;recompute();},60);}
+function dbErr(e){console.warn('db',e);if(e&&e.code==='revoked'){banner('Quyền truy cập trang đã thay đổi. Hãy tải lại trang.');}}
+function banner(m){const b=$('banner');if(!m){b.classList.remove('show');return;}b.innerHTML=m;b.classList.add('show');}
+function subscribeSession(){
+  S.unsubs.forEach(u=>{try{u();}catch(e){}});S.unsubs=[];S.subscribed=true;const sess=S.cfg.session;
+  const sub=(col,key)=>{S[key]=[];S.unsubs.push(S.db.collection(col).where('session','==',sess).limit(1000).onSnapshot(q=>{S[key]=q.docs.map(d=>({...d.data(),_id:d.id}));schedule();},dbErr));};
+  sub('wallets','wallets');sub('txs','txs');sub('blocks','blocks');sub('trades','trades');sub('stakes','stakes');sub('rounds','rounds');sub('contracts','contracts');
+}
+async function boot(){
+  initUI();render();
+  const c=window.claude;
+  if(!c||!c.use){banner('Không tải được thư viện kết nối. Phần <b>Thử tay</b> ở tab Đào vẫn dùng được.');return;}
+  const[db,user]=await Promise.all([c.use('db'),c.use('user')]);
+  S.db=db;S.user=user;
+  if(!db){banner('Không kết nối được trạm trung chuyển dữ liệu (mạng có thể chặn). Hãy thử mạng khác hoặc tải lại trang. Phần <b>Thử tay</b> ở tab Đào vẫn dùng được.');render();return;}
+  if(user){try{S.uid=await user.id();S.admin=await user.canEdit();S.canWrite=await user.can('data.write');const me=await user.me();S.myName=(me&&me.name)||'';}catch(e){}}
+  if(S.canWrite===false)S.readOnly=true;
+  if(S.readOnly)banner('Bạn chỉ có quyền xem.');
+  if(!S.uid)banner('Chưa khởi tạo được danh tính trình duyệt.');
+  $('tabGV').classList.toggle('hide',!S.admin);
+  if(S.myName&&!$('joinName').value)$('joinName').value=S.myName;
+  db.doc('config/main').onSnapshot(s=>{const d=s.exists?s.data():null;S.cfgExists=!!d;const prev=S.cfg.session;S.cfg=cfgOf(d);
+    if(!S.subscribed||prev!==S.cfg.session){M.on=false;subscribeSession();}S.tplDirty=true;fillAdminForm();schedule();},dbErr);
+  if(S.uid)loadKeys();
+}
+async function loadKeys(){
+  let k=null;
+  try{const s=await S.db.doc('data/users/'+S.uid+'/wallet').get();if(s.exists)k=s.data().keys;}catch(e){}
+  if(!k){try{k=JSON.parse(lsGet('ltso-keys-'+S.uid)||'null');}catch(e){}}
+  if(k&&k.pub&&k.priv){S.keys=k;lsSet('ltso-keys-'+S.uid,JSON.stringify(k));}
+  render();
+}
+async function writeOK(fn,okMsg){
+  if(!S.db){toast('Chưa kết nối cơ sở dữ liệu');return false;}
+  if(S.readOnly){toast('Bạn chỉ có quyền xem');return false;}
+  try{await fn();if(okMsg)toast(okMsg);return true;}
+  catch(e){const c=e&&e.code;
+    if(c==='invalid_argument'&&S.canWrite==null){S.readOnly=true;banner('Không ghi được dữ liệu.');}
+    toast(c==='unavailable'?'Đang mất kết nối — chờ vài giây rồi thử lại':c==='permission_denied'?'Cần đăng nhập giảng viên':c==='quota_exceeded'?'Cơ sở dữ liệu đã đầy — giảng viên hãy mở phiên mới':c==='resource_exhausted'?'Thao tác quá nhanh, thử lại sau vài giây':'Không ghi được: '+(c||e.message||e));return false;}
+}
+
+/* ================== HÀNH ĐỘNG ================== */
+async function join(){
+  if(!S.uid){toast('Cần đăng nhập');return;}
+  const name=$('joinName').value.trim();if(!name){toast('Nhập tên hiển thị');return;}
+  $('joinBtn').disabled=true;$('joinMsg').textContent='Đang sinh cặp khóa…';
+  try{
+    if(!S.keys){const k=await genKeys();k.address=addrOf(k.pub);
+      const ok=await writeOK(()=>S.db.doc('data/users/'+S.uid+'/wallet').set({keys:k,created:Date.now()}));
+      if(!ok)return;S.keys=k;lsSet('ltso-keys-'+S.uid,JSON.stringify(k));}
+    await writeOK(()=>S.db.doc('wallets/'+S.uid).set({uid:S.uid,name:name.slice(0,28),address:S.keys.address||addrOf(S.keys.pub),pub:S.keys.pub,session:S.cfg.session,joinedAt:Date.now()}),'Đã tạo ví');
+  }finally{$('joinBtn').disabled=false;$('joinMsg').textContent='';}
+}
+function needWallet(){if(!S.me||!S.keys){toast('Hãy tạo ví ở tab “Ví của tôi” trước');setTab('vi');return false;}return true;}
+async function makeTx(from,to,amount,fee,keys,extra,inp){
+  const t={id:rid()+rid(),from,to,amount,fee,time:Date.now()};if(inp)t.inp=inp;
+  t.sig=await signMsg(keys,txMsg(t));
+  return{...t,kind:'transfer',session:S.cfg.session,uid:S.uid,...(extra||{})};
+}
+async function sendTx(){
+  if(!needWallet())return;
+  const to=$('txTo').value,amt=Math.round(num($('txAmt').value)*SAT),fee=+$('txFee').value;
+  if(!to){toast('Chọn người nhận');return;}if(!(amt>0)){toast('Nhập số BTC hợp lệ');return;}
+  const bal=S.D.tip.bal[S.me.address]||0;
+  if(amt+fee>bal)toast('Lưu ý: số dư đã xác nhận không đủ — mạng sẽ từ chối giao dịch này');
+  const t=await makeTx(S.me.address,to,amt,fee,S.keys);
+  if(await writeOK(()=>S.db.doc('txs/'+t.id).set(t),'Đã phát giao dịch vào hàng chờ'))$('txAmt').value='';
+}
+async function fakeTx(){
+  if(!needWallet())return;const victim=$('fkFrom').value;if(!victim){toast('Chưa có ví nào khác');return;}
+  const bal=S.D.tip.bal[victim]||0;const amt=Math.max(1000,Math.floor(bal/2));
+  const t=await makeTx(victim,S.me.address,amt,10000,S.keys,{note:'giả mạo'});
+  await writeOK(()=>S.db.doc('txs/'+t.id).set(t),'Đã phát giao dịch giả mạo — xem trạng thái ở hàng chờ');
+}
+async function doubleSpend(){
+  if(!needWallet())return;
+  const others=Object.values(S.D.addrMap).filter(w=>w.uid!==S.uid);
+  if(others.length<2){toast('Cần ít nhất 2 ví khác trong lớp');return;}
+  const bal=S.D.tip.bal[S.me.address]||0;if(bal<20000){toast('Số dư quá nhỏ để thử');return;}
+  const amt=Math.floor(bal*0.8);const pick=others.sort(()=>Math.random()-.5).slice(0,2);
+  const coin=rid();
+  const a=await makeTx(S.me.address,pick[0].address,amt,2000,S.keys,{note:'chi tiêu kép A'},coin);
+  const b=await makeTx(S.me.address,pick[1].address,amt,2000,S.keys,{note:'chi tiêu kép B'},coin);
+  if(await writeOK(()=>S.db.doc('txs/'+a.id).set(a)))await writeOK(()=>S.db.doc('txs/'+b.id).set(b),`Đã gửi 2 giao dịch ${fB(amt)} BTC tới ${pick[0].name} và ${pick[1].name}`);
+}
+const trState={side:'buy',asset:'btc'};
+function quote(){const q=num($('trQty').value),unit=trState.asset==='btc'?SAT:MU,p=S.cfg.prices[trState.asset],sp=S.cfg.spread;
+  if(!(q>0))return null;const qty=Math.round(q*unit);const vnd=Math.round(qty/unit*p*(trState.side==='buy'?1+sp:1-sp));return{qty,vnd,unit};}
+async function placeTrade(){
+  if(!needWallet())return;const qt=quote();if(!qt){toast('Nhập số lượng');return;}
+  const a=S.D.san[S.uid];const key=trState.asset;
+  if(trState.side==='buy'&&a.vnd<qt.vnd){toast('Không đủ VND trên sàn');return;}
+  if(trState.side==='sell'&&a[key]<qt.qty){toast('Không đủ '+key.toUpperCase()+' trên sàn');return;}
+  const id=rid()+rid();
+  if(await writeOK(()=>S.db.doc('trades/'+id).set({session:S.cfg.session,uid:S.uid,side:trState.side,asset:key,qty:qt.qty,price:S.cfg.prices[key],vnd:qt.vnd,time:Date.now()}),'Lệnh đã khớp'))$('trQty').value='';
+}
+async function deposit(){
+  if(!needWallet())return;const amt=Math.round(num($('dpAmt').value)*SAT);if(!(amt>0)){toast('Nhập số BTC');return;}
+  if(amt+2000>(S.D.tip.bal[S.me.address]||0)){toast('Không đủ BTC trong ví (đã xác nhận)');return;}
+  const t=await makeTx(S.me.address,'SAN',amt,2000,S.keys,{note:'nạp lên sàn'});
+  if(await writeOK(()=>S.db.doc('txs/'+t.id).set(t),`Đã gửi lệnh nạp — sàn ghi có sau ${S.cfg.params.depConf} xác nhận`))$('dpAmt').value='';
+}
+async function withdraw(){
+  if(!needWallet())return;const amt=Math.round(num($('wdAmt').value)*SAT),fee=2000;if(!(amt>0)){toast('Nhập số BTC');return;}
+  if(amt+fee>S.D.san[S.uid].btc){toast('Không đủ BTC trên sàn (gồm phí 0,00002)');return;}
+  const t={id:rid()+rid(),from:'SAN',to:S.me.address,amount:amt,fee,time:Date.now(),sig:'SAN',kind:'withdraw',session:S.cfg.session,uid:S.uid,note:'rút về ví'};
+  if(await writeOK(()=>S.db.doc('txs/'+t.id).set(t),'Sàn đã ký lệnh rút — chờ thợ đào đưa vào khối'))$('wdAmt').value='';
+}
+async function stake(sign){
+  if(!needWallet())return;const x=Math.round(num($('stAmt').value)*MU);if(!(x>0)){toast('Nhập số ETH');return;}
+  const a=S.D.san[S.uid];
+  if(sign>0&&x>a.eth){toast('Không đủ ETH');return;}
+  if(sign>0&&a.stk+x<S.cfg.pos.minStake*MU){toast(`Cọc tối thiểu ${S.cfg.pos.minStake} ETH (Ethereum thật: 32 ETH)`);return;}
+  if(sign<0&&x>a.stk){toast('Không đủ cọc');return;}
+  const id=rid()+rid();
+  if(await writeOK(()=>S.db.doc('stakes/'+id).set({session:S.cfg.session,uid:S.uid,amt:sign*x,time:Date.now()}),sign>0?'Đã đặt cọc':'Đã rút cọc'))$('stAmt').value='';
+}
+
+/* ================== ĐÀO (PoW) ================== */
+const M={on:false,auto:true,hashes:0,rate:0,nonce:0,last:'',tpl:null,log:[],mine:[],t0:0};
+function buildTpl(){
+  const D=S.D;if(!D||!S.me)return null;const P=S.cfg.params,tip=D.tip,h=tip.h+1;
+  const txs=D.template.map(t=>{const o={id:t.id,from:t.from,to:t.to,amount:+t.amount,fee:+t.fee,time:+t.time,sig:t.sig,kind:t.kind||'transfer'};if(t.inp)o.inp=t.inp;return o;});
+  const fees=txs.reduce((s,t)=>s+t.fee,0),reward=rewardAt(h,P),coinbase=reward+fees,addr=S.me.address;
+  const bits=expBits(tip,h,P,D.evs),time=Math.max(Date.now(),tip.time+1),root=txRoot(txs,addr,coinbase);
+  return{height:h,prev:tip.hash,root,time,bits,txs,coinbase,addr,fees,reward};
+}
+function mlog(cls,msg){M.log.unshift({cls,msg,t:Date.now()});M.log=M.log.slice(0,40);renderMineLog();}
+async function mineLoop(){
+  let tpl=null,prefix='',nonce=0,built=0,ui=0,rc=0,rt=performance.now();
+  M.t0=Date.now();
+  while(M.on){
+    const now=performance.now();
+    if(!S.D){await sleep(300);continue;}
+    if(!tpl||tpl.prev!==S.D.tip.hash||now-built>10000||S.tplDirty){
+      if(tpl&&tpl.prev!==S.D.tip.hash)mlog('','Có khối mới #'+S.D.tip.h+' → bỏ bài toán cũ, đào tiếp trên khối mới nhất');
+      tpl=buildTpl();S.tplDirty=false;if(!tpl){M.on=false;break;}
+      prefix=`${tpl.height}|${tpl.prev}|${tpl.root}|${tpl.time}|${tpl.bits}|`;nonce=0;built=now;M.tpl=tpl;}
+    const target=Math.pow(2,52-tpl.bits);let found=null,hh='',i=0;
+    for(;i<1200;i++){hh=sha256(prefix+nonce);if(parseInt(hh.slice(0,13),16)<target){found=hh;break;}nonce++;}
+    const done=found?i+1:1200;M.hashes+=done;rc+=done;M.nonce=nonce;M.last=hh;
+    if(now-rt>1000){M.rate=rc*1000/(now-rt);rc=0;rt=now;}
+    if(found){await submitBlock(tpl,nonce,found);tpl=null;if(!M.auto){M.on=false;break;}continue;}
+    if(now-ui>180){renderMineBox();ui=now;}
+    await sleep(0);
+  }
+  M.tpl=null;render();
+}
+async function submitBlock(tpl,nonce,hash){
+  if(S.D.tip.hash!==tpl.prev){mlog('bad',`Tìm được nonce ${fN(nonce)} cho khối #${tpl.height} nhưng người khác đã công bố khối này trước → kết quả bỏ đi`);return;}
+  const body={session:S.cfg.session,height:tpl.height,prev:tpl.prev,root:tpl.root,time:tpl.time,bits:tpl.bits,nonce,hash,txs:tpl.txs,coinbase:tpl.coinbase,addr:tpl.addr,miner:S.uid,minerName:S.me.name};
+  const ok=await writeOK(()=>S.db.doc('blocks/'+hash.slice(0,40)).set(body));
+  if(ok){M.mine.push({hash,h:tpl.height});mlog('ok',`Trúng! Khối #${tpl.height} · nonce ${fN(nonce)} · hash ${hash.slice(0,14)}… · thưởng ${fB(tpl.coinbase)} BTC (chờ cả lớp kiểm tra)`);}
+}
+function toggleMine(){
+  if(M.on){M.on=false;renderMine();return;}
+  if(!needWallet())return;if(S.readOnly){toast('Bạn chỉ có quyền xem');return;}
+  M.on=true;M.auto=$('mineAuto').checked;M.rate=0;renderMine();mineLoop();
+}
+
+/* ---- Thử tay ---- */
+let hdRun=false;
+let hdT=null;
+function hdHeaderStr(){const D=S.D;if(M.tpl)hdT=M.tpl;else if(!hdT||!D||hdT.prev!==D.tip.hash||(S.me&&hdT.addr!==S.me.address))hdT=buildTpl();const t=hdT;
+  if(t)return{pre:`${t.height}|${t.prev.slice(0,12)}…|${t.root.slice(0,12)}…|${t.time}|${t.bits}|`,full:`${t.height}|${t.prev}|${t.root}|${t.time}|${t.bits}|`,net:t.bits};
+  const pre='1|000000000000…|thoDao=ban|2026|giao-dich: An→Binh 2 BTC|';return{pre,full:pre,net:null};}
+function hdUpdate(){
+  const H=hdHeaderStr();const n=parseInt($('hdNonce').value)||0;const z=+$('hdZeros').value;
+  const h=sha256(H.full+n);
+  $('hdHeader').innerHTML=esc(H.pre)+'<b style="color:var(--btc)">'+n+'</b>';
+  $('hdHash').innerHTML=hashHTML(h,64);
+  const okDemo=h.startsWith('0'.repeat(z));
+  let r=okDemo?`<span class="pill ok">Đạt yêu cầu tập dượt</span> hash bắt đầu bằng ${'0'.repeat(z)}`:`<span class="pill bad">Chưa đạt</span> cần bắt đầu bằng ${'0'.repeat(z)} — đổi nonce và thử lại`;
+  if(H.net!=null)r+=`<div class="small muted" style="margin-top:4px">Yêu cầu thật của mạng lúc này: ≈ ${H.net} bit 0 (trung bình ${fBig(Math.pow(2,H.net))} lần thử) → ${meets(h,H.net)?'<b class="okc">đạt!</b>':'chưa đạt'}</div>`;
+  $('hdRes').innerHTML=r;
+}
+async function hdAuto(){
+  if(hdRun){hdRun=false;return;}hdRun=true;$('hdAuto').textContent='Dừng';
+  const H=hdHeaderStr(),z='0'.repeat(+$('hdZeros').value);let n=parseInt($('hdNonce').value)||0,tries=0,hit=false;
+  while(hdRun){const step=tries<60?1:400;for(let i=0;i<step;i++){tries++;if(sha256(H.full+n).startsWith(z)){hit=true;hdRun=false;break;}n++;}
+    $('hdNonce').value=n;hdUpdate();await sleep(tries<60?60:0);}
+  $('hdAuto').textContent='Cho máy thử liên tục đến khi trúng';if(hit)toast(`Trúng sau ${fN(tries)} lần thử, nonce = ${fN(n)}`);hdUpdate();
+}
+
+/* ================== GIẢNG VIÊN ================== */
+async function cfgWrite(patch,msg){
+  if(!S.admin){toast('Chỉ giảng viên');return;}
+  const base=S.cfgExists?null:{...cfgOf(null),startedAt:Date.now()};
+  return writeOK(()=>base?S.db.doc('config/main').set({...base,...patch}):S.db.doc('config/main').update(patch),msg);
+}
+function fillAdminForm(){
+  if(!S.admin)return;const P=S.cfg.params;const set=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e&&!e.dataset.touched)e.value=v;};
+  set('nsBits',P.bits0);set('nsReward',String(P.reward).replace('.',','));set('nsHalving',P.halving);
+  set('nsGrantBTC',String(P.grantBTC).replace('.',','));set('nsGrantETH',P.grantETH);set('nsGrantVND',P.grantVND/1e6);
+  set('gvPB',S.cfg.prices.btc);set('gvPE',S.cfg.prices.eth);
+  const D=S.D;const pa=D?paramsAt(D.tip.h+1,P,D.evs):{target:P.target,auto:P.auto};
+  set('gvTarget',pa.target);if(!$('gvAuto').dataset.touched)$('gvAuto').checked=!!pa.auto;
+  $('gvSlashPct').textContent=S.cfg.pos.slashPct;
+}
+async function applyDiff(){
+  const D=S.D;if(!D)return;const h=D.tip.h+1;const bits=num($('gvBits').value),target=parseInt($('gvTarget').value);
+  const e={h,auto:$('gvAuto').checked};if(bits>0)e.bits=Math.round(Math.max(4,Math.min(40,bits))*100)/100;if(target>0)e.target=target;
+  const evs=[...S.cfg.diffEvents.filter(x=>x.h!==h),e].slice(-80);
+  if(await cfgWrite({diffEvents:evs},'Đã đặt tham số cho khối #'+h)){$('gvBits').value='';['gvTarget','gvAuto'].forEach(id=>$(id).dataset.touched='');}
+}
+let nsArm=0;
+async function newSession(){
+  if(Date.now()-nsArm>4000){nsArm=Date.now();$('nsBtn').textContent='Bấm lần nữa để xác nhận xóa phiên';setTimeout(()=>{$('nsBtn').textContent='Bắt đầu phiên mới';},4000);return;}
+  nsArm=0;$('nsBtn').textContent='Bắt đầu phiên mới';
+  const P={...S.cfg.params};const v=(id,def)=>{const x=num($(id).value);return x>0?x:def;};
+  P.bits0=Math.round(v('nsBits',P.bits0)*100)/100;P.reward=v('nsReward',P.reward);P.halving=Math.round(v('nsHalving',P.halving));
+  P.grantBTC=v('nsGrantBTC',P.grantBTC);P.grantETH=v('nsGrantETH',P.grantETH);P.grantVND=Math.round(v('nsGrantVND',P.grantVND/1e6)*1e6);
+  const next={...cfgOf(S.cfgExists?S.cfg:null),session:(S.cfg.session||1)+1,startedAt:Date.now(),params:P,diffEvents:[],priceHist:[{t:Date.now(),btc:S.cfg.prices.btc,eth:S.cfg.prices.eth}]};
+  M.on=false;await writeOK(()=>S.db.doc('config/main').set(next),'Đã mở phiên '+next.session);
+}
+async function setPrices(pb,pe,msg){
+  pb=Math.max(1,Math.round(pb));pe=Math.max(1,Math.round(pe));
+  const hist=[...S.cfg.priceHist];if(!hist.length)hist.push({t:Date.now()-1000,btc:S.cfg.prices.btc,eth:S.cfg.prices.eth});
+  hist.push({t:Date.now(),btc:pb,eth:pe});
+  if(await cfgWrite({prices:{btc:pb,eth:pe},priceHist:hist.slice(-60)},msg)){$('gvPB').value=pb;$('gvPE').value=pe;}
+}
+async function runSlot(){
+  const D=S.D;if(!D)return;
+  const vals=Object.entries(D.san).filter(([u,a])=>a.stk>0&&D.uidMap[u]).sort((a,b)=>a[0]<b[0]?-1:1);
+  if(!vals.length){toast('Chưa có ai đặt cọc ETH');return;}
+  const props=S.rounds.filter(r=>r.type==='propose').sort((a,b)=>b.time-a.time);
+  const slot=props.length+1,seed=sha256((props[0]?props[0].seed:'genesis')+'|'+slot+'|'+Date.now());
+  const total=vals.reduce((s,[,a])=>s+a.stk,0);let x=parseInt(seed.slice(0,12),16)/Math.pow(2,48)*total,pick=vals[vals.length-1][0];
+  for(const[u,a]of vals){if(x<a.stk){pick=u;break;}x-=a.stk;}
+  const share=D.san[pick].stk/total;
+  await writeOK(()=>S.db.doc('rounds/'+rid()+rid()).set({session:S.cfg.session,type:'propose',slot,proposer:pick,seed,reward:Math.round(S.cfg.pos.reward*MU),total,share,nval:vals.length,time:Date.now()}));
+}
+async function slash(){
+  const u=$('gvSlashWho').value;if(!u){toast('Chọn người xác thực');return;}
+  await writeOK(()=>S.db.doc('rounds/'+rid()+rid()).set({session:S.cfg.session,type:'slash',uid:u,pct:S.cfg.pos.slashPct,time:Date.now()}),'Đã phạt '+nameOfUid(u));
+}
+let autoSlotTimer=null;
+
+/* ================== GIAO DIỆN ================== */
+function setTab(t){S.tab=t;lsSet('ltso-tab',t);
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t?'true':'false'));
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('on',s.id==='t-'+t));render();}
+function fillSelect(sel,opts,ph){const k=JSON.stringify(opts);if(sel._k===k)return;sel._k=k;const v=sel.value;
+  sel.innerHTML=(ph?`<option value="">${esc(ph)}</option>`:'')+opts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('');
+  if(opts.some(o=>o[0]===v))sel.value=v;}
+function seg(id,key){$(id).addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;trState[key]=b.dataset.v;
+  $(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));renderSan();});}
+function initUI(){
+  const th=lsGet('ltso-theme');if(th)document.documentElement.dataset.theme=th;
+  $('themeBtn').onclick=()=>{const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    const n=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=n;lsSet('ltso-theme',n);};
+  $('tabs').onclick=e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab);};
+  $('joinBtn').onclick=join;$('joinName').onkeydown=e=>{if(e.key==='Enter')join();};
+  $('copyAddr').onclick=()=>{if(S.me){navigator.clipboard&&navigator.clipboard.writeText(S.me.address).then(()=>toast('Đã sao chép địa chỉ'),()=>toast(S.me.address));}};
+  $('seedBtn').onclick=()=>{const b=$('seedBox');b.classList.toggle('hidden');$('seedBtn').textContent=b.classList.contains('hidden')?'Hiện 12 từ khôi phục':'Ẩn 12 từ khôi phục';};
+  $('txSend').onclick=sendTx;$('fkBtn').onclick=fakeTx;$('dsBtn').onclick=doubleSpend;
+  $('mineBtn').onclick=toggleMine;$('mineAuto').onchange=e=>{M.auto=e.target.checked;};
+  $('hdNonce').oninput=hdUpdate;$('hdZeros').onchange=hdUpdate;$('hdNext').onclick=()=>{$('hdNonce').value=(parseInt($('hdNonce').value)||0)+1;hdUpdate();};$('hdAuto').onclick=hdAuto;
+  seg('trSide','side');seg('trAsset','asset');$('trQty').oninput=renderSan;$('trBtn').onclick=placeTrade;
+  $('dpBtn').onclick=deposit;$('wdBtn').onclick=withdraw;
+  $('stBtn').onclick=()=>stake(1);$('unBtn').onclick=()=>stake(-1);
+  $('gvDiffBtn').onclick=applyDiff;$('nsBtn').onclick=newSession;
+  ['nsBits','nsReward','nsHalving','nsGrantBTC','nsGrantETH','nsGrantVND','gvPB','gvPE','gvTarget'].forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.touched='1';}));
+  $('gvPriceBtn').onclick=()=>{const pb=num($('gvPB').value),pe=num($('gvPE').value);if(!(pb>0&&pe>0)){toast('Nhập giá hợp lệ');return;}$('gvPB').dataset.touched='';$('gvPE').dataset.touched='';setPrices(pb,pe,'Đã cập nhật giá');};
+  document.querySelectorAll('[data-shock]').forEach(b=>b.onclick=()=>{const f=+b.dataset.shock;setPrices(S.cfg.prices.btc*f,S.cfg.prices.eth*f,`Cú sốc giá ${f>1?'+':'−'}${Math.round(Math.abs(f-1)*100)}%`);});
+  $('gvAuto').addEventListener('change',()=>{$('gvAuto').dataset.touched='1';});
+  $('esBtn').onclick=createEscrow;$('esList').onclick=e=>{const b=e.target.closest('[data-act]');if(b)ctCall({type:b.dataset.act,eid:b.dataset.eid},null);};
+  $('vLiqList').onclick=e=>{const b=e.target.closest('[data-liq]');if(b)ctCall({type:'v_liq',owner:b.dataset.liq},'Đã gửi lệnh thanh lý');};
+  $('vLock').onclick=()=>vaultEth(1);$('vFree').onclick=()=>vaultEth(-1);$('vMint').onclick=()=>vaultV('v_mint');$('vRepay').onclick=()=>vaultV('v_repay');
+  $('vSendBtn').onclick=()=>{const to=$('vTo').value,x=Math.round(num($('vSend').value)*1e6);if(!to||!(x>0)){toast('Chọn người nhận và số VNDS');return;}ctCall({type:'v_send',to,vnd:x},'Đã gửi lệnh chuyển VNDS').then(ok=>{if(ok)$('vSend').value='';});};
+  setInterval(()=>{if(S.tab==='hd'&&S.D)renderEscrows();},1000);
+  $('gvSlot').onclick=()=>{$('gvSlot').disabled=true;setTimeout(()=>{$('gvSlot').disabled=false;},1500);runSlot();};$('gvSlash').onclick=slash;
+  $('gvAutoSlot').onchange=e=>{clearInterval(autoSlotTimer);autoSlotTimer=null;if(e.target.checked){runSlot();autoSlotTimer=setInterval(runSlot,12000);}};
+  $('chainStrip').onclick=e=>{const b=e.target.closest('[data-h]');if(b){S.sel=b.dataset.h;renderLedger();}};
+  $('blkDetail').addEventListener('input',e=>{if(e.target.id==='tamperAmt')renderTamper();});
+  const t=lsGet('ltso-tab');setTab(t&&$('t-'+t)?t:'vi');hdUpdate();
+}
+function render(){
+  renderStatus();
+  const T=S.tab;
+  if(T==='vi')renderWallet();else if(T==='chuyen')renderTransfer();else if(T==='dao')renderMine();
+  else if(T==='socai')renderLedger();else if(T==='san')renderSan();else if(T==='pos')renderPos();else if(T==='hd')renderHD();else if(T==='gv')renderGV();
+}
+function renderStatus(){
+  const D=S.D,C=S.cfg;
+  const chips=[
+    `<span class="chip">Phiên <b>${C.session}</b></span>`,
+    `<span class="chip btc">Khối <b>#${D?D.tip.h:0}</b></span>`,
+    `<span class="chip">Độ khó kế tiếp <b>${D?D.stats.nextBits:C.params.bits0} bit</b></span>`,
+    `<span class="chip">Hàng chờ <b>${D?D.mempool.length:0}</b></span>`,
+    `<span class="chip">Thành viên <b>${D?Object.keys(D.uidMap).length:0}</b></span>`,
+    `<span class="chip btc">BTC <b>${fBig(C.prices.btc)} ₫</b></span>`,
+    `<span class="chip eth">ETH <b>${fBig(C.prices.eth)} ₫</b></span>`];
+  if(M.on)chips.unshift(`<span class="chip btc">Đang đào <b>${fN(M.rate)} H/s</b></span>`);
+  $('statusBar').innerHTML=chips.join('');
+}
+function txStatus(t){
+  const D=S.D;const c=D.txConf.get(t.id);
+  if(c){const n=D.conf(c.h);return`<span class="pill ok">${n} xác nhận</span> <span class="small muted">khối #${c.h}</span>`;}
+  const m=D.mempool.find(x=>x.t.id===t.id);if(!m)return'<span class="pill gray">—</span>';
+  return m.ok?'<span class="pill wait">Chờ đào</span>':`<span class="pill bad">Bị từ chối</span> <span class="small badc">${esc(m.why)}</span>`;
+}
+function renderWallet(){
+  const joined=!!(S.me&&S.keys);
+  $('joinCard').classList.toggle('hidden',joined);$('walletArea').classList.toggle('hidden',!joined);
+  $('joinBtn').disabled=!S.db||S.readOnly||!S.uid;
+  if(S.keys&&!S.me)$('joinBtn').textContent='Tham gia phiên này (giữ nguyên ví)';
+  if(!joined)return;
+  const D=S.D,me=S.me,on=D.tip.bal[me.address]||0;
+  let pin=0,pout=0;for(const m of D.mempool){if(!m.ok)continue;if(m.t.to===me.address)pin+=+m.t.amount;if(m.t.from===me.address)pout+=(+m.t.amount)+(+m.t.fee);}
+  $('wBTC').textContent=fB(on)+' BTC';
+  $('wBTCsub').textContent=`≈ ${fV(on/SAT*S.cfg.prices.btc)}`+(pin||pout?` · đang chờ: +${fB(pin)} / −${fB(pout)}`:'');
+  $('wName').textContent=me.name;$('wAddr').textContent=me.address;$('wPub').textContent=short(S.keys.pub,22);
+  $('seedWords').innerHTML=seedWords(S.keys).map((w,i)=>`<span><i>${i+1}</i>${w}</span>`).join('');
+  const a=D.san[S.uid],p=S.cfg.prices;
+  const rows=[['BTC trong ví (tự giữ khóa)',fB(on),on/SAT*p.btc],['BTC trên sàn (sàn giữ hộ)',fB(a.btc),a.btc/SAT*p.btc],
+    ['ETH',fE(a.eth),a.eth/MU*p.eth],['ETH đang đặt cọc',fE(a.stk),a.stk/MU*p.eth],['VND ảo trên sàn',fN(a.vnd),a.vnd]];
+  if(a.esc)rows.push(['ETH khóa trong hợp đồng ký quỹ',fE(a.esc),a.esc/MU*p.eth]);
+  if(a.coll)rows.push(['ETH thế chấp trong két VNDS',fE(a.coll),a.coll/MU*p.eth]);
+  if(a.vnds)rows.push(['Stablecoin VNDS',fN(a.vnds),a.vnds]);
+  if(a.debt)rows.push(['Nợ VNDS của két',fN(a.debt),-a.debt]);
+  const tot=rows.reduce((s,r)=>s+r[2],0);$('wTotal').textContent=fV(tot);
+  $('wAssets').innerHTML='<tr><th>Tài sản</th><th class="r">Số lượng</th><th class="r">Giá trị</th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td class="r">${r[1]}</td><td class="r">${fV(r[2])}</td></tr>`).join('');
+  const mine=S.txs.filter(t=>t.from===me.address||t.to===me.address||(t.kind==='withdraw'&&t.uid===S.uid));
+  const cb=D.chain.filter(n=>n.b.addr===me.address);
+  const items=[...mine.map(t=>({time:t.time,html:`<tr><td>${fT(t.time)}</td><td>${t.from===me.address?'Gửi → '+esc(nameOfAddr(t.to)):'Nhận ← '+esc(nameOfAddr(t.from))}${t.note?` <span class="pill gray">${esc(t.note)}</span>`:''}</td><td class="r ${t.from===me.address?'badc':'okc'}">${t.from===me.address?'−':'+'}${fB(t.from===me.address?(+t.amount)+(+t.fee):+t.amount)}</td><td>${txStatus(t)}</td></tr>`})),
+    ...cb.map(n=>({time:n.time,html:`<tr><td>${fT(n.time)}</td><td>Thưởng đào khối #${n.h}</td><td class="r okc">+${fB(n.b.coinbase)}</td><td><span class="pill ok">${D.conf(n.h)} xác nhận</span></td></tr>`}))].sort((x,y)=>y.time-x.time);
+  $('wHist').innerHTML=items.length?`<table class="tbl"><tr><th>Giờ</th><th>Nội dung</th><th class="r">BTC</th><th>Trạng thái</th></tr>${items.map(i=>i.html).join('')}</table>`:`<div class="empty">Chưa có giao dịch. Số dư ban đầu ${fB(Math.round(S.cfg.params.grantBTC*SAT))} BTC được cấp trong khối nguyên thủy.</div>`;
+}
+function renderTransfer(){
+  const D=S.D;if(!D)return;
+  const others=Object.values(D.addrMap).filter(w=>w.uid!==S.uid).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
+  fillSelect($('txTo'),others.map(w=>[w.address,`${w.name} · ${short(w.address,8)}`]),others.length?'— chọn người nhận —':'Chưa có ai khác trong lớp');
+  fillSelect($('fkFrom'),others.map(w=>[w.address,'Từ ví của '+w.name]),others.length?'':'Chưa có ví khác');
+  $('mpCount').textContent=D.mempool.length;
+  $('mpList').innerHTML=D.mempool.length?`<table class="tbl"><tr><th>Giờ</th><th>Từ → Đến</th><th class="r">BTC</th><th class="r">Phí</th><th>Trạng thái</th></tr>${D.mempool.slice(0,200).map(m=>`<tr><td>${fT(m.t.time)}</td><td>${esc(nameOfAddr(m.t.from))} → ${esc(nameOfAddr(m.t.to))}${m.t.note?` <span class="pill gray">${esc(m.t.note)}</span>`:''}</td><td class="r">${fB(m.t.amount)}</td><td class="r">${fB(m.t.fee)}</td><td>${m.ok?'<span class="pill wait">Hợp lệ · chờ đào</span>':`<span class="pill bad">Từ chối</span> <span class="small badc">${esc(m.why)}</span>`}</td></tr>`).join('')}</table>`:'<div class="empty">Hàng chờ trống — mọi giao dịch đã được đưa vào khối.</div>';
+}
+function renderMineBox(){
+  const t=M.tpl;
+  if(!t){$('mBox').innerHTML='<div class="lbl">Trạng thái</div><div class="val" style="font-family:var(--sans)">Máy đang nghỉ. Bấm “Bắt đầu đào”: trình duyệt sẽ thật sự chạy SHA-256 hàng chục nghìn lần mỗi giây.</div>';return;}
+  $('mBox').innerHTML=`<div class="lbl">Đang giải khối #${t.height} · nối sau khối</div><div class="val">${hashHTML(t.prev,24)}</div>
+  <div class="lbl">Gói kèm</div><div class="val" style="font-family:var(--sans)">${t.txs.length} giao dịch · thưởng ${fB(t.reward)} + phí ${fB(t.fees)} BTC → địa chỉ của bạn</div>
+  <div class="lbl">Yêu cầu</div><div class="val" style="font-family:var(--sans)">hash phải nhỏ hơn mục tiêu ≈ ${t.bits} bit 0 đầu (≈ ${'0'.repeat(Math.floor(t.bits/4))}… hex), trung bình ${fBig(Math.pow(2,t.bits))} lần thử</div>
+  <div class="lbl">Nonce đang thử</div><div class="val">${fN(M.nonce)}</div>
+  <div class="lbl">Hash vừa ra</div><div class="val">${hashHTML(M.last,64)}</div>`;
+}
+function renderMineLog(){$('mLog').innerHTML=M.log.length?M.log.map(l=>`<div class="${l.cls}"><span class="muted small">${fT(l.t)}</span> ${esc(l.msg)}</div>`).join(''):'<div class="muted">Chưa có sự kiện.</div>';}
+function renderMine(){
+  const D=S.D,P=S.cfg.params;
+  $('mineBtn').textContent=M.on?'Dừng đào':'Bắt đầu đào';$('mineBtn').className='btn '+(M.on?'sec':'btcb');
+  $('mineBtn').disabled=!S.db||S.readOnly;
+  const won=D?M.mine.filter(m=>D.inBest.has(m.hash)).length:0,orph=D?M.mine.filter(m=>!D.inBest.has(m.hash)&&m.h<=D.tip.h).length:0;
+  const chance=D&&D.stats.avg>0&&M.rate>0?Math.min(100,M.rate/(Math.pow(2,D.stats.nextBits)/D.stats.avg)*100):null;
+  $('mStats').innerHTML=[['Tốc độ',M.on?fN(M.rate)+' H/s':'—'],['Đã thử',fBig(M.hashes)],['Khối được công nhận',won],['Khối mồ côi',orph],
+    ['Ước tính thị phần',chance==null?'—':fD(chance)+'%']].map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v">${s[1]}</div></div>`).join('');
+  renderMineBox();renderMineLog();hdUpdate();
+  if(D)for(const m of M.mine){if(!m.noted&&D.tip.h>=m.h+1){m.noted=true;if(!D.inBest.has(m.hash))mlog('bad',`Khối #${m.h} của bạn đã thành khối mồ côi: nhánh khác dài hơn được cả lớp chọn → phần thưởng bị hủy, giao dịch quay lại hàng chờ`);}}
+  $('daoNote').innerHTML=`<b>Bitcoin thật:</b> mục tiêu ~10 phút/khối, độ khó điều chỉnh mỗi 2.016 khối, thưởng hiện tại 3,125 BTC (sau halving 4/2024), toàn mạng thử hàng trăm tỷ tỷ (10<sup>20</sup>) hash mỗi giây. <b>Ở lớp:</b> mục tiêu ${paramsAt(D?D.tip.h+1:1,P,D?D.evs:[]).target} giây/khối, điều chỉnh mỗi ${P.N} khối, thưởng ${String(P.reward).replace('.',',')} BTC và halving mỗi ${P.halving} khối.`;
+}
+function renderLedger(){
+  const D=S.D;if(!D)return;const st=D.stats,P=S.cfg.params;
+  const hr=st.avg>0?Math.pow(2,D.tip.bits||P.bits0)/st.avg:0;
+  $('netStats').innerHTML=[['Chiều cao chuỗi','#'+D.tip.h],['Thời gian khối TB',st.avg?fD(st.avg)+' giây':'—'],['Độ khó khối kế',st.nextBits+' bit'],
+    ['Thưởng khối kế',fB(rewardAt(D.tip.h+1,P))+' BTC'],['Sức mạnh băm ước tính',hr?fBig(hr)+' H/s':'—'],['Khối mồ côi',st.orphans],['Khối bị từ chối',st.invalid],
+    ['BTC đã phát hành',fB(D.chain.reduce((s,n)=>s+rewardAt(n.h,P),0))]].map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v">${s[1]}</div></div>`).join('');
+  const best=[...D.chain].reverse().slice(0,40);
+  const side=D.nodes.filter(n=>!D.inBest.has(n.hash)).sort((a,b)=>b.h-a.h).slice(0,20);
+  const card=(n,cls)=>`<div class="blk ${cls} ${S.sel===n.hash?'sel':''}" data-h="${n.hash}"><div class="hh">#${n.h}</div><div>${hashHTML(n.hash,10)}</div><div class="muted">${esc(n.b.minerName||'?')}</div><div class="muted">${(n.b.txs||[]).length} GD · ${fT(n.time)}</div>${cls==='orph'?'<span class="pill gray">mồ côi</span>':cls==='inv'?'<span class="pill bad">bị từ chối</span>':`<span class="pill ok">${D.conf(n.h)} xác nhận</span>`}</div>`;
+  $('chainStrip').innerHTML=best.length?best.map(n=>card(n,'')).join('')+`<div class="blk" style="cursor:default"><div class="hh">#0</div><div class="muted">Khối nguyên thủy</div><div class="muted small">cấp ${fB(Math.round(P.grantBTC*SAT))} BTC/ví</div></div>`:'<div class="empty" style="width:100%">Chưa có khối nào. Hãy sang tab Đào và bấm “Bắt đầu đào”.</div>';
+  $('forkInfo').innerHTML=side.length?`<div class="mt"><b>Nhánh phụ / bị loại:</b></div><div class="chain">${side.map(n=>card(n,n.invalid?'inv':'orph')).join('')}</div><div class="small muted">Khi hai người trúng gần như cùng lúc, chuỗi tạm rẽ nhánh; cả lớp đi theo nhánh có nhiều công sức hơn (thường là nhánh dài hơn). Khối ở nhánh thua thành “mồ côi”.</div>`:'';
+  $('forkInfo').onclick=e=>{const b=e.target.closest('[data-h]');if(b){S.sel=b.dataset.h;renderLedger();}};
+  renderBlockDetail();
+  $('board').innerHTML=D.board.length?`<table class="tbl"><tr><th>#</th><th>Thành viên</th><th class="r">Khối đào</th><th class="r">Tổng tài sản</th></tr>${D.board.map((r,i)=>`<tr${r.w.uid===S.uid?' class="sel"':''}><td>${i+1}</td><td>${esc(r.w.name)}</td><td class="r">${r.mined}</td><td class="r">${fV(r.val)}</td></tr>`).join('')}</table>`:'<div class="empty">Chưa có ai tạo ví.</div>';
+}
+function renderBlockDetail(){
+  const D=S.D;const n=D.nodes.find(x=>x.hash===S.sel);
+  if(!n){$('blkDetail').innerHTML='<div class="empty">Chọn một khối ở trên để xem bên trong.</div>';return;}
+  if($('blkDetail').dataset.h===n.hash&&$('tamperAmt'))return; // tránh xóa ô đang nhập
+  $('blkDetail').dataset.h=n.hash;const b=n.b;
+  $('blkDetail').innerHTML=`<h2>Khối #${n.h} ${n.invalid?'<span class="pill bad">bị từ chối</span>':D.inBest.has(n.hash)?'<span class="pill ok">trên chuỗi chính</span>':'<span class="pill gray">mồ côi</span>'}</h2>
+  ${n.invalid?`<div class="note warn small">Lý do: ${esc(n.invalid)}</div>`:''}
+  <dl class="kv mt"><dt>Hash</dt><dd>${hashHTML(b.hash,64)}</dd><dt>Hash khối trước</dt><dd>${hashHTML(b.prev,64)}</dd>
+  <dt>Nonce</dt><dd class="mono">${fN(b.nonce)}</dd><dt>Độ khó</dt><dd>${b.bits} bit</dd><dt>Thời gian</dt><dd>${fT(b.time)}</dd>
+  <dt>Thợ đào</dt><dd>${esc(b.minerName||'?')} — nhận ${fB(b.coinbase)} BTC</dd></dl>
+  <h3>Giao dịch trong khối</h3>
+  ${(b.txs||[]).length?`<div class="scroll"><table class="tbl"><tr><th>Từ → Đến</th><th class="r">BTC</th><th class="r">Phí</th></tr>${b.txs.map(t=>`<tr><td>${esc(nameOfAddr(t.from))} → ${esc(nameOfAddr(t.to))}</td><td class="r">${fB(t.amount)}</td><td class="r">${fB(t.fee)}</td></tr>`).join('')}</table></div>`:'<div class="small muted">Khối chỉ có giao dịch thưởng (coinbase).</div>'}
+  ${(b.txs||[]).length?`<h3>Thử sửa sổ cái (chỉ trên máy bạn)</h3><label class="f" for="tamperAmt">Đổi số BTC của giao dịch đầu tiên thành</label><input id="tamperAmt" inputmode="decimal" value="${(b.txs[0].amount/SAT).toString().replace('.',',')}"><div id="tamperRes" class="mt"></div>`:''}`;
+  if((b.txs||[]).length)renderTamper();
+}
+function renderTamper(){
+  const D=S.D;const n=D.nodes.find(x=>x.hash===S.sel);const el=$('tamperRes');if(!n||!el)return;const b=n.b;
+  const v=Math.round(num($('tamperAmt').value)*SAT);const txs=b.txs.map((t,i)=>i===0?{...t,amount:v}:t);
+  const root=txRoot(txs,b.addr,b.coinbase);
+  const h=sha256(header(b.height,b.prev,root,b.time,b.bits,b.nonce));const same=h===b.hash;
+  const child=D.nodes.find(x=>x.b.prev===b.hash);
+  el.innerHTML=same?'<div class="small muted">Chưa thay đổi gì.</div>':`<div class="minebox"><div class="lbl">Hash mới của khối sau khi sửa</div><div class="val">${hashHTML(h,64)}</div></div>
+  <ul class="small" style="margin:8px 0 0;padding-left:18px"><li>Hash ${meets(h,b.bits)?'vẫn may mắn đạt độ khó':'<b class="badc">không còn đạt độ khó</b>'} → phải đào lại khối này.</li>
+  <li>${child?`Khối #${child.h} đang trỏ tới hash cũ → <b class="badc">mắt xích bị đứt</b>, phải đào lại cả khối #${child.h} và mọi khối sau (${D.tip.h-b.height} khối), nhanh hơn toàn bộ phần còn lại của lớp.`:'Đây là khối mới nhất, nhưng mọi máy khác đều giữ bản gốc và sẽ từ chối bản sửa.'}</li>
+  <li>Chữ ký của người gửi cũng không còn khớp với số tiền mới.</li></ul>`;
+}
+function spark(svg,vals,color){if(vals.length<2){svg.innerHTML='';return;}const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1)*100).toFixed(2)},${(36-(v-mn)/r*32).toFixed(2)}`).join(' ');
+  svg.innerHTML=`<polyline points="${pts}" fill="none" style="stroke:${color}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;}
+function renderSan(){
+  const C=S.cfg,D=S.D,p=C.prices;
+  $('pBTC').textContent=fV(p.btc);$('pETH').textContent=fV(p.eth);
+  const h=C.priceHist;const ch=(k)=>{if(h.length<2)return'';const a=h[0][k],b=p[k];const d=(b/a-1)*100;return`<span class="${d>=0?'okc':'badc'}">${d>=0?'+':''}${fD(d)}% từ đầu phiên</span>`;};
+  $('pBTCch').innerHTML=ch('btc');$('pETHch').innerHTML=ch('eth');
+  spark($('spBTC'),h.map(x=>x.btc),'var(--btc)');spark($('spETH'),h.map(x=>x.eth),'var(--eth)');
+  $('trSpread').textContent=(C.spread*100).toLocaleString('vi-VN')+'%';
+  const qt=quote();$('trQuote').innerHTML=qt?`${trState.side==='buy'?'Bạn trả':'Bạn nhận'} <b>${fV(qt.vnd)}</b> cho ${trState.asset==='btc'?fB(qt.qty)+' BTC':fE(qt.qty)+' ETH'}`:'Nhập số lượng để xem báo giá';
+  $('trBtn').textContent=(trState.side==='buy'?'Mua ':'Bán ')+trState.asset.toUpperCase();$('trBtn').className='btn full '+(trState.side==='buy'?'okb':'badb');
+  if(!D)return;const a=S.me?D.san[S.uid]:null;
+  $('sanBal').innerHTML=a?`<dt>VND</dt><dd>${fV(a.vnd)}</dd><dt>BTC</dt><dd>${fB(a.btc)}</dd><dt>ETH</dt><dd>${fE(a.eth)} <span class="muted small">(+${fE(a.stk)} đang cọc)</span></dd>`:'<dt>—</dt><dd>Hãy tạo ví trước</dd>';
+  const dp=D.depPending.filter(x=>x.u===S.uid);
+  $('dpPending').innerHTML=dp.length?'Đang chờ nạp: '+dp.map(x=>`${fB(x.t.amount)} BTC (${x.confs}/${C.params.depConf} xác nhận)`).join(' · '):'';
+  $('sanNote').innerHTML=`<b>Nạp</b> là một giao dịch trên chuỗi tới ví của sàn; sàn chỉ ghi có sau ${C.params.depConf} xác nhận (sàn thật thường chờ 1–6). <b>Rút</b>: sàn ký giao dịch từ ví nóng của sàn, rồi chờ thợ đào. Mua bán trên sàn <b>không tạo giao dịch blockchain</b> — chỉ là dòng ghi nội bộ, như trường hợp FTX (11/2022).`;
+  const tr=[...S.trades].sort((x,y)=>y.time-x.time).slice(0,60);
+  $('trFeed').innerHTML=tr.length?`<table class="tbl"><tr><th>Giờ</th><th>Thành viên</th><th>Lệnh</th><th class="r">Số lượng</th><th class="r">Giá trị</th><th></th></tr>${tr.map(t=>`<tr><td>${fT(t.time)}</td><td>${esc(nameOfUid(t.uid))}</td><td><span class="pill ${t.side==='buy'?'ok':'bad'}">${t.side==='buy'?'Mua':'Bán'}</span> ${t.asset.toUpperCase()}</td><td class="r">${t.asset==='btc'?fB(t.qty):fE(t.qty)}</td><td class="r">${fV(t.vnd)}</td><td>${D.bad.has(t._id)?`<span class="pill bad">${esc(D.bad.get(t._id))}</span>`:''}</td></tr>`).join('')}</table>`:'<div class="empty">Chưa có lệnh nào.</div>';
+}
+function renderPos(){
+  const D=S.D,C=S.cfg;if(!D)return;const a=S.me?D.san[S.uid]:null;
+  const vals=Object.entries(D.san).filter(([u,x])=>x.stk>0&&D.uidMap[u]).sort((x,y)=>y[1].stk-x[1].stk);
+  const total=vals.reduce((s,[,x])=>s+x.stk,0);
+  $('posMine').innerHTML=a?`<dt>ETH khả dụng</dt><dd>${fE(a.eth)}</dd><dt>Đang đặt cọc</dt><dd class="ethc"><b>${fE(a.stk)} ETH</b></dd><dt>Xác suất được chọn mỗi slot</dt><dd>${total?fD(a.stk/total*100)+'%':'—'}</dd><dt>Thưởng đã nhận</dt><dd>${fE(a.rewards)} ETH</dd>${a.slashed?`<dt>Bị phạt</dt><dd class="badc">−${fE(a.slashed)} ETH</dd>`:''}`:'<dt>—</dt><dd>Hãy tạo ví trước</dd>';
+  $('posNote').innerHTML=`<b>Ethereum thật</b> chuyển sang PoS từ 15/9/2022 (The Merge): mỗi slot 12 giây, người xác thực cần đặt cọc 32 ETH; ký hai khối mâu thuẫn sẽ bị phạt (slashing) và buộc rời mạng. <b>Ở lớp:</b> cọc tối thiểu ${C.pos.minStake} ETH, thưởng đề xuất ${String(C.pos.reward).replace('.',',')} ETH/slot, giảng viên bấm “Chạy slot”.`;
+  const work=D.stats.workAll;const props=S.rounds.filter(r=>r.type==='propose').length;
+  $('posCmp').innerHTML=[['Phép băm PoW đã tốn (ước tính)',fBig(work)],['Số khối PoW',D.chain.length],['Phép băm PoS cần để chọn người',props?props+' (1/slot)':'0'],['Số slot PoS',props]].map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v">${s[1]}</div></div>`).join('');
+  $('valList').innerHTML=vals.length?`<table class="tbl"><tr><th>Người xác thực</th><th class="r">Cọc (ETH)</th><th>Tỷ lệ</th></tr>${vals.map(([u,x])=>{const sh=x.stk/total*100;return`<tr${u===S.uid?' class="sel"':''}><td>${esc(nameOfUid(u))}${x.slashed?' <span class="pill bad">đã bị phạt</span>':''}</td><td class="r">${fE(x.stk)}</td><td style="min-width:110px"><div class="bar"><i style="width:${sh.toFixed(1)}%"></i></div><span class="small muted">${fD(sh)}%</span></td></tr>`;}).join('')}</table>`:'<div class="empty">Chưa ai đặt cọc.</div>';
+  const rs=[...S.rounds].sort((x,y)=>y.time-x.time).slice(0,40);
+  $('roundList').innerHTML=rs.length?`<table class="tbl"><tr><th>Giờ</th><th>Sự kiện</th><th>Hạt giống ngẫu nhiên</th></tr>${rs.map(r=>r.type==='propose'?`<tr><td>${fT(r.time)}</td><td>Slot ${r.slot}: <b>${esc(nameOfUid(r.proposer))}</b> đề xuất khối (xác suất ${fD(r.share*100)}%) · +${fE(r.reward)} ETH</td><td>${hashHTML(r.seed,10)}</td></tr>`:`<tr><td>${fT(r.time)}</td><td><span class="pill bad">Slashing</span> ${esc(nameOfUid(r.uid))} bị cắt ${r.pct}% cọc</td><td></td></tr>`).join('')}</table>`:'<div class="empty">Chưa có slot nào. Giảng viên bấm “Chạy 1 slot”.</div>';
+}
+function renderGV(){
+  if(!S.admin)return;const D=S.D;fillAdminForm();
+  if(D){$('gvNow').innerHTML=`Khối kế tiếp #${D.tip.h+1} · độ khó ${D.stats.nextBits} bit · thời gian khối TB ${D.stats.avg?fD(D.stats.avg)+' giây':'—'} · ${Object.keys(D.uidMap).length} thành viên · ${S.blocks.length+S.txs.length+S.trades.length+S.stakes.length+S.rounds.length} bản ghi phiên này`;
+    const vals=Object.entries(D.san).filter(([u,x])=>x.stk>0&&D.uidMap[u]);
+    fillSelect($('gvSlashWho'),vals.map(([u,x])=>[u,`${nameOfUid(u)} · ${fE(x.stk)} ETH`]),vals.length?'— chọn người xác thực —':'Chưa có người xác thực');}
+}
+
+/* ================== HỢP ĐỒNG THÔNG MINH ================== */
+async function ctCall(fields,msg){
+  if(!needWallet())return false;const id=rid()+rid();const before=S.D.san[S.uid].eth;
+  if(before<Math.round(S.cfg.ct.gas*MU)){toast('Không đủ ETH trả phí gas');return false;}
+  const ok=await writeOK(()=>S.db.doc('contracts/'+id).set({session:S.cfg.session,uid:S.uid,time:Date.now(),...fields}),null);
+  if(ok){S.pendingCt=id;toast(msg||'Đã gửi lệnh gọi hợp đồng — xem kết quả ở nhật ký');}return ok;
+}
+async function createEscrow(){
+  const seller=$('esSeller').value,x=Math.round(num($('esAmt').value)*MU),m=num($('esMin').value);
+  if(!seller){toast('Chọn người bán');return;}if(!(x>0)){toast('Nhập số ETH');return;}if(!(m>0)){toast('Nhập hạn chót (phút)');return;}
+  if(await ctCall({type:'esc_create',seller,amt:x,deadline:Date.now()+Math.round(m*60000),note:$('esNote').value.trim().slice(0,40)},'Đã triển khai hợp đồng ký quỹ')){$('esAmt').value='';$('esNote').value='';}
+}
+async function vaultEth(sign){const x=Math.round(num($('vEth').value)*MU);if(!(x>0)){toast('Nhập số ETH');return;}if(await ctCall({type:'v_lock',amt:sign*x}))$('vEth').value='';}
+async function vaultV(type){const x=Math.round(num($('vAmt').value)*1e6);if(!(x>0)){toast('Nhập số VNDS (triệu)');return;}if(await ctCall({type,vnd:x}))$('vAmt').value='';}
+const ESC_ST={funded:'Đã nạp',shipped:'Đã giao',released:'Kết thúc: trả người bán',refunded:'Kết thúc: hoàn người mua',claimed:'Kết thúc: người bán nhận sau hạn'};
+function escCode(last){
+  const L=[['c','// Hợp đồng ký quỹ — bản rút gọn, cú pháp kiểu Solidity'],['k','contract KyQuy {'],['','  address nguoiMua, nguoiBan; uint soTien, hanChot; TrangThai tt;'],
+  ['create','  constructor(ban, han) payable { nguoiMua = msg.sender; soTien = msg.value; tt = DA_NAP; }'],
+  ['ship','  function giaoHang() { require(msg.sender == nguoiBan && tt == DA_NAP); tt = DA_GIAO; }'],
+  ['confirm','  function xacNhan()  { require(msg.sender == nguoiMua && tt != KET_THUC); chuyen(nguoiBan, soTien); }'],
+  ['refund','  function hoanTien() { require(msg.sender == nguoiMua && tt == DA_NAP && now > hanChot); chuyen(nguoiMua, soTien); }'],
+  ['claim','  function nhanTien() { require(msg.sender == nguoiBan && tt == DA_GIAO && now > hanChot); chuyen(nguoiBan, soTien); }'],['k','}']];
+  return L.map(([k,t])=>{const e=esc(t);if(k==='c')return`<span class="c">${e}</span>`;if(k==='k')return`<span class="k">${e}</span>`;return k&&k===last?`<span class="hl">${e}</span>`:e;}).join('\n');
+}
+function renderEscrows(){
+  const D=S.D;const mine=Object.values(D.escrows).filter(E=>E.buyer===S.uid||E.seller===S.uid).sort((a,b)=>b.created-a.created);
+  const now=Date.now();
+  const html=mine.map(E=>{const buyer=E.buyer===S.uid,left=E.deadline-now,over=left<=0,open=E.state==='funded'||E.state==='shipped';
+    const btn=(act,lab,cls)=>`<button class="btn ${cls||'sec'}" data-act="${act}" data-eid="${E.id}">${lab}</button>`;let b='';
+    if(open){if(buyer){b+=btn('esc_confirm','Xác nhận đã nhận hàng','okb');if(E.state==='funded')b+=btn('esc_refund',over?'Rút lại tiền (quá hạn)':'Rút lại tiền (thử trước hạn)');}
+      else{if(E.state==='funded')b+=btn('esc_ship','Báo đã giao hàng','ethb');if(E.state==='shipped')b+=btn('esc_claim',over?'Nhận tiền (người mua im lặng quá hạn)':'Nhận tiền (thử trước hạn)');}}
+    const st=['funded','shipped'].map(k=>`<span class="${E.state===k||(k==='funded'&&E.state!=='funded')||(k==='shipped'&&!open&&E.state!=='refunded')?'on':''}">${ESC_ST[k]}</span>`).join('')+(open?'':`<span class="end">${ESC_ST[E.state]}</span>`);
+    return`<div class="esc"><div class="flex"><b>${fE(E.amt)} ETH</b><span class="small muted">${buyer?'Bạn mua của '+esc(nameOfUid(E.seller)):'Bạn bán cho '+esc(nameOfUid(E.buyer))}${E.note?' · '+esc(E.note):''}</span><span class="spacer"></span>${open?`<span class="pill ${over?'bad':'wait'}">${over?'Đã quá hạn':'Còn '+Math.floor(left/60000)+':'+String(Math.floor(left%60000/1000)).padStart(2,'0')}</span>`:''}</div>
+    <div class="steps">${st}</div>${b?`<div class="btns" style="margin-top:6px">${b}</div>`:''}</div>`;}).join('');
+  if($('esList')._h!==html){$('esList')._h=html;$('esList').innerHTML=html||'<div class="empty">Chưa có hợp đồng nào. Hãy lập một hợp đồng với bạn cùng lớp: một người mua, một người bán.</div>';}
+  const last=mine.find(E=>E.last);$('esCode').innerHTML=escCode(last?last.last:'');
+}
+function renderHD(){
+  const D=S.D,C=S.cfg,CT=C.ct;if(!D)return;
+  $('ctGas').textContent=String(CT.gas).replace('.',',');$('vMin').textContent=Math.round(CT.minRatio*100)+'%';$('vLiq').textContent=Math.round(CT.liqRatio*100)+'%';$('vBonus').textContent=Math.round(CT.bonus*100)+'%';
+  const others=Object.values(D.uidMap).filter(w=>w.uid!==S.uid).sort((a,b)=>a.name.localeCompare(b.name,'vi'));
+  fillSelect($('esSeller'),others.map(w=>[w.uid,w.name]),others.length?'— chọn người bán —':'Chưa có ai khác');
+  fillSelect($('vTo'),others.map(w=>[w.uid,w.name]),others.length?'— chọn —':'Chưa có ai khác');
+  renderEscrows();
+  const p=C.prices.eth,a=S.me?D.san[S.uid]:null;
+  if(a){const val=a.coll/MU*p,r=a.debt?val/a.debt:null,maxMint=Math.max(0,Math.floor(val/CT.minRatio-a.debt)),liqP=a.debt&&a.coll?a.debt*CT.liqRatio/(a.coll/MU):null;
+    $('vStats').innerHTML=[['ETH thế chấp',fE(a.coll)],['Giá trị thế chấp',fBig(val)+' ₫'],['Nợ VNDS',fBig(a.debt)],['Tỷ lệ thế chấp',r==null?'—':Math.round(r*100)+'%'],['Còn in được',fBig(maxMint)+' VNDS'],['Giá ETH bị thanh lý',liqP?fBig(liqP)+' ₫':'—'],['VNDS đang giữ',fBig(a.vnds)],['Phí gas đã trả',fE(a.gas)+' ETH']]
+      .map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v">${s[1]}</div></div>`).join('');
+    const max=3,pos=x=>Math.min(100,x/max*100);const col=r==null?'var(--muted)':r<CT.liqRatio?'var(--bad)':r<CT.minRatio?'var(--warn)':'var(--ok)';
+    $('vGauge').innerHTML=`<i style="width:${r==null?0:pos(r)}%;background:${col}"></i><div class="mk" style="left:${pos(CT.liqRatio)}%"><span>thanh lý ${Math.round(CT.liqRatio*100)}%</span></div><div class="mk" style="left:${pos(CT.minRatio)}%"><span style="top:auto;bottom:-17px">tối thiểu ${Math.round(CT.minRatio*100)}%</span></div>`;
+  }else{$('vStats').innerHTML='<div class="empty">Hãy tạo ví trước.</div>';$('vGauge').innerHTML='';}
+  const liq=Object.entries(D.san).filter(([u,x])=>x.debt>0&&D.uidMap[u]).map(([u,x])=>({u,x,r:x.coll/MU*p/x.debt})).sort((a,b)=>a.r-b.r);
+  $('vLiqList').innerHTML=liq.length?`<table class="tbl"><tr><th>Chủ két</th><th class="r">Nợ VNDS</th><th class="r">Tỷ lệ</th><th></th></tr>${liq.map(v=>`<tr><td>${esc(nameOfUid(v.u))}</td><td class="r">${fBig(v.x.debt)}</td><td class="r ${v.r<CT.liqRatio?'badc':''}">${Math.round(v.r*100)}%</td><td>${v.r<CT.liqRatio&&v.u!==S.uid?`<button class="btn badb" data-liq="${v.u}" style="padding:6px 10px">Thanh lý</button>`:v.r<CT.liqRatio?'<span class="pill bad">dưới ngưỡng</span>':'<span class="pill ok">an toàn</span>'}</td></tr>`).join('')}</table><div class="small muted mt">Muốn thanh lý, bạn cần đủ VNDS để trả toàn bộ nợ của két đó.</div>`:'<div class="empty">Chưa có két nào đang vay VNDS.</div>';
+  const NAMES={esc_create:'Triển khai ký quỹ',esc_ship:'giaoHang()',esc_confirm:'xacNhan()',esc_refund:'hoanTien()',esc_claim:'nhanTien()',v_lock:'Khóa/rút thế chấp',v_mint:'In VNDS',v_repay:'Trả nợ VNDS',v_send:'Chuyển VNDS',v_liq:'Thanh lý két'};
+  const cs=[...S.contracts].sort((x,y)=>y.time-x.time).slice(0,80);
+  $('ctLog').innerHTML=cs.length?`<table class="tbl"><tr><th>Giờ</th><th>Người gọi</th><th>Hàm</th><th>Kết quả</th></tr>${cs.map(c=>{const r=D.ctRes.get(c._id);return`<tr${c.uid===S.uid?' class="sel"':''}><td>${fT(c.time)}</td><td>${esc(nameOfUid(c.uid))}</td><td class="mono">${esc(NAMES[c.type]||c.type)}</td><td>${r?(r.ok?`<span class="pill ok">Thành công</span> ${esc(r.msg)}`:`<span class="pill bad">Revert</span> <span class="small badc">${esc(r.msg)}</span>`):'<span class="pill gray">—</span>'}</td></tr>`;}).join('')}</table>`:'<div class="empty">Chưa có lệnh gọi hợp đồng nào.</div>';
+}
+boot();
+</script>
+</body>
+</html>
