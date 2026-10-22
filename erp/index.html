@@ -641,8 +641,8 @@ function showLogin(msg){
   document.getElementById('main').innerHTML = `<div class="wrap" style="max-width:440px;margin:40px auto 0">
   <div class="ph"><div><div class="tc">Đăng nhập hệ thống</div><h1>ERP Lab HTTTKT</h1><p>Thực hành chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền. Dùng MSSV và mật khẩu giảng viên cấp.</p></div></div>
   <form class="form panel" data-form="LOGIN" autocomplete="on"><div class="err">${msg?esc(msg):''}</div>
-   <label class="field"><span>Mã số sinh viên</span><input id="l-user" autocomplete="username" required autofocus></label>
-   <label class="field"><span>Mật khẩu</span><input id="l-pass" type="password" autocomplete="current-password" required></label>
+   <label class="field"><span>Tên đăng nhập (sinh viên: MSSV · giảng viên: gv)</span><input id="l-user" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus></label>
+   <label class="field"><span>Mật khẩu</span><input id="l-pass" type="password" autocomplete="current-password" autocapitalize="none" required></label>
    <div class="form-foot"><span class="small muted">Quên mật khẩu? Nhờ giảng viên cấp lại.</span><button class="btn pri">Đăng nhập</button></div></form></div>`;
 }
 function showSetup(){
@@ -1148,12 +1148,12 @@ const CALC = {
 
 /* ============ FORM SUBMITS ============ */
 function busy(f,on){ f.querySelectorAll('button').forEach(b=>b.disabled=on); }
-async function guard(f,fn){ busy(f,true); try{ await fn(); }catch(e){ console.error(e); setErr(f,'<b>Không lưu được.</b> '+esc(dbErr(e))); } finally{ busy(f,false); } }
+async function guard(f,fn,pre){ busy(f,true); try{ await fn(); }catch(e){ console.error(e); setErr(f,(pre===''?'':'<b>'+(pre||'Không lưu được.')+'</b> ')+esc(dbErr(e))); } finally{ busy(f,false); } }
 const val = (f,id) => (f.querySelector('#'+id)?.value||'').trim();
 
 const FORM = {
   LOGIN(f){ guard(f,async()=>{ const r=await api('erp_login',{p_username:val(f,'l-user'),p_password:f.querySelector('#l-pass').value});
-    S.token=r.token; LS.set('erp.token',r.token); await start(); }); },
+    S.token=r.token; LS.set('erp.token',r.token); await start(); },''); },
   PW(f){ guard(f,async()=>{ const o=f.querySelector('#p-old').value,n=f.querySelector('#p-new').value,n2=f.querySelector('#p-new2').value;
     if(n!==n2) return setErr(f,'<b>Hai lần nhập mật khẩu mới không khớp.</b>');
     await api('erp_change_password',{p_token:S.token,p_old:o,p_new:n}); toast('Đã đổi mật khẩu.'); await sync(); S.screen='HOME'; S.param=null; render(true); }); },
