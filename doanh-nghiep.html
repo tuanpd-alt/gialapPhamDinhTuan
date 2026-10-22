@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sổ cái doanh nghiệp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5f9;--surface:#fff;--surface2:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;--accent:#1d5cf0;--accent-soft:#e3ebff;--ok:#11805a;--ok-soft:#dff3ea;--bad:#bd3434;--bad-soft:#fbe5e5;--warn:#9a6a00;--warn-soft:#fff4d6;--lock:#6b7390;
+--pA:#1d5cf0;--pB:#c8770a;--pC:#11805a;--pD:#7a3fd0;--pE:#bd3434;--pX:#5a6380;--shadow:0 1px 2px rgba(19,26,44,.05),0 6px 18px rgba(19,26,44,.05);
+--mono:"JetBrains Mono",ui-monospace,monospace;--sans:"Be Vietnam Pro",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a0f1e;--surface:#111a2e;--surface2:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;--accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--ok:#3fcf92;--ok-soft:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-soft:rgba(255,111,111,.12);--warn:#ffc94d;--warn-soft:rgba(255,201,77,.12);--lock:#8d96b4;--pA:#7aa2ff;--pB:#f5a524;--pC:#3fcf92;--pD:#b28cff;--pE:#ff7b7b;--pX:#95a0bf;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0a0f1e;--surface:#111a2e;--surface2:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;--accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--ok:#3fcf92;--ok-soft:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-soft:rgba(255,111,111,.12);--warn:#ffc94d;--warn-soft:rgba(255,201,77,.12);--lock:#8d96b4;--pA:#7aa2ff;--pB:#f5a524;--pC:#3fcf92;--pD:#b28cff;--pE:#ff7b7b;--pX:#95a0bf;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+header{display:flex;align-items:center;gap:12px;padding:16px 0 8px;flex-wrap:wrap}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--pA),var(--pD));display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+h1{font-size:19px;margin:0}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+a.btnlink,.iconbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h2{font-size:16px;margin:0 0 10px}
+.card h3{font-size:12.5px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.note{background:var(--accent-soft);border-radius:12px;padding:12px 14px;font-size:13.5px}
+.note.warn{background:var(--warn-soft)}
+.muted{color:var(--muted)}.small{font-size:12.5px}
+.mono{font-family:var(--mono);font-size:12px;overflow-wrap:anywhere}
+.btn{border:0;border-radius:10px;padding:9px 12px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;background:var(--accent);color:#fff}
+.btn.sec{background:var(--surface2);color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface)}
+.step .n{width:26px;height:26px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.step.done .n{background:var(--ok);color:#fff}
+.step .t{flex:1;min-width:0}
+.step .t b{display:block;font-size:14px}
+.step .t span{font-size:12.5px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.wait{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.scroll{overflow-x:auto}.tall{max-height:520px;overflow-y:auto}
+.chain{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px}
+.blk{flex:none;width:170px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface2);font-size:12px;cursor:pointer}
+.blk.sel{outline:2px solid var(--accent)}
+.blk b{font-size:14px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+.lockbox{display:flex;gap:8px;align-items:flex-start;color:var(--lock);font-size:12.5px}
+.flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px}
+.flow .ph{padding:3px 8px;border-radius:8px;background:var(--surface2);color:var(--muted)}
+.flow .ph.on{background:var(--warn-soft);color:var(--warn);font-weight:600}
+.flow .ph.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+.item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+select,input{font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:7px 10px}
+svg.arch{width:100%;height:auto;display:block}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);z-index:9}
+.toast.show{opacity:1}
+.empty{padding:18px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">⛓</div>
+  <div><h1>Sổ cái doanh nghiệp</h1><div class="sub">Mô phỏng blockchain cấp phép: nhiều đối tác, một chuỗi chung, dữ liệu riêng</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <button class="iconbtn" id="themeBtn">Sáng/Tối</button>
+</header>
+
+<div class="card">
+  <h2>Tình huống</h2>
+  <p style="margin:0 0 10px" class="small"><b style="color:var(--pA)">A – Công ty Thủy sản Biển Xanh</b> mua 20 tấn thức ăn tôm của <b style="color:var(--pB)">B – Công ty Thức ăn Hải Phong</b>, thuê <b style="color:var(--pC)">C – Vận tải Nam Trung</b> chở hàng, vay vốn <b style="color:var(--pD)">D – Ngân hàng Sao Mai</b> để thanh toán, cuối năm mời <b style="color:var(--pE)">E – Kiểm toán Minh Bạch</b>. Ngoài ra A còn giao dịch với <b>100 đối tác khác</b>. Tên các đơn vị là giả định.</p>
+  <svg class="arch" viewBox="0 0 960 300" role="img" aria-label="Kiến trúc mạng: các bên ký xác nhận, nút đóng khối gom giao dịch, mọi nút nhận khối chứa hash">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
+    <g style="color:var(--muted)" fill="none" stroke="currentColor" stroke-width="1.4">
+      <path d="M232 70 H360" marker-end="url(#ar)"/><path d="M232 150 H360" marker-end="url(#ar)"/><path d="M232 230 H360" marker-end="url(#ar)"/>
+      <path d="M600 150 H700" marker-end="url(#ar)"/>
+    </g>
+    <g font-family="Be Vietnam Pro, sans-serif">
+      <rect x="20" y="40" width="212" height="60" rx="10" fill="none" stroke="var(--pA)" stroke-width="1.6"/><text x="126" y="66" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">A + B ký: Đơn hàng</text><text x="126" y="86" text-anchor="middle" font-size="12" fill="var(--muted)">C, D, E không cần ký</text>
+      <rect x="20" y="120" width="212" height="60" rx="10" fill="none" stroke="var(--pD)" stroke-width="1.6"/><text x="126" y="146" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">A + D ký: Giải ngân</text><text x="126" y="166" text-anchor="middle" font-size="12" fill="var(--muted)">B không cần ký</text>
+      <rect x="20" y="200" width="212" height="60" rx="10" fill="none" stroke="var(--pX)" stroke-width="1.6"/><text x="126" y="226" text-anchor="middle" font-size="14" font-weight="600" fill="var(--ink)">A + Đối tác 057 ký</text><text x="126" y="246" text-anchor="middle" font-size="12" fill="var(--muted)">99 đối tác khác không ký</text>
+      <rect x="370" y="60" width="230" height="180" rx="12" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.6"/>
+      <text x="485" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">3 nút đóng khối</text>
+      <text x="485" y="114" text-anchor="middle" font-size="12" fill="var(--muted)">Hiệp hội ngành · Ngân hàng ·</text>
+      <text x="485" y="130" text-anchor="middle" font-size="12" fill="var(--muted)">Đơn vị hạ tầng dữ liệu</text>
+      <text x="485" y="160" text-anchor="middle" font-size="12.5" fill="var(--ink)">Xếp giao dịch theo thời gian</text>
+      <text x="485" y="180" text-anchor="middle" font-size="12.5" fill="var(--ink)">Gom thành khối, nối hash</text>
+      <text x="485" y="200" text-anchor="middle" font-size="12.5" fill="var(--ink)">Không đọc nội dung riêng</text>
+      <rect x="710" y="60" width="230" height="180" rx="12" fill="none" stroke="var(--muted)" stroke-width="1.4"/>
+      <text x="825" y="92" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink)">Mọi thành viên nhận khối</text>
+      <text x="825" y="122" text-anchor="middle" font-size="12.5" fill="var(--ink)">Bên có quyền: thấy nội dung</text>
+      <text x="825" y="146" text-anchor="middle" font-size="12.5" fill="var(--ink)">Bên khác: chỉ thấy hash</text>
+      <text x="825" y="176" text-anchor="middle" font-size="12" fill="var(--muted)">Sửa 1 con số → hash đổi</text>
+      <text x="825" y="194" text-anchor="middle" font-size="12" fill="var(--muted)">→ bị phát hiện ngay</text>
+    </g>
+  </svg>
+</div>
+
+<div class="grid g2" style="margin-top:14px">
+  <div class="card">
+    <h2>1. Tạo giao dịch theo kịch bản</h2>
+    <div class="small muted" style="margin-bottom:8px">Bấm lần lượt từ trên xuống. Mỗi giao dịch đi qua: <b>đề xuất → các bên liên quan ký → chờ đóng khối → ghi vào chuỗi</b>.</div>
+    <div class="steps" id="steps"></div>
+    <h3>Mô phỏng quy mô lớn</h3>
+    <div class="row"><button class="btn sec" id="massBtn">Sinh 30 giao dịch giữa A và 100 đối tác</button></div>
+    <h3>Nút đóng khối</h3>
+    <div class="row"><button class="btn sec" id="cutBtn">Đóng khối ngay</button><label class="small muted row" style="gap:6px"><input type="checkbox" id="autoCut" checked> Tự đóng khối mỗi 6 giây</label></div>
+  </div>
+  <div class="card">
+    <h2>2. Đang xử lý</h2>
+    <div id="pending" class="tall"></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <div class="row"><h2 style="margin:0">3. Chuỗi khối chung (mọi thành viên giữ bản sao giống hệt)</h2><span class="sp"></span><span class="small muted">Bấm vào khối để xem bên trong</span></div>
+  <div class="chain" id="chain" style="margin-top:10px"></div>
+  <div id="blkDetail"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>4. Mỗi bên nhìn thấy gì?</h2>
+  <div class="seg" id="views"></div>
+  <div class="note small" id="viewNote" style="margin:10px 0"></div>
+  <div class="scroll" id="ledger"></div>
+  <div id="tools"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function sha256(str){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var bytes=new TextEncoder().encode(str),l=bytes.length,n=((l+9+63)>>6)<<6,m=new Uint8Array(n);
+  m.set(bytes);m[l]=0x80;var dv=new DataView(m.buffer);dv.setUint32(n-4,(l*8)>>>0);dv.setUint32(n-8,Math.floor(l*8/4294967296));
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],W=new Int32Array(64);
+  for(var i=0;i<n;i+=64){
+    for(var t=0;t<16;t++)W[t]=dv.getUint32(i+t*4);
+    for(t=16;t<64;t++){var x=W[t-15],y=W[t-2];W[t]=(W[t-16]+(rr(x,7)^rr(x,18)^(x>>>3))+W[t-7]+(rr(y,17)^rr(y,19)^(y>>>10)))|0;}
+    var a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(t=0;t<64;t++){var t1=(h+(rr(e,6)^rr(e,11)^rr(e,25))+((e&f)^(~e&g))+K[t]+W[t])|0;var t2=((rr(a,2)^rr(a,13)^rr(a,22))+((a&b)^(a&c)^(b&c)))|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+b)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+h)|0;
+  }
+  var s='';for(i=0;i<8;i++)s+=(H[i]>>>0).toString(16).padStart(8,'0');return s;
+}
+function zeroBits(hex){var n=0;for(var i=0;i<hex.length;i++){var v=parseInt(hex[i],16);if(v===0){n+=4;continue;}return n+Math.clz32(v)-28;}return n;}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rnd=()=>{const a=new Uint8Array(6);crypto.getRandomValues(a);return [...a].map(x=>x.toString(16).padStart(2,'0')).join('');};
+const fT=t=>new Date(t).toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),3000);}
+const sh=h=>h.slice(0,10)+'…';
+
+const P={A:{name:'A – Thủy sản Biển Xanh',short:'A',col:'var(--pA)'},B:{name:'B – Thức ăn Hải Phong',short:'B',col:'var(--pB)'},
+  C:{name:'C – Vận tải Nam Trung',short:'C',col:'var(--pC)'},D:{name:'D – Ngân hàng Sao Mai',short:'D',col:'var(--pD)'},
+  E:{name:'E – Kiểm toán Minh Bạch',short:'E',col:'var(--pE)'},P057:{name:'Đối tác 057',short:'057',col:'var(--pX)'}};
+const pname=k=>P[k]?P[k].name:('Đối tác '+k.slice(1));
+const pshort=k=>P[k]?P[k].short:k.slice(1);
+const pcol=k=>P[k]?P[k].col:'var(--pX)';
+
+const SCEN=[
+ {key:'s1',label:'Đơn đặt hàng',members:['A','B'],signers:['A','B'],desc:'A đặt mua thức ăn tôm của B',
+  data:{'Bên mua':'A – Thủy sản Biển Xanh','Bên bán':'B – Thức ăn Hải Phong','Hàng hóa':'Thức ăn tôm, 20 tấn','Đơn giá':'25.000.000 đ/tấn','Tổng giá trị':'500.000.000 đ','Giao hàng':'Trong 5 ngày'}},
+ {key:'s2',label:'Phiếu giao hàng',members:['A','B','C'],signers:['B','C','A'],desc:'C chở hàng từ kho B đến trại A; C không thấy giá',
+  data:{'Hàng hóa':'Thức ăn tôm, 20 tấn (800 bao)','Từ':'Kho B – Cam Ranh','Đến':'Trại nuôi A – Vạn Ninh','Xe':'79C-123.45','Tình trạng':'Đủ số lượng, bao bì nguyên vẹn'}},
+ {key:'s3',label:'Hóa đơn GTGT',members:['A','B'],signers:['B','A'],desc:'B xuất hóa đơn cho A',
+  data:{'Số hóa đơn':'0001234','Tiền hàng':'500.000.000 đ','Thuế GTGT 10%':'50.000.000 đ','Tổng thanh toán':'550.000.000 đ','Hạn thanh toán':'30 ngày'}},
+ {key:'s4',label:'Hợp đồng tín dụng, giải ngân',members:['A','D'],signers:['A','D'],desc:'A vay D để trả B; B không biết A vay bao nhiêu',
+  data:{'Bên vay':'A – Thủy sản Biển Xanh','Số tiền vay':'400.000.000 đ','Lãi suất':'7,5%/năm','Kỳ hạn':'6 tháng','Mục đích':'Thanh toán hóa đơn 0001234','Tài sản bảo đảm':'Lô tôm thương phẩm tại trại Vạn Ninh'}},
+ {key:'s5',label:'Lệnh thanh toán',members:['A','B','D'],signers:['A','D'],desc:'D chuyển tiền cho B theo lệnh của A',
+  data:{'Người trả':'A (qua Ngân hàng D)','Người nhận':'B – Thức ăn Hải Phong','Số tiền':'550.000.000 đ','Nguồn':'400.000.000 đ vốn vay + 150.000.000 đ tự có','Tham chiếu':'Hóa đơn 0001234'}},
+ {key:'s6',label:'Bút toán kế toán của A',members:['A'],signers:['A'],desc:'Chỉ A ghi và thấy; chuỗi chỉ giữ hash',
+  data:{'Ghi nhận mua hàng':'Nợ TK 152: 500.000.000 · Nợ TK 133: 50.000.000 / Có TK 331: 550.000.000','Ghi nhận vay':'Nợ TK 112: 400.000.000 / Có TK 341: 400.000.000','Ghi nhận thanh toán':'Nợ TK 331: 550.000.000 / Có TK 112: 550.000.000'}},
+ {key:'s7',label:'Cấp quyền cho kiểm toán',members:['A','E'],signers:['A','E'],desc:'A cho E đọc mọi dữ liệu riêng của A',grant:true,
+  data:{'Phạm vi':'Toàn bộ giao dịch có A tham gia, năm tài chính 2026','Thời hạn quyền':'Đến 31/03/2027','Mục đích':'Kiểm toán báo cáo tài chính'}}
+];
+const ORD=['Hiệp hội ngành','Ngân hàng Sao Mai','Đơn vị hạ tầng dữ liệu'];
+
+const S={txs:[],blocks:[],view:'A',sel:null,grantE:false,done:new Set(),busy:false,tamper:null};
+const GEN={n:0,time:Date.now(),prev:'0'.repeat(64),entries:[],hash:sha256('khoi-nguyen-thuy')};
+S.blocks.push(GEN);
+const collKey=m=>[...m].sort().join('-');
+const canSee=(v,tx)=>tx.members.includes(v)||(v==='E'&&S.grantE&&tx.members.includes('A'));
+
+function makeTx(t,extra){
+  const id='tx'+rnd().slice(0,6);const salt=rnd();
+  const tx={id,label:t.label,members:t.members,signers:t.signers,data:t.data,salt,time:Date.now(),sigs:{},status:'proposed',block:null,grant:!!t.grant,key:t.key,...(extra||{})};
+  tx.hash=sha256(JSON.stringify(tx.data)+'|'+salt);
+  return tx;
+}
+async function runTx(tx){
+  S.txs.push(tx);render();
+  await sleep(500);tx.status='signing';render();
+  for(const s of tx.signers){await sleep(600);tx.sigs[s]=sha256('ky:'+s+':'+tx.hash).slice(0,16);render();}
+  await sleep(300);tx.status='pending';render();
+}
+async function cutBlock(){
+  const pend=S.txs.filter(t=>t.status==='pending');if(!pend.length)return;
+  for(const t of pend)t.status='ordering';render();await sleep(700);
+  const prev=S.blocks[S.blocks.length-1];
+  const entries=pend.map(t=>({id:t.id,coll:collKey(t.members),hash:t.hash,sig:Object.keys(t.sigs).length}));
+  const n=prev.n+1,time=Date.now();
+  const hash=sha256(n+'|'+prev.hash+'|'+time+'|'+entries.map(e=>e.id+':'+e.hash).join(','));
+  S.blocks.push({n,time,prev:prev.hash,entries,hash,orders:2+Math.round(Math.random())});
+  for(const t of pend){t.status='committed';t.block=n;if(t.grant)S.grantE=true;}
+  S.sel=n;render();
+}
+setInterval(()=>{if($('autoCut').checked)cutBlock();},6000);
+
+async function runScenario(i){
+  const t=SCEN[i];if(S.done.has(t.key))return;S.done.add(t.key);renderSteps();
+  await runTx(makeTx(t));
+}
+async function mass(){
+  $('massBtn').disabled=true;
+  const items=['Thức ăn bổ sung','Chế phẩm sinh học','Bao bì','Đá lạnh','Dịch vụ thú y','Điện năng','Lưới, bạt','Vận chuyển nội địa'];
+  const jobs=[];
+  for(let i=0;i<30;i++){
+    const p=i%10===3?'P057':'P'+String(1+Math.floor(Math.random()*100)).padStart(3,'0');
+    const v=(5+Math.floor(Math.random()*95))*1e6;
+    const t={label:'Hóa đơn '+items[i%items.length].toLowerCase(),members:['A',p],signers:['A',p],
+      data:{'Bên mua':'A – Thủy sản Biển Xanh','Bên bán':'Đối tác '+p.slice(1),'Hàng hóa/dịch vụ':items[i%items.length],'Giá trị':v.toLocaleString('vi-VN')+' đ'}};
+    jobs.push(runTx(makeTx(t)));await sleep(120);
+  }
+  await Promise.all(jobs);$('massBtn').disabled=false;toast('Đã gửi 30 giao dịch. Mỗi giao dịch chỉ cần A và đúng một đối tác ký.');
+}
+
+/* ---------- render ---------- */
+function chip(k){return `<span class="chip"><span class="dot" style="background:${pcol(k)}"></span>${esc(pshort(k))}</span>`;}
+function renderSteps(){
+  $('steps').innerHTML=SCEN.map((t,i)=>`<div class="step ${S.done.has(t.key)?'done':''}"><div class="n">${S.done.has(t.key)?'✓':i+1}</div><div class="t"><b>${esc(t.label)}</b><span>${esc(t.desc)}</span><div class="row" style="margin-top:4px;gap:4px"><span class="small muted">Thấy nội dung:</span>${t.members.map(chip).join('')}<span class="small muted" style="margin-left:6px">Cần ký:</span>${t.signers.map(chip).join('')}</div></div><button class="btn ${S.done.has(t.key)?'sec':''}" data-s="${i}" ${S.done.has(t.key)?'disabled':''}>${S.done.has(t.key)?'Đã gửi':'Gửi'}</button></div>`).join('');
+}
+function phase(tx){const order=['proposed','signing','pending','ordering','committed'];const names=['Đề xuất','Các bên ký','Chờ đóng khối','Nút đóng khối xếp thứ tự','Đã ghi vào khối'];
+  const i=order.indexOf(tx.status);return `<div class="flow">${names.map((n,j)=>`<span class="ph ${j<i||tx.status==='committed'?'ok':j===i?'on':''}">${n}</span>`).join('<span class="muted">›</span>')}</div>`;}
+function renderPending(){
+  const list=S.txs.filter(t=>t.status!=='committed').slice(-12).reverse();
+  const recent=S.txs.filter(t=>t.status==='committed').slice(-3).reverse();
+  const card=t=>`<div class="item"><div class="row"><b style="font-size:14px">${esc(t.label)}</b><span class="mono muted">${t.id}</span><span class="sp"></span>${t.status==='committed'?`<span class="chip ok">Khối #${t.block}</span>`:''}</div>
+    <div style="margin:6px 0">${phase(t)}</div>
+    <div class="row small" style="gap:4px"><span class="muted">Chữ ký:</span>${t.signers.map(s=>`<span class="chip ${t.sigs[s]?'ok':'wait'}"><span class="dot" style="background:${pcol(s)}"></span>${esc(pshort(s))} ${t.sigs[s]?'đã ký':'đang chờ'}</span>`).join('')}</div>
+    <div class="small muted" style="margin-top:4px">Hash dữ liệu riêng: <span class="mono">${sh(t.hash)}</span></div></div>`;
+  $('pending').innerHTML=(list.length?list.map(card).join(''):'<div class="empty">Không có giao dịch đang xử lý.</div>')+(recent.length?`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Vừa ghi xong</h3>`+recent.map(card).join(''):'');
+}
+function renderChain(){
+  $('chain').innerHTML=S.blocks.map(b=>`<div class="blk ${S.sel===b.n?'sel':''}" data-b="${b.n}"><b>Khối #${b.n}</b><div class="mono">${sh(b.hash)}</div><div class="muted">${b.n?b.entries.length+' giao dịch':'Khối nguyên thủy'}</div><div class="muted">${fT(b.time)}</div>${b.n?`<div class="muted">Trỏ về: <span class="mono">${b.prev.slice(0,6)}…</span></div>`:''}</div>`).join('');
+  const b=S.blocks.find(x=>x.n===S.sel);
+  if(!b||!b.n){$('blkDetail').innerHTML='<div class="small muted">Khối được gom <b>theo thời gian</b>, không theo đối tác: một khối có thể chứa giao dịch của nhiều cặp khác nhau.</div>';return;}
+  $('blkDetail').innerHTML=`<div class="note small" style="margin-bottom:8px">Khối #${b.n} được ${b.orders}/3 nút đóng khối đồng thuận (${ORD.join(', ')}). <b>Đây là nội dung mọi thành viên đều nhận được</b>: chỉ có mã giao dịch, tên bộ dữ liệu riêng và hash, không có số tiền hay hàng hóa.</div>
+  <div class="scroll"><table class="tbl"><tr><th>Mã giao dịch</th><th>Bộ dữ liệu riêng (ai được đọc)</th><th>Hash nội dung</th><th>Số chữ ký</th></tr>${b.entries.map(e=>`<tr><td class="mono">${e.id}</td><td>${e.coll.split('-').map(chip).join(' ')}</td><td class="mono">${e.hash.slice(0,24)}…</td><td>${e.sig}</td></tr>`).join('')}</table></div>`;
+}
+const VIEWS=['A','B','C','D','E','P057'];
+function renderViews(){
+  $('views').innerHTML=VIEWS.map(v=>`<button data-v="${v}" class="${S.view===v?'on':''}"><span class="dot" style="background:${pcol(v)}"></span>${esc(pname(v))}</button>`).join('');
+  const notes={A:'A là doanh nghiệp trung tâm: thấy nội dung mọi giao dịch mình tham gia, kể cả bút toán nội bộ.',B:'B chỉ thấy giao dịch với A (đơn hàng, giao hàng, hóa đơn, thanh toán). B không biết A vay ngân hàng bao nhiêu, không thấy sổ kế toán của A.',
+    C:'C chỉ thấy phiếu giao hàng: biết chở gì, từ đâu đến đâu, nhưng không biết giá trị lô hàng.',D:'Ngân hàng D thấy hợp đồng tín dụng và lệnh thanh toán, không thấy đơn giá mua hàng giữa A và B.',
+    E:S.grantE?'A đã cấp quyền: E đọc được mọi dữ liệu riêng có A tham gia và tự kiểm tra hash với chuỗi.':'E chưa được cấp quyền: hiện chỉ thấy hash. Hãy gửi bước 7 “Cấp quyền cho kiểm toán”.',
+    P057:'Đối tác 057 là một trong 100 đối tác: giữ cùng chuỗi khối, nhưng chỉ đọc được giao dịch của chính mình với A; mọi giao dịch khác chỉ là hash.'};
+  $('viewNote').innerHTML=notes[S.view];
+}
+function renderLedger(){
+  const v=S.view;const rows=S.txs.filter(t=>t.status==='committed');
+  if(!rows.length){$('ledger').innerHTML='<div class="empty">Chưa có giao dịch nào được ghi vào chuỗi. Hãy gửi giao dịch ở mục 1.</div>';$('tools').innerHTML='';return;}
+  const seen=rows.filter(t=>canSee(v,t)).length;
+  $('ledger').innerHTML=`<div class="small muted" style="margin-bottom:6px">${esc(pname(v))} đọc được nội dung <b>${seen}/${rows.length}</b> giao dịch trên chuỗi; phần còn lại chỉ thấy hash.</div><div class="tall"><table class="tbl"><tr><th>Khối</th><th>Giao dịch</th><th>Nội dung ${esc(pname(v))} nhìn thấy</th></tr>${rows.slice().reverse().map(t=>{
+    const ok=canSee(v,t);
+    return `<tr><td>#${t.block}</td><td><div class="mono">${t.id}</div><div>${t.members.map(chip).join(' ')}</div></td><td>${ok?`<div style="font-weight:600;margin-bottom:4px">${esc(t.label)}</div><dl class="kv">${Object.entries(t.data).map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl>`:`<div class="lockbox"><span>🔒</span><div>Dữ liệu riêng của ${t.members.map(m=>esc(pshort(m))).join(', ')}<br><span class="mono">hash ${t.hash.slice(0,24)}…</span></div></div>`}</td></tr>`;}).join('')}</table></div>`;
+  renderTools();
+}
+function renderTools(){
+  const v=S.view,el=$('tools');if(el.contains(document.activeElement)&&el.dataset.tv===v)return;el.dataset.tv=v;const mine=S.txs.filter(t=>t.status==='committed'&&t.members.includes('A'));
+  if(v==='A'&&mine.length){
+    const cur=S.tamper&&mine.find(t=>t.id===S.tamper.id)?S.tamper:{id:mine[0].id,field:Object.keys(mine[0].data)[0]};S.tamper=cur;
+    const tx=mine.find(t=>t.id===cur.id);
+    el.innerHTML=`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:16px">Thử gian lận: A sửa dữ liệu sau khi đã ghi</h3>
+    <div class="row"><select id="tmTx">${mine.map(t=>`<option value="${t.id}" ${t.id===cur.id?'selected':''}>${esc(t.label)} (${t.id})</option>`).join('')}</select>
+    <select id="tmField">${Object.keys(tx.data).map(k=>`<option ${k===cur.field?'selected':''}>${esc(k)}</option>`).join('')}</select>
+    <input id="tmVal" value="${esc(tx.data[cur.field])}" style="flex:1;min-width:200px"><button class="btn sec" id="tmBtn">Kiểm tra với chuỗi</button></div><div id="tmRes" class="small" style="margin-top:8px">${S.tmMsg||''}</div>`;
+  }else if(v==='E'){
+    el.innerHTML=`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:16px">Kiểm toán tự động</h3><button class="btn" id="audBtn" ${S.grantE?'':'disabled'}>Đối chiếu toàn bộ dữ liệu của A với hash trên chuỗi</button><div id="audRes" class="small" style="margin-top:8px">${S.audMsg||''}</div>`;
+  }else el.innerHTML='';
+}
+function render(){renderPending();renderChain();renderViews();renderLedger();}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-s]');if(s){runScenario(+s.dataset.s);return;}
+  const b=e.target.closest('[data-b]');if(b){S.sel=+b.dataset.b;renderChain();return;}
+  const v=e.target.closest('[data-v]');if(v){S.view=v.dataset.v;renderViews();renderLedger();return;}
+  if(e.target.id==='tmBtn'){
+    const tx=S.txs.find(t=>t.id===$('tmTx').value);const f=$('tmField').value;const val=$('tmVal').value;
+    const data={...tx.data,[f]:val};const h=sha256(JSON.stringify(data)+'|'+tx.salt);const same=h===tx.hash;
+    S.tmMsg=same?'<span class="chip ok">Khớp</span> Dữ liệu chưa bị thay đổi.':`<span class="chip bad">Không khớp</span> Hash sau khi sửa: <span class="mono">${h.slice(0,24)}…</span> khác hash trên khối #${tx.block}: <span class="mono">${tx.hash.slice(0,24)}…</span>. ${tx.members.length>1?'Đối tác '+tx.members.filter(m=>m!=='A').map(pshort).join(', ')+' và kiểm toán viên sẽ phát hiện ngay. ':'Kiểm toán viên sẽ phát hiện khi đối chiếu. '}Muốn che giấu, A phải sửa cả khối #${tx.block} và mọi khối sau trên máy của tất cả thành viên.`;$('tmRes').innerHTML=S.tmMsg;
+  }
+  if(e.target.id==='audBtn'){
+    const mine=S.txs.filter(t=>t.status==='committed'&&t.members.includes('A'));
+    const ok=mine.filter(t=>sha256(JSON.stringify(t.data)+'|'+t.salt)===S.blocks.find(b=>b.n===t.block).entries.find(x=>x.id===t.id).hash).length;
+    S.audMsg=`<span class="chip ok">${ok}/${mine.length} khớp</span> Kiểm toán viên băm lại từng chứng từ gốc mà A cung cấp và so với hash đã khóa trên chuỗi. Không cần gửi thư xác nhận công nợ cho từng đối tác: chữ ký của đối tác đã nằm sẵn trong giao dịch.`;$('audRes').innerHTML=S.audMsg;
+  }
+  if(e.target.id==='massBtn')mass();
+  if(e.target.id==='cutBtn')cutBlock();
+  if(e.target.id==='themeBtn'){const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=cur==='dark'?'light':'dark';}
+});
+document.addEventListener('change',e=>{
+  if(e.target.id==='tmTx'){const tx=S.txs.find(t=>t.id===e.target.value);S.tamper={id:tx.id,field:Object.keys(tx.data)[0]};S.tmMsg='';$('tools').dataset.tv='';renderTools();}
+  if(e.target.id==='tmField'){S.tamper.field=e.target.value;const tx=S.txs.find(t=>t.id===S.tamper.id);$('tmVal').value=tx.data[e.target.value];S.tmMsg='';$('tmRes').innerHTML='';}
+});
+renderSteps();render();
+</script>
+</body>
+</html>
