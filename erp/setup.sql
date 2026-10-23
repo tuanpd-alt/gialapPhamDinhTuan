@@ -38,8 +38,10 @@ create table if not exists erp_doc(
   primary key(co,id)
 );
 create index if not exists erp_doc_upd on erp_doc(co, updated_at);
+-- Kiêm nhiệm / giao quyền: mã vai trò (KHO, MH, KD, KT, KTT) hoặc quyền lẻ T:<loại chứng từ> / T:AP (phê duyệt)
+alter table erp_user add column if not exists extra text[] not null default '{}';
 create table if not exists erp_cfg(k text primary key, v jsonb not null);
-insert into erp_cfg values ('main','{"tol":5,"poAuto":0,"credit":true}') on conflict do nothing;
+insert into erp_cfg values ('main','{"tol":5,"poAuto":0,"credit":true,"selfApprove":false}') on conflict do nothing;
 insert into erp_cfg values ('epoch','{}') on conflict do nothing;
 
 -- Không ai đọc/ghi bảng trực tiếp qua API; mọi truy cập đi qua các hàm bên dưới.
@@ -92,6 +94,22 @@ begin
   return u;
 end $$;
 
+-- Vai trò dùng để lập loại chứng từ: vai trò chính, vai trò kiêm nhiệm, hoặc quyền lẻ được giao
+create or replace function erp_type_role(p_type text) returns text language sql immutable as $$
+  select case p_type when 'PR' then 'KHO' when 'GR' then 'KHO' when 'DL' then 'KHO' when 'PO' then 'MH' when 'SO' then 'KD'
+                     when 'IV' then 'KT' when 'PAY' then 'KT' when 'BI' then 'KT' when 'RC' then 'KT' end
+$$;
+create or replace function erp_role_for(u erp_user, p_type text) returns text language sql stable as $$
+  select case
+    when u.role = erp_type_role(p_type) then u.role
+    when erp_type_role(p_type) = any(coalesce(u.extra,'{}')) then erp_type_role(p_type)
+    when ('T:' || p_type) = any(coalesce(u.extra,'{}')) then erp_type_role(p_type)
+  end
+$$;
+create or replace function erp_can_approve(u erp_user) returns boolean language sql stable as $$
+  select u.role = 'KTT' or 'KTT' = any(coalesce(u.extra,'{}')) or 'T:AP' = any(coalesce(u.extra,'{}'))
+$$;
+
 create or replace function erp_balance(p_co text, p_acc text) returns numeric language sql stable
 set search_path = public, extensions as $$
   select (case p_acc when '1111' then 200000000 when '1121' then 3000000000 else 0 end)::numeric
@@ -102,7 +120,7 @@ $$;
 
 create or replace function erp_user_json(u erp_user) returns jsonb language sql stable as $$
   select jsonb_build_object('id',u.id,'username',u.username,'full_name',u.full_name,'is_admin',u.is_admin,
-    'co',u.co,'role',u.role,'grp',u.grp,'must_change',u.must_change)
+    'co',u.co,'role',u.role,'extra',coalesce(to_jsonb(u.extra),'[]'::jsonb),'grp',u.grp,'must_change',u.must_change)
 $$;
 
 -- Chỉ chạy được trong SQL Editor (không mở cho trình duyệt)
@@ -165,10 +183,10 @@ begin
   end if;
   if u.is_admin then
     select coalesce(jsonb_agg(jsonb_build_object('id',x.id,'username',x.username,'full_name',x.full_name,'is_admin',x.is_admin,
-       'co',x.co,'role',x.role,'grp',x.grp,'must_change',x.must_change,'last_login',x.last_login) order by x.username), '[]'::jsonb)
+       'co',x.co,'role',x.role,'extra',coalesce(to_jsonb(x.extra),'[]'::jsonb),'grp',x.grp,'must_change',x.must_change,'last_login',x.last_login) order by x.username), '[]'::jsonb)
       into v_users from erp_user x;
   else
-    select coalesce(jsonb_agg(jsonb_build_object('id',x.id,'full_name',x.full_name,'is_admin',x.is_admin,'co',x.co,'role',x.role)), '[]'::jsonb)
+    select coalesce(jsonb_agg(jsonb_build_object('id',x.id,'full_name',x.full_name,'is_admin',x.is_admin,'co',x.co,'role',x.role,'extra',coalesce(to_jsonb(x.extra),'[]'::jsonb))), '[]'::jsonb)
       into v_users from erp_user x where x.is_admin or x.co = u.co;
   end if;
   return jsonb_build_object(
@@ -202,8 +220,15 @@ begin
     when 'PO' then array['MH'] when 'SO' then array['KD']
     when 'IV' then array['KT'] when 'PAY' then array['KT'] when 'BI' then array['KT'] when 'RC' then array['KT'] end;
   if allowed is null then raise exception 'Loại chứng từ % không tồn tại.', p_type; end if;
-  if r <> 'GV' and not (r = any(allowed)) then
-    raise exception 'Vai trò % không được lập loại chứng từ này (SU53). Bất kiêm nhiệm.', r;
+  if u.is_admin then
+    if r <> 'GV' and not (r = any(allowed)) then
+      raise exception 'Vai trò % không được lập loại chứng từ này (SU53).', r;
+    end if;
+  else
+    r := erp_role_for(u, p_type);
+    if r is null then
+      raise exception 'Bạn chưa được giao quyền lập loại chứng từ này (SU53). Nhờ giảng viên giao kiêm nhiệm nếu nhóm thiếu người.';
+    end if;
   end if;
 
   st := b->>'status';
@@ -262,7 +287,7 @@ begin
     r := coalesce(nullif(p_act_role,''), 'GV');
     if r not in ('GV','KTT') then raise exception 'Hãy chọn vai trò Giảng viên hoặc Kế toán trưởng để phê duyệt.'; end if;
   else
-    if u.role is distinct from 'KTT' then raise exception 'Chỉ Kế toán trưởng được phê duyệt chứng từ.'; end if;
+    if not erp_can_approve(u) then raise exception 'Chỉ Kế toán trưởng hoặc người được giao quyền phê duyệt mới được duyệt chứng từ.'; end if;
     if p_co is distinct from u.co then raise exception 'Không được phê duyệt chứng từ của công ty khác.'; end if;
     r := 'KTT';
   end if;
@@ -271,7 +296,8 @@ begin
   if not ((d.type in ('PR','PO','PAY','RC') and d.status = 'pending') or (d.type in ('IV','SO') and d.status = 'blocked')) then
     raise exception 'Chứng từ không còn ở trạng thái chờ xử lý.';
   end if;
-  if d.data->>'by' = u.id::text and not u.is_admin then
+  if d.data->>'by' = u.id::text and not u.is_admin
+     and not coalesce((select (v->>'selfApprove')::boolean from erp_cfg where k = 'main'), false) then
     raise exception 'Vi phạm bất kiêm nhiệm: không được phê duyệt chứng từ do chính mình lập.';
   end if;
   if not p_ok and coalesce(trim(p_note),'') = '' then raise exception 'Hãy ghi lý do từ chối.'; end if;
@@ -298,7 +324,8 @@ begin
   end if;
   nd := nd || jsonb_build_object('status', ns, 'decBy', u.id::text, 'decAt', ts,
         'hist', coalesce(nd->'hist','[]'::jsonb) || jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,
-                 'act', case when p_ok then 'approve' else 'reject' end, 'note', coalesce(p_note,''))));
+                 'act', case when p_ok then 'approve' else 'reject' end, 'note', coalesce(p_note,''),
+                 'self', d.data->>'by' = u.id::text)));
   update erp_doc set status = ns, data = nd, updated_at = clock_timestamp() where co = p_co and id = p_id;
   return jsonb_build_object('status', ns);
 end $$;
@@ -336,13 +363,24 @@ end $$;
 
 create or replace function erp_admin_assign(p_token text, p_rows jsonb) returns int language plpgsql
 security definer set search_path = public, extensions as $$
-declare u erp_user; e jsonb; c text; r text; k int := 0;
+declare u erp_user; e jsonb; c text; r text; k int := 0; ex text[]; t text;
 begin
   u := erp_require_admin(p_token);
   for e in select * from jsonb_array_elements(p_rows) loop
     c := nullif(e->>'co',''); r := nullif(e->>'role','');
     if c is not null and not (c = any(erp_cos())) then raise exception 'Mã công ty % không hợp lệ.', c; end if;
     if r is not null and r not in ('KHO','MH','KD','KT','KTT') then raise exception 'Vai trò % không hợp lệ.', r; end if;
+    if e ? 'extra' and jsonb_typeof(e->'extra') = 'array' then
+      select coalesce(array_agg(distinct x), '{}') into ex from jsonb_array_elements_text(e->'extra') x where x is distinct from r;
+      foreach t in array ex loop
+        if t not in ('KHO','MH','KD','KT','KTT','T:PR','T:PO','T:GR','T:IV','T:PAY','T:SO','T:DL','T:BI','T:RC','T:AP') then
+          raise exception 'Quyền kiêm nhiệm % không hợp lệ.', t; end if;
+      end loop;
+      if c is null then ex := '{}'; end if;
+      update erp_user set extra = ex where id = (e->>'id')::uuid and not is_admin;
+    elsif c is null or r is null then
+      update erp_user set extra = '{}' where id = (e->>'id')::uuid and not is_admin;
+    end if;
     update erp_user set co = c, role = r where id = (e->>'id')::uuid and not is_admin;
     k := k + 1;
   end loop;
@@ -364,7 +402,8 @@ begin
   u := erp_require_admin(p_token);
   nv := jsonb_build_object('tol', greatest(0, least(50, coalesce((p_cfg->>'tol')::numeric, 5))),
                           'poAuto', greatest(0, coalesce((p_cfg->>'poAuto')::numeric, 0)),
-                          'credit', coalesce((p_cfg->>'credit')::boolean, true));
+                          'credit', coalesce((p_cfg->>'credit')::boolean, true),
+                          'selfApprove', coalesce((p_cfg->>'selfApprove')::boolean, false));
   update erp_cfg set v = nv where k = 'main';
   return nv;
 end $$;
@@ -387,7 +426,7 @@ declare f text;
 begin
   foreach f in array array[
     'erp_iso()','erp_cos()','erp_genpw()','erp_auth(text)','erp_require_admin(text)','erp_balance(text,text)',
-    'erp_user_json(erp_user)','erp_create_admin(text,text,text)'] loop
+    'erp_user_json(erp_user)','erp_create_admin(text,text,text)','erp_type_role(text)','erp_role_for(erp_user,text)','erp_can_approve(erp_user)'] loop
     execute 'revoke execute on function ' || f || ' from public';
     if exists (select 1 from pg_roles where rolname='anon') then execute 'revoke execute on function ' || f || ' from anon'; end if;
     if exists (select 1 from pg_roles where rolname='authenticated') then execute 'revoke execute on function ' || f || ' from authenticated'; end if;

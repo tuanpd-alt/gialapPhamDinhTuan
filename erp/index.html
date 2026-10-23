@@ -119,6 +119,8 @@ table.t{border-collapse:collapse;width:100%;font-size:13px}
 .t th.num{text-align:right}
 .t input,.t select{width:100%;min-width:90px}
 .t .w-mat{min-width:220px}
+.t input[type=checkbox]{width:auto;min-width:0;margin:0 6px 0 0;vertical-align:-2px}
+form[data-form="EXTRA"] label{display:flex;align-items:baseline;gap:4px;font-size:13px}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 
 /* status */
@@ -447,13 +449,34 @@ function dbErr(e){
   return (e&&e.message)||'Không lưu được, hãy thử lại.';
 }
 /* ============ AUTHORIZATION ============ */
+const TC_DOC = {'ME51N':'PR','ME21N':'PO','MIGO':'GR','MIRO':'IV','F-53':'PAY','VA01':'SO','VL01N':'DL','VF01':'BI','F-28':'RC'};
+const TYPE_ROLE = {PR:'KHO',GR:'KHO',DL:'KHO',PO:'MH',SO:'KD',IV:'KT',PAY:'KT',BI:'KT',RC:'KT'};
+const GRANTS = ['PR','PO','GR','IV','PAY','SO','DL','BI','RC','AP'];
+const grantName = g => g==='AP' ? 'Phê duyệt chứng từ' : TYPES[g].n+' ('+TYPES[g].tc+')';
+// Mức xung đột khi một người giữ cả hai vai trò (0 = chấp nhận được, 3 = nghiêm trọng)
+const CONFLICT = {'KHO|MH':2,'KHO|KT':3,'KHO|KD':1,'MH|KT':2,'KD|KT':2,'MH|KD':0,'KHO|KTT':3,'MH|KTT':3,'KD|KTT':3,'KT|KTT':3};
+const conflictOf = (a,b) => CONFLICT[a+'|'+b] ?? CONFLICT[b+'|'+a] ?? 0;
+const CONFLICT_WHY = {'KHO|MH':'tự đặt mua và tự nhận hàng','KHO|KT':'vừa giữ hàng vừa ghi sổ','KHO|KD':'vừa bán vừa xuất kho','MH|KT':'vừa đặt mua vừa ghi nhận công nợ phải trả','KD|KT':'vừa bán vừa lập hóa đơn, thu tiền','KHO|KTT':'vừa lập vừa duyệt chứng từ kho','MH|KTT':'vừa lập vừa duyệt đơn mua','KD|KTT':'vừa bán vừa gỡ khóa tín dụng','KT|KTT':'vừa lập vừa duyệt phiếu chi, phiếu thu'};
+const conflictWhy = (a,b) => CONFLICT_WHY[a+'|'+b] || CONFLICT_WHY[b+'|'+a] || '';
+function userRoles(u){ if(!u||!u.role) return []; return [u.role].concat((u.extra||[]).filter(x=>ROLES[x]&&x!==u.role)); }
+function userGrants(u){ return ((u&&u.extra)||[]).filter(x=>x.startsWith('T:')).map(x=>x.slice(2)); }
+function myRoles(){ if(S.isAdmin) return S.role==='GV'?ROLE_ORDER.slice():[S.role]; return userRoles(S.me); }
+function myGrants(){ return S.isAdmin?[]:userGrants(S.me); }
+function canApprove(){ return myRoles().includes('KTT') || myGrants().includes('AP'); }
 function allowed(tc){
   const t = TC[tc]; if(!t) return false;
   if(t.admin) return S.isAdmin;
   if(S.role==='GV') return true;
   if(t.r===ALL) return true;
-  return Array.isArray(t.r)&&t.r.includes(S.role);
+  if('ap' in t) return canApprove();
+  const dt = TC_DOC[tc];
+  if(dt) return myRoles().includes(TYPE_ROLE[dt]) || myGrants().includes(dt);
+  const rs = myRoles();
+  return Array.isArray(t.r)&&t.r.some(r=>rs.includes(r));
 }
+function rolesLabel(u){ const rs=userRoles(u); if(!rs.length) return '—'; const g=userGrants(u);
+  return roleName(rs[0]) + (rs.length>1?' · kiêm '+rs.slice(1).map(roleName).join(', '):'') + (g.length?' · được giao: '+g.map(x=>x==='AP'?'phê duyệt':TYPES[x].tc).join(', '):''); }
+function userConflicts(u){ const rs=userRoles(u), out=[]; for(let i=0;i<rs.length;i++) for(let j=i+1;j<rs.length;j++){ const sc=conflictOf(rs[i],rs[j]); if(sc>=2) out.push({a:rs[i],b:rs[j],sc}); } return out; }
 function rolesFor(tc){ const t=TC[tc]; if(!t) return ''; if(t.admin) return 'Giảng viên'; if(t.r===ALL) return 'Tất cả'; return t.r.map(roleName).join(', '); }
 
 /* ============ STATUS LABELS ============ */
@@ -537,6 +560,7 @@ function isFormScreen(){
   if(LIVE_FORM[S.screen]) return true;
   if(['ME21N','MIGO','MIRO','F-53','VL01N','VF01','F-28'].includes(S.screen)&&S.param) return true;
   if(S.screen==='SPRO'||S.screen==='PW') return true;
+  if(S.screen==='SU01'&&S.editExtra) return true;
   return false;
 }
 function render(force,keepScroll){
@@ -559,7 +583,8 @@ function renderCtx(){
     h += `<select id="sel-co" data-chg="co" aria-label="Công ty">${COS.map(c=>`<option value="${c}" ${c===S.co?'selected':''}>${c} · Nhóm ${+c.slice(1)}</option>`).join('')}</select>`;
     h += `<select id="sel-role" data-chg="role" aria-label="Thao tác với vai trò">${['GV',...ROLE_ORDER].map(r=>`<option value="${r}" ${r===S.role?'selected':''}>${r==='GV'?'Giảng viên – toàn quyền':'Thao tác như: '+ROLES[r].n}</option>`).join('')}</select>`;
   } else if(S.co){
-    h += `<span class="rolechip"><span class="dot" style="background:var(--r-${S.role})"></span>${esc(roleName(S.role))}</span><span class="who">${esc(S.co)} · ${esc(coName(S.co))}</span>`;
+    const xr=myRoles().slice(1), xg=myGrants();
+    h += `<span class="rolechip"><span class="dot" style="background:var(--r-${S.role})"></span>${esc(roleName(S.role))}${xr.length||xg.length?` <span style="font-weight:500;color:var(--shell-mute)">+ kiêm ${xr.length+xg.length}</span>`:''}</span><span class="who">${esc(S.co)} · ${esc(coName(S.co))}</span>`;
   }
   h += `<span class="who"><b>${esc(S.me.full_name)}</b> <span class="mono">${esc(S.me.username)}</span></span>`;
   if(!S.online) h += `<span class="rolechip" style="background:var(--bad)">Mất kết nối</span>`;
@@ -618,7 +643,7 @@ function screenHTML(){
 function scrNoAuth(tc){
   return `<div class="wrap">${head('SU53','Không đủ quyền thực hiện giao dịch','')}
   <div class="panel"><p style="margin-top:0">Vai trò hiện tại <b>${esc(roleName(S.role))}</b> không được cấp quyền giao dịch <code>${esc(tc)}</code> – ${esc(TC[tc].t)}.</p>
-  <dl class="kv"><dt>Vai trò được phép</dt><dd>${esc(rolesFor(tc))}</dd><dt>Nguyên tắc kiểm soát</dt><dd>Bất kiêm nhiệm: người lập, người phê duyệt, người giữ tài sản và người ghi sổ phải là những người khác nhau.</dd></dl>
+  <dl class="kv"><dt>Vai trò được phép</dt><dd>${esc(rolesFor(tc))}</dd><dt>Quyền của bạn</dt><dd>${esc(S.isAdmin?roleName(S.role):rolesLabel(S.me))}</dd><dt>Nguyên tắc kiểm soát</dt><dd>Bất kiêm nhiệm: người lập, người phê duyệt, người giữ tài sản và người ghi sổ phải là những người khác nhau. Nhóm thiếu người thì giảng viên có thể giao kiêm nhiệm trong SU01.</dd></dl>
   <p class="small muted">Xem toàn bộ ma trận ở giao dịch <button class="linkbtn" data-go="PFCG">PFCG</button>.</p></div></div>`;
 }
 function scrWaiting(){
@@ -655,7 +680,7 @@ const P2P = [['ME51N','KHO','Đề nghị mua',c=>null],['ME54N','KTT','Duyệt 
 const O2C = [['VA01','KD','Đơn bán hàng',c=>null],['VKM3','KTT','Gỡ khóa tín dụng',c=>c.Q.ap.SO.length],['VL01N','KHO','Xuất kho giao hàng',c=>c.Q.soForDL.length],['VF01','KT','Lập hóa đơn GTGT',c=>c.Q.dlForBI.length],
   ['F-28','KT','Ghi nhận thu tiền',c=>c.Q.biForRC.length],['ZFAP','KTT','Duyệt thu',c=>c.Q.ap.RC.length]];
 function lane(steps,c){
-  return `<div class="lane">${steps.map((s,i)=>{ const q=s[3](c); const mine=S.role===s[1];
+  return `<div class="lane">${steps.map((s,i)=>{ const q=s[3](c); const mine=S.role!=='GV'&&(myRoles().includes(s[1])||(s[1]==='KTT'&&canApprove()));
     return (i?'<span class="arrow" aria-hidden="true">→</span>':'')+`<button class="step ${mine?'mine':''}" style="--rc:var(--r-${s[1]})" data-go="${s[0]}">${q!=null?`<span class="q ${q?'has':''}">${q}</span>`:''}<code>${s[0]}</code><span class="s">${esc(s[2])}</span><span class="r">${esc(ROLES[s[1]].n)}</span></button>`; }).join('')}</div>`;
 }
 function scrHome(){
@@ -674,7 +699,7 @@ function scrHome(){
   const mine = c.L.filter(d=>d.by===S.uid).slice(-6).reverse();
   const myRej = c.L.filter(d=>d.by===S.uid&&d.status==='rejected');
   return `<div class="wrap">
-  <div class="ph"><div><div class="tc">${esc(S.co)} · ${esc(coName(S.co))}</div><h1>Xin chào${me?', '+esc(me):''}</h1><p>Vai trò: <b>${esc(roleName(S.role))}</b>${S.role&&ROLES[S.role]?' — '+esc(ROLES[S.role].d):''}. Gõ mã giao dịch ở ô phía trên hoặc chọn bước trong sơ đồ quy trình.</p></div></div>
+  <div class="ph"><div><div class="tc">${esc(S.co)} · ${esc(coName(S.co))}</div><h1>Xin chào${me?', '+esc(me):''}</h1><p>Vai trò: <b>${esc(S.isAdmin?roleName(S.role):rolesLabel(S.me))}</b>${S.role&&ROLES[S.role]&&myRoles().length<2&&!myGrants().length?' — '+esc(ROLES[S.role].d):''}. Gõ mã giao dịch ở ô phía trên hoặc chọn bước trong sơ đồ quy trình.</p></div></div>
   ${myRej.length?`<div class="note bad"><b>${myRej.length} chứng từ của bạn bị từ chối.</b> Mở chứng từ để xem lý do rồi lập lại: ${myRej.map(d=>docLink(S.co,d)).join(', ')}</div>`:''}
   ${tiles.length?`<div><h3 class="sec-title">Việc cần làm</h3><div class="tiles">${tiles.join('')}</div></div>`:''}
   <div class="panel"><h2>Sơ đồ quy trình của công ty</h2>
@@ -914,7 +939,7 @@ function jeTable(d){
   <tfoot><tr><td colspan="3">Cộng</td><td class="num">${fm(sum(d.je,j=>j.dr||0))}</td><td class="num">${fm(sum(d.je,j=>j.cr||0))}</td></tr></tfoot></table></div>`;
 }
 const ACTN = {create:'Lập chứng từ',approve:'Phê duyệt',reject:'Từ chối'};
-function histList(d){ return `<ul class="hist">${(d.hist||[]).map(h=>`<li><time>${vdt(h.at)}</time><div><b>${esc(ACTN[h.act]||h.act)}</b> — ${esc(nameOf(h.by))} <span class="small muted">(${esc(roleName(h.role))})</span>${h.note?`<div class="small">${esc(h.note)}</div>`:''}</div></li>`).join('')}</ul>`; }
+function histList(d){ return `<ul class="hist">${(d.hist||[]).map(h=>`<li><time>${vdt(h.at)}</time><div><b>${esc(ACTN[h.act]||h.act)}</b>${h.self?' <span class="chip c-pending">tự duyệt do kiêm nhiệm</span>':''} — ${esc(nameOf(h.by))} <span class="small muted">(${esc(roleName(h.role))})</span>${h.note?`<div class="small">${esc(h.note)}</div>`:''}</div></li>`).join('')}</ul>`; }
 function nextSteps(c,d){
   const b=[]; const B=(tc,p,l)=>{ if(allowed(tc)) b.push(`<button class="btn sm pri" data-go="${tc}" data-p="${P(p)}">${esc(l)} (${tc})</button>`); };
   if(d.type==='PR'&&c.Q.prForPO.includes(d)) B('ME21N',{pr:d.id},'Lập đơn mua');
@@ -1046,12 +1071,21 @@ function scrPFCG(){
   return `<div class="wrap">${head('PFCG','Ma trận phân quyền','Mỗi vai trò chỉ được thực hiện các giao dịch thuộc trách nhiệm của mình. Ma trận thể hiện nguyên tắc bất kiêm nhiệm trong hai chu trình.')}
   <div class="tw"><table class="t matrix"><thead><tr><th>Giao dịch</th>${ROLE_ORDER.map(r=>`<th><span class="dot" style="background:var(--r-${r})"></span> ${esc(ROLES[r].n)}</th>`).join('')}</tr></thead><tbody>
   ${codes.map(k=>`<tr><td><code>${k}</code> ${esc(TC[k].t)}</td>${ROLE_ORDER.map(r=>{const ok=TC[k].r===ALL||TC[k].r.includes(r);return `<td>${ok?(TC[k].r===ALL?'<span class="muted">xem</span>':'<b style="color:var(--ok)">●</b>'):''}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>
+  ${pfcgCompany()}
   <div class="panel"><h2>Các xung đột đã được tách</h2><ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
   <li>Người đề nghị mua (Thủ kho) không tự chọn nhà cung cấp và lập đơn mua (Mua hàng).</li>
   <li>Người lập đơn mua không nhập kho; người nhập kho không ghi nhận hóa đơn; người ghi nhận hóa đơn không tự duyệt chi.</li>
   <li>Người bán hàng không xuất kho và không lập hóa đơn; người thu tiền không tự xác nhận khoản thu.</li>
   <li>Kế toán trưởng phê duyệt nhưng không lập chứng từ nghiệp vụ. Hệ thống chặn người lập tự phê duyệt chứng từ của chính mình.</li>
   <li>Lưu ý thực tế: nhóm 5 người nên Kế toán công nợ kiêm lập phiếu chi/thu; doanh nghiệp thật nên tách thêm Thủ quỹ.</li></ul></div></div>`;
+}
+function pfcgCompany(){
+  if(!S.co) return '';
+  const mem=Object.values(S.users).filter(u=>!u.is_admin&&u.co===S.co&&u.role).sort((a,b)=>ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role));
+  if(!mem.length) return '';
+  return `<div class="panel"><h2>Phân công trong công ty ${esc(S.co)}</h2><div class="tw"><table class="t"><thead><tr><th>Thành viên</th><th>Vai trò chính</th><th>Kiêm nhiệm / được giao</th><th>Điểm cần lưu ý về kiểm soát</th></tr></thead><tbody>
+  ${mem.map(u=>{const xr=userRoles(u).slice(1), g=userGrants(u), cf=userConflicts(u);return `<tr><td>${esc(u.full_name)}</td><td><span class="dot" style="background:var(--r-${u.role})"></span> ${esc(roleName(u.role))}</td><td class="small">${[...xr.map(r=>esc(ROLES[r].n)),...g.map(x=>esc(grantName(x)))].join(', ')||'<span class="muted">Không</span>'}</td><td class="small">${cf.length?cf.map(x=>esc(conflictWhy(x.a,x.b))).join('; '):'<span class="muted">—</span>'}</td></tr>`;}).join('')}</tbody></table></div>
+  <p class="small muted" style="margin-bottom:0">Khi kiêm nhiệm tạo xung đột, doanh nghiệp thật thường bù bằng kiểm soát khác: kiểm kê đột xuất, đối chiếu công nợ định kỳ, người ngoài bộ phận rà soát nhật ký.</p></div>`;
 }
 function scrCase(){
   return `<div class="wrap">${head('ZCASE','Tình huống thực hành','Mỗi nhóm là một công ty thương mại thiết bị tin học tại Nha Trang. Tồn đầu kỳ: tiền gửi 3 tỷ, tiền mặt 200 triệu, hàng hóa '+fm(INV0)+' đồng.')}
@@ -1086,7 +1120,8 @@ function scrCase(){
 function scrUsers(){
   const users = Object.values(S.users).filter(u=>!u.is_admin).sort((a,b)=>String(a.username).localeCompare(String(b.username)));
   const unassigned = users.filter(u=>!u.co||!u.role).length;
-  const grid = COS.map(co=>ROLE_ORDER.map(r=>users.filter(u=>u.co===co&&u.role===r)));
+  const grid = COS.map(co=>ROLE_ORDER.map(r=>users.filter(u=>u.co===co&&userRoles(u).includes(r))));
+  const warns = COS.map(co=>coWarnings(co, users)).filter(w=>w.items.length);
   const pw = S.lastPw;
   return `<div class="wrap">${head('SU01','Sinh viên & phân quyền',users.length+' tài khoản sinh viên, '+unassigned+' chưa được phân công.',
     `<button class="btn sm pri" data-act="autoAssign">Tự động phân công</button><button class="btn sm" data-act="rotate">Xoay vòng vai trò</button>`)}
@@ -1099,14 +1134,48 @@ function scrUsers(){
    <textarea id="i-rows" rows="6" style="font-family:var(--f-mono);font-size:13px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--surface);color:var(--fg)" placeholder="62131001	Nguyễn Văn An	1&#10;62131002	Trần Thị Bình	1"></textarea>
    <div class="form-foot"><span class="small muted" id="i-preview"></span><button class="btn pri">Tạo tài khoản</button></div></form>
   <div class="panel"><h2>Sơ đồ tổ chức 8 công ty</h2><div class="tw"><table class="t"><thead><tr><th>Công ty</th>${ROLE_ORDER.map(r=>`<th><span class="dot" style="background:var(--r-${r})"></span> ${esc(ROLES[r].n)}</th>`).join('')}</tr></thead><tbody>
-  ${COS.map((co,i)=>`<tr><td class="mono">${co}</td>${grid[i].map(us=>`<td class="small">${us.length?us.map(u=>esc(u.full_name)).join('<br>'):'<span class="muted">trống</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
-  ${users.length?`<div class="tw"><table class="t"><thead><tr><th>MSSV</th><th>Họ tên</th><th>Nhóm muốn</th><th>Công ty</th><th>Vai trò</th><th>Đăng nhập gần nhất</th><th></th></tr></thead><tbody>
+  ${COS.map((co,i)=>`<tr><td class="mono">${co}</td>${grid[i].map((us,ri)=>`<td class="small">${us.length?us.map(u=>esc(u.full_name)+(u.role!==ROLE_ORDER[ri]?' <span class="chip c-info">kiêm</span>':'')).join('<br>'):'<span class="muted">trống</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <p class="small muted" style="margin-bottom:0">Nhãn <span class="chip c-info">kiêm</span> là người giữ vai trò đó do được giao kiêm nhiệm. Ô "trống" là chưa ai làm được bước đó, nhóm sẽ tắc ở bước này.</p></div>
+  ${warns.length?`<div class="panel" style="border-color:var(--warn)"><h2>Cảnh báo phân công</h2><ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${warns.map(w=>w.items.map(x=>`<li><b class="mono">${w.co}</b> · ${x}</li>`).join('')).join('')}</ul></div>`:''}
+  ${users.length?`<div class="tw"><table class="t"><thead><tr><th>MSSV</th><th>Họ tên</th><th>Nhóm muốn</th><th>Công ty</th><th>Vai trò chính</th><th>Kiêm nhiệm / giao quyền</th><th>Đăng nhập gần nhất</th><th></th></tr></thead><tbody>
   ${users.map(u=>`<tr><td class="mono">${esc(u.username)}</td><td>${esc(u.full_name)}${u.must_change?' <span class="chip c-pending">chưa đổi MK</span>':''}</td><td>${esc(u.grp||'')}</td>
    <td><select data-chg="asgCo" data-u="${esc(u.id)}" aria-label="Công ty"><option value="">—</option>${COS.map(c=>`<option ${u.co===c?'selected':''}>${c}</option>`).join('')}</select></td>
    <td><select data-chg="asgRole" data-u="${esc(u.id)}" aria-label="Vai trò"><option value="">—</option>${ROLE_ORDER.map(x=>`<option value="${x}" ${u.role===x?'selected':''}>${esc(ROLES[x].n)}</option>`).join('')}</select></td>
+   <td class="small">${extraCell(u)}</td>
    <td class="small">${u.last_login?vdt(u.last_login):'<span class="muted">chưa</span>'}</td>
-   <td style="white-space:nowrap"><button class="btn sm" data-act="resetPw" data-u="${esc(u.id)}">Cấp lại MK</button> <button class="btn sm badb" data-act="delUser" data-u="${esc(u.id)}">Xóa</button></td></tr>`).join('')}</tbody></table></div>`
+   <td style="white-space:nowrap"><button class="btn sm" data-act="resetPw" data-u="${esc(u.id)}">Cấp lại MK</button> <button class="btn sm badb" data-act="delUser" data-u="${esc(u.id)}">Xóa</button></td></tr>${S.editExtra===u.id?extraEditor(u):''}`).join('')}</tbody></table></div>`
   :`<div class="tw"><div class="empty">Chưa có tài khoản sinh viên. Dán danh sách lớp vào ô phía trên để tạo.</div></div>`}</div>`;
+}
+function extraCell(u){
+  if(!u.co||!u.role) return '<span class="muted">Phân công vai trò chính trước</span>';
+  const xr=userRoles(u).slice(1), g=userGrants(u), cf=userConflicts(u);
+  const tags = xr.map(r=>`<span class="chip c-info">${esc(ROLES[r].n)}</span>`).concat(g.map(x=>`<span class="chip c-approved">${esc(x==='AP'?'Phê duyệt':TYPES[x].tc)}</span>`));
+  return `<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">${tags.join('')||'<span class="muted">Không</span>'} <button class="linkbtn" data-act="editExtra" data-u="${esc(u.id)}">${S.editExtra===u.id?'Đóng':'Sửa'}</button></div>${cf.length?`<div style="color:var(--warn);margin-top:2px">⚠ ${cf.map(x=>esc(conflictWhy(x.a,x.b))).join('; ')}</div>`:''}`;
+}
+function extraEditor(u){
+  const ex=new Set(u.extra||[]);
+  return `<tr><td colspan="8" style="background:var(--surface-2)"><form class="form" data-form="EXTRA" data-u="${esc(u.id)}" style="gap:10px"><div class="err"></div>
+   <div><b>Giao kiêm nhiệm cho ${esc(u.full_name)}</b> <span class="muted">(vai trò chính: ${esc(roleName(u.role))}, ${esc(u.co)})</span></div>
+   <div class="grid3"><div><div class="sec-title">Kiêm cả vai trò</div><div style="display:flex;flex-direction:column;gap:4px">
+   ${ROLE_ORDER.filter(r=>r!==u.role).map(r=>{const sc=conflictOf(u.role,r);return `<label><input type="checkbox" name="xr" value="${r}" ${ex.has(r)?'checked':''}> ${esc(ROLES[r].n)} ${sc>=2?`<span class="small" style="color:var(--warn)">– xung đột: ${esc(conflictWhy(u.role,r))}</span>`:''}</label>`;}).join('')}</div></div>
+   <div><div class="sec-title">Hoặc chỉ giao quyền lập / duyệt từng loại chứng từ</div><div style="display:flex;flex-direction:column;gap:4px">
+   ${GRANTS.map(g=>`<label><input type="checkbox" name="xg" value="T:${g}" ${ex.has('T:'+g)?'checked':''}> ${esc(grantName(g))}</label>`).join('')}</div></div></div>
+   <p class="small muted" style="margin:0">Kiêm vai trò = được làm mọi giao dịch của vai trò đó. Giao quyền lẻ = chỉ được lập (hoặc duyệt) đúng loại chứng từ đã chọn. Chứng từ lập bằng quyền kiêm nhiệm vẫn ghi tên người lập và vai trò tương ứng.</p>
+   <div style="display:flex;gap:8px"><button class="btn pri sm">Lưu kiêm nhiệm</button><button type="button" class="btn sm" data-act="editExtra" data-u="${esc(u.id)}">Hủy</button></div></form></td></tr>`;
+}
+function coWarnings(co, users){
+  const mem = users.filter(u=>u.co===co&&u.role); const items=[];
+  if(!mem.length) return {co,items};
+  const holders = r => mem.filter(u=>userRoles(u).includes(r)||(r==='KTT'&&userGrants(u).includes('AP')));
+  ROLE_ORDER.forEach(r=>{ if(!holders(r).length){
+    const g = Object.keys(TYPE_ROLE).filter(t=>TYPE_ROLE[t]===r);
+    const covered = r!=='KTT' && g.every(t=>mem.some(u=>userGrants(u).includes(t)));
+    if(!covered) items.push(`Chưa ai giữ vai trò <b>${esc(ROLES[r].n)}</b>${r==='KTT'?' hoặc quyền phê duyệt':''}. Giao kiêm nhiệm cho một thành viên.`); } });
+  const appr = holders('KTT');
+  if(appr.length===1 && !S.cfg.selfApprove){ const a=appr[0]; const creates = ROLE_ORDER.filter(r=>r!=='KTT'&&userRoles(a).includes(r)).length || userGrants(a).some(x=>x!=='AP');
+    if(creates) items.push(`<b>${esc(a.full_name)}</b> vừa là người duyệt duy nhất vừa lập chứng từ: chứng từ người này lập sẽ không ai duyệt được. Bật "Cho phép tự duyệt khi kiêm nhiệm" trong SPRO, hoặc giao thêm quyền phê duyệt cho người khác.`); }
+  mem.forEach(u=>userConflicts(u).filter(x=>x.sc>=3&&!(x.a==='KTT'||x.b==='KTT')).forEach(x=>items.push(`<b>${esc(u.full_name)}</b> kiêm ${esc(roleName(x.a))} và ${esc(roleName(x.b))}: ${esc(conflictWhy(x.a,x.b))}. Nên đổi cách giao nếu nhóm đủ người.`)));
+  return {co,items};
 }
 function scrOverview(){
   return `<div class="wrap">${head('ZOVR','Tổng quan 8 nhóm','Theo dõi tiến độ thực hành của từng công ty. Chu trình hoàn tất được tính khi phiếu chi (P2P) hoặc phiếu thu (O2C) đã được duyệt.')}
@@ -1122,7 +1191,8 @@ function scrConfig(){
   <form class="form panel" data-form="CFG"><div class="err"></div>
    <div class="grid3"><label class="field"><span>Dung sai giá hóa đơn so với đơn mua (%)</span><input id="c-tol" type="number" min="0" max="50" step="0.5" value="${cf.tol}"></label>
    <label class="field"><span>Đơn mua tự duyệt nếu tổng ≤ (đồng, 0 = luôn phải duyệt)</span><input id="c-po" type="number" min="0" step="1000000" value="${cf.poAuto}"></label>
-   <label class="field"><span>Kiểm tra hạn mức tín dụng</span><select id="c-cr"><option value="1" ${cf.credit!==false?'selected':''}>Bật</option><option value="0" ${cf.credit===false?'selected':''}>Tắt</option></select></label></div>
+   <label class="field"><span>Kiểm tra hạn mức tín dụng</span><select id="c-cr"><option value="1" ${cf.credit!==false?'selected':''}>Bật</option><option value="0" ${cf.credit===false?'selected':''}>Tắt</option></select></label>
+   <label class="field"><span>Cho phép tự duyệt khi kiêm nhiệm (nhóm 1–2 người)</span><select id="c-self"><option value="0" ${!cf.selfApprove?'selected':''}>Không – người lập không được tự duyệt</option><option value="1" ${cf.selfApprove?'selected':''}>Có – ghi chú "tự duyệt" vào nhật ký</option></select></label></div>
    <div class="form-foot"><span></span><button class="btn pri">Lưu tham số</button></div></form>
   <div class="panel"><h2>Làm mới dữ liệu một công ty</h2><p class="small muted" style="margin-top:0">Xóa toàn bộ chứng từ của công ty được chọn để bắt đầu lại từ số dư đầu kỳ. Không thể hoàn tác.</p>
    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="c-reset" aria-label="Công ty cần làm mới">${COS.map(c=>`<option>${c}</option>`).join('')}</select>
@@ -1244,7 +1314,7 @@ const FORM = {
   DECIDE(f,ev){ const ok = ev&&ev.submitter ? ev.submitter.value==='1' : true;
     guard(f,async()=>{ const co=f.dataset.co, id=f.dataset.id; const c=calc(co); const d=c.by[id]; const note=val(f,'f-note');
     if(!allowed('SBWP')) return setErr(f,'<b>Không có quyền phê duyệt.</b>');
-    if(d.by===S.uid&&!S.isAdmin) return setErr(f,'<b>Vi phạm bất kiêm nhiệm.</b> Bạn không thể phê duyệt chứng từ do chính mình lập.');
+    if(d.by===S.uid&&!S.isAdmin&&!S.cfg.selfApprove) return setErr(f,'<b>Vi phạm bất kiêm nhiệm.</b> Bạn không thể phê duyệt chứng từ do chính mình lập. Nếu nhóm không còn ai khác được duyệt, báo giảng viên bật "Cho phép tự duyệt khi kiêm nhiệm" trong SPRO.');
     if(!ok&&!note) return setErr(f,'<b>Hãy ghi lý do từ chối</b> để người lập biết cần sửa gì.');
     const t=now(); const patch={hist:(d.hist||[]).concat([{at:t,by:S.uid,role:S.role,act:ok?'approve':'reject',note}]),decBy:S.uid,decAt:t};
     if(!ok){ patch.status='rejected'; }
@@ -1254,7 +1324,10 @@ const FORM = {
     else if(d.type==='IV'){ patch.status='posted'; }
     else patch.status='approved';
     await api('erp_doc_decide',{p_token:S.token,p_co:co,p_id:id,p_ok:ok,p_note:note,p_act_role:S.isAdmin?S.role:''}); await sync(); toast(ok?'Đã phê duyệt '+d.no+'.':'Đã từ chối '+d.no+'.'); render(true,true); }); },
-  CFG(f){ guard(f,async()=>{ const cfg={tol:Math.max(0,num(val(f,'c-tol'))),poAuto:Math.max(0,num(val(f,'c-po'))),credit:val(f,'c-cr')==='1'};
+  EXTRA(f){ guard(f,async()=>{ const u=S.users[f.dataset.u]; if(!u) return;
+    const ex=[...f.querySelectorAll('input[name="xr"]:checked,input[name="xg"]:checked')].map(i=>i.value);
+    await api('erp_admin_assign',{p_token:S.token,p_rows:[{id:u.id,co:u.co,role:u.role,extra:ex}]}); S.editExtra=null; await sync(); toast('Đã lưu kiêm nhiệm cho '+u.full_name+'.'); render(true,true); }); },
+  CFG(f){ guard(f,async()=>{ const cfg={tol:Math.max(0,num(val(f,'c-tol'))),poAuto:Math.max(0,num(val(f,'c-po'))),credit:val(f,'c-cr')==='1',selfApprove:val(f,'c-self')==='1'};
     await api('erp_admin_set_cfg',{p_token:S.token,p_cfg:cfg}); await sync(); toast('Đã lưu tham số.'); }); }
 };
 
@@ -1265,18 +1338,28 @@ const ACT = {
   addLine(a){ const tb=document.getElementById('lines'); if(tb.children.length>=MATS.length) return toast('Tối đa '+MATS.length+' dòng.'); tb.insertAdjacentHTML('beforeend',lineRow(a.dataset.kind,S.co)); const f=a.closest('form'); CALC[f.dataset.calc](f); },
   delLine(a){ const tb=document.getElementById('lines'); if(tb.children.length<=1) return; const f=a.closest('form'); a.closest('tr').remove(); CALC[f.dataset.calc](f); },
   viewCo(a){ LS.set('erp.co',a.dataset.co); S.co=a.dataset.co; S.sideKey=''; go('HOME'); },
+  editExtra(a){ S.editExtra = S.editExtra===a.dataset.u ? null : a.dataset.u; render(true,true); },
   async autoAssign(){ const us=Object.values(S.users).filter(u=>!u.is_admin);
     const todo=us.filter(u=>!u.co||!u.role); if(!todo.length) return toast('Không còn sinh viên chờ phân công.');
-    const count={}; COS.forEach(c=>count[c]={}); us.filter(u=>u.co&&u.role).forEach(u=>{count[u.co][u.role]=(count[u.co][u.role]||0)+1;});
-    const size=co=>sum(ROLE_ORDER,r=>count[co][r]||0); const rows=[];
+    const mem={}; COS.forEach(c=>mem[c]=us.filter(u=>u.co&&u.role&&u.co===c).map(u=>({id:u.id,role:u.role,extra:(u.extra||[]).slice(),old:true})));
     todo.sort((a,b)=>String(a.username).localeCompare(String(b.username))).forEach(u=>{ let co=u.grp&&COS[u.grp-1]?COS[u.grp-1]:null;
-      if(!co||size(co)>=5) co=COS.slice().sort((a,b)=>size(a)-size(b))[0];
-      const role=ROLE_ORDER.slice().sort((a,b)=>(count[co][a]||0)-(count[co][b]||0))[0];
-      count[co][role]=(count[co][role]||0)+1; rows.push({id:u.id,co,role}); });
-    try{ await api('erp_admin_assign',{p_token:S.token,p_rows:rows}); await sync(); toast('Đã phân công '+rows.length+' sinh viên.'); render(true,true);}catch(e){ toast(dbErr(e)); } },
+      if(!co||mem[co].length>=5) co=COS.slice().sort((a,b)=>mem[a].length-mem[b].length)[0];
+      mem[co].push({id:u.id,role:null,extra:[],old:false}); });
+    const FILL=['KHO','KT','KTT','MH','KD']; const rows=[];
+    COS.forEach(co=>{ const m=mem[co]; if(!m.some(x=>!x.old)) return;
+      m.filter(x=>!x.old).forEach(x=>{ const held=new Set(m.filter(y=>y.role).map(y=>y.role)); x.role=FILL.find(r=>!held.has(r))||FILL.find(r=>true); });
+      m.forEach(y=>{ const k=y.extra.filter(e=>e.startsWith('T:')); if(k.length!==y.extra.length){ y.extra=k; y.touched=true; } });
+      if(m.length<5){ const held=new Set(); m.forEach(y=>{held.add(y.role); y.extra.forEach(e=>held.add(e));});
+        FILL.filter(r=>!held.has(r)).forEach(r=>{ const cand=m.filter(y=>!(m.length>=3&&y.role==='KTT'));
+          const score=y=>{const rs=[y.role].concat(y.extra.filter(e=>ROLES[e])); return sum(rs,q=>conflictOf(q,r))+1.5*rs.length;};
+          const pick=(cand.length?cand:m).slice().sort((a,b)=>score(a)-score(b))[0]; pick.extra.push(r); pick.touched=true; }); }
+      m.forEach(x=>{ if(!x.old||x.touched) rows.push({id:x.id,co,role:x.role,extra:x.extra}); }); });
+    try{ await api('erp_admin_assign',{p_token:S.token,p_rows:rows}); await sync(); toast('Đã phân công '+todo.length+' sinh viên. Nhóm thiếu người đã được giao kiêm nhiệm.'); render(true,true);}catch(e){ toast(dbErr(e)); } },
   async rotate(a){ if(a.dataset.sure!=='1'){ a.dataset.sure='1'; a.textContent='Bấm lần nữa để xoay vòng'; setTimeout(()=>{a.dataset.sure='';a.textContent='Xoay vòng vai trò';},4000); return; }
-    const rows=Object.values(S.users).filter(u=>!u.is_admin&&u.co&&u.role).map(u=>({id:u.id,co:u.co,role:ROLE_ORDER[(ROLE_ORDER.indexOf(u.role)+1)%ROLE_ORDER.length]}));
-    try{ await api('erp_admin_assign',{p_token:S.token,p_rows:rows}); await sync(); toast('Đã xoay vòng: Thủ kho → Mua hàng → Kinh doanh → Kế toán → Kế toán trưởng → Thủ kho.'); render(true,true);}catch(e){ toast(dbErr(e)); } },
+    const rows=[];
+    COS.forEach(co=>{ const m=Object.values(S.users).filter(u=>!u.is_admin&&u.co===co&&u.role).sort((x,y)=>ROLE_ORDER.indexOf(x.role)-ROLE_ORDER.indexOf(y.role));
+      m.forEach((u,i)=>{ const nx=m[(i+1)%m.length]; rows.push({id:u.id,co,role:nx.role,extra:(nx.extra||[]).slice()}); }); });
+    try{ await api('erp_admin_assign',{p_token:S.token,p_rows:rows}); await sync(); toast('Đã xoay vòng: mỗi bạn nhận phần việc (cả kiêm nhiệm) của bạn kế tiếp trong nhóm.'); render(true,true);}catch(e){ toast(dbErr(e)); } },
   async resetPw(a){ if(a.dataset.sure!=='1'){ a.dataset.sure='1'; a.textContent='Xác nhận?'; setTimeout(()=>{a.dataset.sure='';a.textContent='Cấp lại MK';},4000); return; }
     try{ const r=await api('erp_admin_reset_pw',{p_token:S.token,p_user:a.dataset.u}); S.lastPw=[r]; await sync(); render(true,true); toast('Đã cấp lại mật khẩu cho '+r.mssv+'.'); }catch(e){ toast(dbErr(e)); } },
   async delUser(a){ if(a.dataset.sure!=='1'){ a.dataset.sure='1'; a.textContent='Xóa thật?'; setTimeout(()=>{a.dataset.sure='';a.textContent='Xóa';},4000); return; }

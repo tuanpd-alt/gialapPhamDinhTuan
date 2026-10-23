@@ -43,6 +43,14 @@ Giảng viên có thể chọn "Thao tác như" một vai trò bất kỳ để 
 - **ZOVR**: tiến độ 8 nhóm.
 - **SPRO**: tham số (dung sai giá, hạn mức tự duyệt đơn mua, kiểm tra tín dụng) và xóa dữ liệu của một nhóm.
 
+## Kiêm nhiệm và giao quyền (nhóm thiếu người)
+
+- Trong SU01, cột **Kiêm nhiệm / giao quyền** → **Sửa**: chọn vai trò kiêm thêm, hoặc chỉ giao quyền lập (hay duyệt) từng loại chứng từ.
+- **Tự động phân công** tự giao kiêm nhiệm cho nhóm dưới 5 người: ưu tiên để Kế toán trưởng không kiêm, ghép các vai trò ít xung đột nhất.
+- Hệ thống cảnh báo các cặp kiêm nhiệm xung đột (ví dụ Thủ kho kiêm Kế toán) và trường hợp người duyệt duy nhất cũng lập chứng từ.
+- Nhóm 1–2 người: bật **Cho phép tự duyệt khi kiêm nhiệm** trong SPRO; nhật ký ghi rõ "tự duyệt do kiêm nhiệm".
+- **Xoay vòng vai trò** chuyển nguyên phần việc (cả kiêm nhiệm) của bạn kế tiếp trong nhóm.
+
 ## Lưu ý vận hành
 
 - **Tự tạm dừng**: project Supabase miễn phí sẽ tự tạm dừng nếu không có ai dùng trong 7 ngày. Trước buổi học, vào Supabase bấm **Restore** nếu thấy project đang tạm dừng.
