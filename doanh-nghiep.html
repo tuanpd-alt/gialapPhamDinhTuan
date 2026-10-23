@@ -70,6 +70,13 @@ select,input{font:inherit;font-size:14px;color:var(--ink);background:var(--surfa
 svg.arch{width:100%;height:auto;display:block}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:calc(100% - 32px);z-index:9}
 .toast.show{opacity:1}
+.hbox{font-family:var(--mono);font-size:13px;background:var(--surface2);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere;line-height:1.6}
+.hbox .x{background:var(--bad-soft);color:var(--bad);font-weight:700;border-radius:3px}
+.hbox .m{color:var(--ok)}
+.astep{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--surface)}
+.astep.off{opacity:.45}
+.astep h4{margin:0 0 6px;font-size:14px;display:flex;gap:8px;align-items:center}
+.astep h4 .n{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px;flex:none}
 .empty{padding:18px;text-align:center;color:var(--muted);font-size:13px}
 </style>
 </head>
@@ -141,6 +148,20 @@ svg.arch{width:100%;height:auto;display:block}
   <div class="note small" id="viewNote" style="margin:10px 0"></div>
   <div class="scroll" id="ledger"></div>
   <div id="tools"></div>
+</div>
+
+<div class="card" style="margin-top:14px" id="auditCard">
+  <h2>5. Phòng kiểm toán: E “băm lại” chứng từ từng bước</h2>
+  <div class="small muted" style="margin-bottom:10px">“Băm lại” = đưa chứng từ A cung cấp vào cùng công thức SHA-256 một lần nữa, rồi so kết quả với hash đã khóa trên chuỗi từ lúc phát sinh nghiệp vụ.</div>
+  <div id="audit"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>6. Máy băm thử: dấu vân tay thay đổi thế nào?</h2>
+  <div class="small muted" style="margin-bottom:8px">Gõ nội dung, bấm “Lưu dấu vân tay” (giống lúc ghi lên chuỗi). Sau đó sửa dù chỉ một ký tự và xem kết quả “băm lại”.</div>
+  <textarea id="hsIn" rows="3" style="width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px">Hóa đơn 0001234 | Bên bán: B | Bên mua: A | Tổng thanh toán: 550.000.000 đ</textarea>
+  <div class="row" style="margin-top:8px"><button class="btn sec" id="hsSave">Lưu dấu vân tay</button><button class="btn sec" id="hsReset">Khôi phục nội dung đã lưu</button></div>
+  <div id="hsOut" style="margin-top:10px"></div>
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -298,7 +319,55 @@ function renderTools(){
     el.innerHTML=`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:16px">Kiểm toán tự động</h3><button class="btn" id="audBtn" ${S.grantE?'':'disabled'}>Đối chiếu toàn bộ dữ liệu của A với hash trên chuỗi</button><div id="audRes" class="small" style="margin-top:8px">${S.audMsg||''}</div>`;
   }else el.innerHTML='';
 }
-function render(){renderPending();renderChain();renderViews();renderLedger();}
+function render(){renderPending();renderChain();renderViews();renderLedger();renderAudit();}
+
+/* ---------- Phòng kiểm toán ---------- */
+S.aud={id:null,step:0,fraud:false,field:null,val:''};
+const docText=(data,salt)=>JSON.stringify(data)+'|'+salt;
+function provided(tx){const a=S.aud;if(a.fraud&&a.id===tx.id&&a.field){return {...tx.data,[a.field]:a.val};}return tx.data;}
+function chainHash(tx){const b=S.blocks.find(x=>x.n===tx.block);const e=b&&b.entries.find(x=>x.id===tx.id);return e?e.hash:null;}
+function diffHTML(h,ref){let o='';for(let i=0;i<h.length;i++){o+=h[i]===ref[i]?`<span class="m">${h[i]}</span>`:`<span class="x">${h[i]}</span>`;}return o;}
+function renderAudit(){
+  const el=$('audit');const ae=document.activeElement;if(el.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&!renderAudit.force)return;renderAudit.force=false;
+  const mine=S.txs.filter(t=>t.status==='committed'&&t.members.includes('A'));
+  if(!mine.length){el.innerHTML='<div class="empty">Chưa có chứng từ nào trên chuỗi. <br><br><button class="btn" id="quickRun">Chạy nhanh 7 bước kịch bản</button></div>';return;}
+  if(!S.grantE){el.innerHTML=`<div class="note warn small">E chưa được A cấp quyền nên chưa nhận được chứng từ gốc. Hãy gửi bước 7 “Cấp quyền cho kiểm toán” ở mục 1${S.done.has('s7')?' (đang chờ đóng khối)':''}.</div>`;return;}
+  const a=S.aud;if(!a.id||!mine.find(t=>t.id===a.id)){const inv=mine.find(t=>t.key==='s3')||mine[0];a.id=inv.id;a.step=0;a.field=inv.key==='s3'?'Tổng thanh toán':Object.keys(inv.data)[0];a.val=inv.key==='s3'?'650.000.000 đ':inv.data[a.field];}
+  const tx=mine.find(t=>t.id===a.id);const data=provided(tx);const text=docText(data,tx.salt);const h=sha256(text);const ref=chainHash(tx);const ok=h===ref;
+  const st=n=>a.step>=n?'':'off';
+  el.innerHTML=`<div class="row" style="margin-bottom:10px"><span class="small muted">Chứng từ cần kiểm tra:</span><select id="audTx">${mine.map(t=>`<option value="${t.id}" ${t.id===a.id?'selected':''}>${esc(t.label)} · khối #${t.block}</option>`).join('')}</select></div>
+  <div class="note warn small" style="margin-bottom:10px"><label class="row" style="gap:6px"><input type="checkbox" id="audFraud" ${a.fraud?'checked':''}> <b>Giả định A gian lận:</b> trước khi gửi cho kiểm toán, A đã sửa</label>
+  <div class="row" style="margin-top:6px"><select id="audField" ${a.fraud?'':'disabled'}>${Object.keys(tx.data).map(k=>`<option ${k===a.field?'selected':''}>${esc(k)}</option>`).join('')}</select><span class="small">thành</span><input id="audVal" value="${esc(a.val)}" ${a.fraud?'':'disabled'} style="flex:1;min-width:180px"></div></div>
+  <div class="astep ${st(1)}"><h4><span class="n">1</span>A gửi chứng từ gốc cho E</h4>
+    <div class="small muted" style="margin-bottom:6px">Chứng từ nằm trong hệ thống kế toán của A (trên chuỗi không có nội dung này). Kèm theo là “chuỗi muối” A lưu cùng chứng từ từ lúc ghi nhận.</div>
+    <dl class="kv">${Object.entries(data).map(([k,v])=>`<dt>${esc(k)}</dt><dd ${a.fraud&&k===a.field?'style="color:var(--bad);font-weight:600"':''}>${esc(v)}</dd>`).join('')}<dt>Chuỗi muối</dt><dd class="mono">${tx.salt}</dd></dl></div>
+  <div class="astep ${st(2)}"><h4><span class="n">2</span>E “băm lại”: đưa chứng từ vào công thức SHA-256</h4>
+    <div class="small muted">Đầu vào (toàn bộ nội dung chứng từ + chuỗi muối):</div><div class="hbox">${esc(text)}</div>
+    <div class="small muted" style="margin-top:8px">Kết quả E vừa tính được:</div><div class="hbox">${a.step>=2?h:'…'}</div></div>
+  <div class="astep ${st(3)}"><h4><span class="n">3</span>E tra hash đã khóa trên chuỗi</h4>
+    <div class="small">Khối #${tx.block}, giao dịch <span class="mono">${tx.id}</span>, ghi lúc ${fT(tx.time)}. Đã được ${Object.keys(tx.sigs).map(k=>esc(pname(k))).join(', ')} ký số. Bản sao khối này nằm trên máy của mọi thành viên: A không sửa được.</div>
+    <div class="hbox" style="margin-top:6px">${a.step>=3?ref:'…'}</div></div>
+  <div class="astep ${st(4)}"><h4><span class="n">4</span>So sánh hai dấu vân tay</h4>
+    ${a.step>=4?`<div class="small muted">E tính được (ký tự khác được tô đỏ):</div><div class="hbox">${diffHTML(h,ref)}</div><div class="small muted" style="margin-top:6px">Trên chuỗi:</div><div class="hbox">${ref}</div>
+    <div style="margin-top:10px">${ok?`<span class="chip ok">Khớp</span> <b>Kết luận:</b> chứng từ A cung cấp đúng là bản đã được ${tx.members.filter(m=>m!=='A').map(pname).join(', ')||'A'} ký từ lúc ghi nhận, chưa bị sửa ký tự nào. Không cần gửi thư xác nhận.`:`<span class="chip bad">Không khớp</span> <b>Kết luận:</b> chứng từ đã bị sửa sau khi ghi nhận (mục “${esc(a.field)}”). Chỉ một chi tiết khác, gần như toàn bộ 64 ký tự đều đổi. E ghi nhận sai phạm và yêu cầu A giải trình${tx.members.includes('B')?'; bản gốc B đang giữ sẽ cho ra đúng hash trên chuỗi':''}.`}</div>`:''}</div>
+  <div class="row"><button class="btn" id="audNext" ${a.step>=4?'disabled':''}>${['Bắt đầu: A gửi chứng từ','Bước 2: băm lại','Bước 3: tra hash trên chuỗi','Bước 4: so sánh','Đã xong'][a.step]}</button><button class="btn sec" id="audReset">Làm lại</button><button class="btn sec" id="audAll">Kiểm toán toàn bộ chứng từ của A</button></div>
+  <div id="audTable" style="margin-top:12px">${S.audTable||''}</div>`;
+}
+function auditAll(){
+  const mine=S.txs.filter(t=>t.status==='committed'&&t.members.includes('A'));let bad=0;
+  const rows=mine.map(t=>{const h=sha256(docText(provided(t),t.salt));const ref=chainHash(t);const ok=h===ref;if(!ok)bad++;
+    return `<tr><td>${esc(t.label)}</td><td>#${t.block}</td><td class="mono">${h.slice(0,16)}…</td><td class="mono">${ref.slice(0,16)}…</td><td>${ok?'<span class="chip ok">Khớp</span>':'<span class="chip bad">Không khớp</span>'}</td></tr>`;}).join('');
+  S.audTable=`<div class="small" style="margin-bottom:6px"><b>${mine.length-bad}/${mine.length}</b> chứng từ khớp${bad?` · <b style="color:var(--bad)">${bad} chứng từ bị sửa</b>`:''}. Mỗi dòng là một lần “băm lại”, mất chưa tới 1 giây.</div><div class="scroll tall"><table class="tbl"><tr><th>Chứng từ</th><th>Khối</th><th>E băm lại được</th><th>Hash trên chuỗi</th><th>Kết quả</th></tr>${rows}</table></div>`;
+  $('audTable').innerHTML=S.audTable;
+}
+async function quickRun(){
+  const jobs=[];SCEN.forEach((t,i)=>{if(!S.done.has(t.key)){S.done.add(t.key);jobs.push(runTx(makeTx(t)));}});renderSteps();
+  await Promise.all(jobs);await cutBlock();toast('Đã chạy xong 7 bước và đóng khối.');
+}
+function hashSandbox(){
+  const t=$('hsIn').value;const h=sha256(t);const ref=S.hsRef;
+  $('hsOut').innerHTML=`<div class="small muted">Dấu vân tay của nội dung hiện tại:</div><div class="hbox">${ref?diffHTML(h,ref.h):h}</div>${ref?`<div class="small muted" style="margin-top:6px">Dấu vân tay đã lưu:</div><div class="hbox">${ref.h}</div><div style="margin-top:8px">${h===ref.h?'<span class="chip ok">Khớp</span> Nội dung giống hệt lúc lưu.':'<span class="chip bad">Không khớp</span> Nội dung đã khác lúc lưu: các ký tự đỏ là phần hash bị thay đổi.'}</div>`:''}`;
+}
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
@@ -317,13 +386,27 @@ document.addEventListener('click',e=>{
   }
   if(e.target.id==='massBtn')mass();
   if(e.target.id==='cutBtn')cutBlock();
+  if(e.target.id==='quickRun'){e.target.disabled=true;quickRun();}
+  if(e.target.id==='audNext'){S.aud.step=Math.min(4,S.aud.step+1);renderAudit();}
+  if(e.target.id==='audReset'){S.aud.step=0;S.audTable='';renderAudit();}
+  if(e.target.id==='audAll'){auditAll();}
+  if(e.target.id==='hsSave'){S.hsRef={t:$('hsIn').value,h:sha256($('hsIn').value)};hashSandbox();toast('Đã lưu dấu vân tay. Giờ hãy sửa nội dung.');}
+  if(e.target.id==='hsReset'&&S.hsRef){$('hsIn').value=S.hsRef.t;hashSandbox();}
   if(e.target.id==='themeBtn'){const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=cur==='dark'?'light':'dark';}
 });
+document.addEventListener('input',e=>{
+  if(e.target.id==='hsIn')hashSandbox();
+  if(e.target.id==='audVal'){S.aud.val=e.target.value;S.aud.step=0;S.audTable='';}
+});
 document.addEventListener('change',e=>{
+  if(e.target.id==='audTx'){renderAudit.force=true;S.aud.id=e.target.value;S.aud.step=0;S.audTable='';const tx=S.txs.find(t=>t.id===S.aud.id);S.aud.field=Object.keys(tx.data)[0];S.aud.val=tx.data[S.aud.field];renderAudit();}
+  if(e.target.id==='audFraud'){renderAudit.force=true;S.aud.fraud=e.target.checked;S.aud.step=0;S.audTable='';renderAudit();}
+  if(e.target.id==='audField'){renderAudit.force=true;const tx=S.txs.find(t=>t.id===S.aud.id);S.aud.field=e.target.value;S.aud.val=tx.data[e.target.value];S.aud.step=0;S.audTable='';renderAudit();}
+  if(e.target.id==='audVal'){renderAudit.force=true;renderAudit();}
   if(e.target.id==='tmTx'){const tx=S.txs.find(t=>t.id===e.target.value);S.tamper={id:tx.id,field:Object.keys(tx.data)[0]};S.tmMsg='';$('tools').dataset.tv='';renderTools();}
   if(e.target.id==='tmField'){S.tamper.field=e.target.value;const tx=S.txs.find(t=>t.id===S.tamper.id);$('tmVal').value=tx.data[e.target.value];S.tmMsg='';$('tmRes').innerHTML='';}
 });
-renderSteps();render();
+renderSteps();render();hashSandbox();
 </script>
 </body>
 </html>
