@@ -150,6 +150,18 @@ svg.arch{width:100%;height:auto;display:block}
   <div id="tools"></div>
 </div>
 
+<div class="card" style="margin-top:14px">
+  <h2>7. Lập giao dịch điều chỉnh: sai thì ghi thêm, không xóa</h2>
+  <div class="small muted" style="margin-bottom:10px">Phát hiện sai sót sau khi đã ghi vào chuỗi? Các bên lập một giao dịch <b>điều chỉnh</b> tham chiếu giao dịch gốc, cùng ký lại. Giao dịch gốc vẫn nằm nguyên trong khối cũ; số hiện hành = gốc + điều chỉnh.</div>
+  <div id="adjust"></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+  <h2>8. Nếu A và B nhất quyết sửa thẳng vào khối cũ thì sao?</h2>
+  <div class="small muted" style="margin-bottom:10px">Giả định A và B thông đồng, cùng sửa hóa đơn trong khối cũ trên máy của mình. Xem các máy khác trong mạng phản ứng thế nào.</div>
+  <div id="rewrite"></div>
+</div>
+
 <div class="card" style="margin-top:14px" id="auditCard">
   <h2>5. Phòng kiểm toán: E “băm lại” chứng từ từng bước</h2>
   <div class="small muted" style="margin-bottom:10px">“Băm lại” = đưa chứng từ A cung cấp vào cùng công thức SHA-256 một lần nữa, rồi so kết quả với hash đã khóa trên chuỗi từ lúc phát sinh nghiệp vụ.</div>
@@ -231,7 +243,7 @@ function makeTx(t,extra){
 async function runTx(tx){
   S.txs.push(tx);render();
   await sleep(500);tx.status='signing';render();
-  for(const s of tx.signers){await sleep(600);tx.sigs[s]=sha256('ky:'+s+':'+tx.hash).slice(0,16);render();}
+  for(const s of tx.signers){await sleep(600);if(tx.reject&&tx.reject.includes(s)){tx.status='rejected';tx.rejectBy=s;render();return;}tx.sigs[s]=sha256('ky:'+s+':'+tx.hash).slice(0,16);render();}
   await sleep(300);tx.status='pending';render();
 }
 async function cutBlock(){
@@ -275,9 +287,9 @@ function phase(tx){const order=['proposed','signing','pending','ordering','commi
 function renderPending(){
   const list=S.txs.filter(t=>t.status!=='committed').slice(-12).reverse();
   const recent=S.txs.filter(t=>t.status==='committed').slice(-3).reverse();
-  const card=t=>`<div class="item"><div class="row"><b style="font-size:14px">${esc(t.label)}</b><span class="mono muted">${t.id}</span><span class="sp"></span>${t.status==='committed'?`<span class="chip ok">Khối #${t.block}</span>`:''}</div>
+  const card=t=>`<div class="item"><div class="row"><b style="font-size:14px">${esc(t.label)}</b><span class="mono muted">${t.id}</span><span class="sp"></span>${t.status==='committed'?`<span class="chip ok">Khối #${t.block}</span>`:''}${t.status==='rejected'?'<span class="chip bad">Không được ghi: thiếu chữ ký</span>':''}</div>
     <div style="margin:6px 0">${phase(t)}</div>
-    <div class="row small" style="gap:4px"><span class="muted">Chữ ký:</span>${t.signers.map(s=>`<span class="chip ${t.sigs[s]?'ok':'wait'}"><span class="dot" style="background:${pcol(s)}"></span>${esc(pshort(s))} ${t.sigs[s]?'đã ký':'đang chờ'}</span>`).join('')}</div>
+    <div class="row small" style="gap:4px"><span class="muted">Chữ ký:</span>${t.signers.map(s=>`<span class="chip ${t.sigs[s]?'ok':t.rejectBy===s?'bad':'wait'}"><span class="dot" style="background:${pcol(s)}"></span>${esc(pshort(s))} ${t.sigs[s]?'đã ký':t.rejectBy===s?'từ chối ký':'đang chờ'}</span>`).join('')}</div>
     <div class="small muted" style="margin-top:4px">Hash dữ liệu riêng: <span class="mono">${sh(t.hash)}</span></div></div>`;
   $('pending').innerHTML=(list.length?list.map(card).join(''):'<div class="empty">Không có giao dịch đang xử lý.</div>')+(recent.length?`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Vừa ghi xong</h3>`+recent.map(card).join(''):'');
 }
@@ -303,7 +315,8 @@ function renderLedger(){
   const seen=rows.filter(t=>canSee(v,t)).length;
   $('ledger').innerHTML=`<div class="small muted" style="margin-bottom:6px">${esc(pname(v))} đọc được nội dung <b>${seen}/${rows.length}</b> giao dịch trên chuỗi; phần còn lại chỉ thấy hash.</div><div class="tall"><table class="tbl"><tr><th>Khối</th><th>Giao dịch</th><th>Nội dung ${esc(pname(v))} nhìn thấy</th></tr>${rows.slice().reverse().map(t=>{
     const ok=canSee(v,t);
-    return `<tr><td>#${t.block}</td><td><div class="mono">${t.id}</div><div>${t.members.map(chip).join(' ')}</div></td><td>${ok?`<div style="font-weight:600;margin-bottom:4px">${esc(t.label)}</div><dl class="kv">${Object.entries(t.data).map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl>`:`<div class="lockbox"><span>🔒</span><div>Dữ liệu riêng của ${t.members.map(m=>esc(pshort(m))).join(', ')}<br><span class="mono">hash ${t.hash.slice(0,24)}…</span></div></div>`}</td></tr>`;}).join('')}</table></div>`;
+    const adjs=adjsOf(t);const cur=adjs.length?currentData(t):null;
+    return `<tr><td>#${t.block}</td><td><div class="mono">${t.id}</div>${t.adjOf?'<span class="chip wait">Điều chỉnh</span>':''}<div>${t.members.map(chip).join(' ')}</div></td><td>${ok?`<div style="font-weight:600;margin-bottom:4px">${esc(t.label)}</div><dl class="kv">${Object.entries(t.data).map(([k,x])=>`<dt>${esc(k)}</dt><dd>${esc(x)}</dd>`).join('')}</dl>${cur?`<div class="small" style="margin-top:6px;color:var(--warn)"><b>Đã điều chỉnh ở khối #${adjs.map(a=>a.block).join(', #')}.</b> Giá trị hiện hành: ${Object.entries(cur).filter(([k,x])=>x!==t.data[k]).map(([k,x])=>esc(k)+' = '+esc(x)).join('; ')}</div>`:''}`:`<div class="lockbox"><span>🔒</span><div>Dữ liệu riêng của ${t.members.map(m=>esc(pshort(m))).join(', ')}<br><span class="mono">hash ${t.hash.slice(0,24)}…</span></div></div>`}</td></tr>`;}).join('')}</table></div>`;
   renderTools();
 }
 function renderTools(){
@@ -319,7 +332,62 @@ function renderTools(){
     el.innerHTML=`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:16px">Kiểm toán tự động</h3><button class="btn" id="audBtn" ${S.grantE?'':'disabled'}>Đối chiếu toàn bộ dữ liệu của A với hash trên chuỗi</button><div id="audRes" class="small" style="margin-top:8px">${S.audMsg||''}</div>`;
   }else el.innerHTML='';
 }
-function render(){renderPending();renderChain();renderViews();renderLedger();renderAudit();}
+function render(){renderPending();renderChain();renderViews();renderLedger();renderAudit();renderAdjust();renderRewrite();}
+
+/* ---------- Giao dịch điều chỉnh ---------- */
+const adjsOf=t=>S.txs.filter(x=>x.adjOf===t.id&&x.status==='committed').sort((a,b)=>a.time-b.time);
+function currentData(t){const d={...t.data};for(const a of adjsOf(t))Object.assign(d,a.adjNew);return d;}
+S.adj={id:null,vals:{},reason:'',refuse:false};
+function renderAdjust(){
+  const el=$('adjust');const ae=document.activeElement;if(el.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName)&&!renderAdjust.force)return;renderAdjust.force=false;
+  const origs=S.txs.filter(t=>t.status==='committed'&&t.members.includes('A')&&!t.adjOf&&!t.grant);
+  if(!origs.length){el.innerHTML='<div class="empty">Chưa có giao dịch gốc trên chuỗi. Hãy chạy kịch bản ở mục 1 hoặc mục 5.</div>';return;}
+  const a=S.adj;if(!a.id||!origs.find(t=>t.id===a.id)){const inv=origs.find(t=>t.key==='s3')||origs[0];a.id=inv.id;a.vals={...currentData(inv)};a.reason='';}
+  const t=origs.find(x=>x.id===a.id);const cur=currentData(t);const signers=t.members.filter(m=>P[m]||m.startsWith('P'));
+  const list=S.txs.filter(x=>x.adjOf===t.id);
+  el.innerHTML=`<div class="row" style="margin-bottom:10px"><span class="small muted">Giao dịch gốc cần điều chỉnh:</span><select id="adjTx">${origs.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${esc(x.label)} · khối #${x.block}</option>`).join('')}</select>${t.key==='s3'?'<button class="btn sec" id="adjDemo">Điền ví dụ: sai đơn giá 25 → 24 triệu/tấn</button>':''}</div>
+  <div class="scroll"><table class="tbl"><tr><th>Mục</th><th>Giá trị hiện hành</th><th>Giá trị đúng (sửa ô cần điều chỉnh)</th></tr>${Object.keys(cur).map((k,i)=>`<tr><td>${esc(k)}</td><td>${esc(cur[k])}</td><td><input data-adjf="${esc(k)}" value="${esc(a.vals[k]??cur[k])}" style="width:100%;${(a.vals[k]??cur[k])!==cur[k]?'border-color:var(--warn);background:var(--warn-soft)':''}"></td></tr>`).join('')}</table></div>
+  <div class="row" style="margin-top:8px"><input id="adjReason" placeholder="Lý do điều chỉnh" value="${esc(a.reason)}" style="flex:1;min-width:240px"></div>
+  <div class="row small" style="margin-top:8px"><span class="muted">Cần chữ ký lại của tất cả các bên đã ký giao dịch gốc:</span>${signers.map(chip).join('')}<label class="row" style="gap:6px;margin-left:8px"><input type="checkbox" id="adjRefuse" ${a.refuse?'checked':''}> Giả định ${esc(pname(signers.find(x=>x!=='A')||'A'))} từ chối ký</label></div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="adjSend">Lập và gửi giao dịch điều chỉnh</button></div>
+  ${list.length?`<h3 style="font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:16px">Lịch sử của giao dịch này trên chuỗi</h3>
+  <div class="scroll"><table class="tbl"><tr><th>Khối</th><th>Giao dịch</th><th>Nội dung</th><th>Trạng thái</th></tr>
+  <tr><td>#${t.block}</td><td>${esc(t.label)} (gốc)<div class="mono">${t.id}</div></td><td>${Object.keys(t.data).filter(k=>list.some(x=>x.adjNew&&k in x.adjNew)).map(k=>esc(k)+': '+esc(t.data[k])).join('<br>')}</td><td><span class="chip ok">Vẫn nguyên, hash không đổi</span></td></tr>
+  ${list.map(x=>`<tr><td>${x.block?'#'+x.block:'–'}</td><td>Điều chỉnh<div class="mono">${x.id}</div></td><td>${Object.entries(x.adjNew).map(([k,v])=>esc(k)+': '+esc(t.data[k])+' → <b>'+esc(v)+'</b>').join('<br>')}<div class="small muted">Lý do: ${esc(x.data['Lý do'])}</div></td><td>${x.status==='committed'?'<span class="chip ok">Đã ghi</span>':x.status==='rejected'?`<span class="chip bad">${esc(pshort(x.rejectBy))} từ chối ký: không có hiệu lực</span>`:'<span class="chip wait">Đang xử lý</span>'}</td></tr>`).join('')}
+  <tr><td></td><td><b>Giá trị hiện hành</b></td><td colspan="2">${Object.entries(cur).filter(([k,v])=>v!==t.data[k]).map(([k,v])=>esc(k)+': <b>'+esc(v)+'</b>').join('<br>')||'Chưa thay đổi'}</td></tr></table></div>
+  <div class="small muted" style="margin-top:6px">Kiểm toán viên (mục 5) băm lại giao dịch gốc vẫn ra <b>khớp</b>, đồng thời thấy rõ ai sửa, sửa gì, khi nào, vì sao.</div>`:''}`;
+}
+async function sendAdjust(){
+  const a=S.adj;const t=S.txs.find(x=>x.id===a.id);const cur=currentData(t);const changed={};
+  for(const k of Object.keys(cur)){if((a.vals[k]??cur[k])!==cur[k])changed[k]=a.vals[k];}
+  if(!Object.keys(changed).length){toast('Chưa có ô nào được sửa');return;}
+  if(!a.reason.trim()){toast('Hãy ghi lý do điều chỉnh');return;}
+  const data={'Tham chiếu':t.label+' · '+t.id+' (khối #'+t.block+')','Lý do':a.reason.trim()};
+  for(const[k,v]of Object.entries(changed))data['Điều chỉnh "'+k+'"']=cur[k]+' → '+v;
+  const other=t.members.find(x=>x!=='A');
+  const tx=makeTx({label:'Điều chỉnh: '+t.label,members:t.members,signers:t.members,data},{adjOf:t.id,adjNew:changed,reject:a.refuse&&other?[other]:null});
+  a.reason='';renderAdjust.force=true;runTx(tx);toast(a.refuse?'Đã gửi. Theo dõi mục 2: bên kia sẽ từ chối ký.':'Đã gửi giao dịch điều chỉnh. Theo dõi mục 2 và mục 3.');
+}
+
+/* ---------- A và B thông đồng sửa khối ---------- */
+S.rw=null;
+function blockHashOf(b,entries){return sha256(b.n+'|'+b.prev+'|'+b.time+'|'+entries.map(e=>e.id+':'+e.hash).join(','));}
+function renderRewrite(){
+  const el=$('rewrite');
+  const target=S.txs.find(t=>t.status==='committed'&&t.key==='s3')||S.txs.find(t=>t.status==='committed'&&t.members.length===2&&t.members.includes('A')&&t.members.includes('B'));
+  if(!target){el.innerHTML='<div class="empty">Cần có hóa đơn giữa A và B trên chuỗi. Hãy chạy kịch bản trước.</div>';return;}
+  const b=S.blocks.find(x=>x.n===target.block);const next=S.blocks.find(x=>x.n===b.n+1);
+  if(!S.rw||S.rw.id!==target.id){el.innerHTML=`<div class="small" style="margin-bottom:8px">Mục tiêu: hóa đơn <span class="mono">${target.id}</span> trong <b>khối #${b.n}</b>. Khối này chứa ${b.entries.length} giao dịch, trong đó có ${b.entries.filter(e=>!(e.coll==='A-B')).length} giao dịch của các bên khác.</div><button class="btn" id="rwGo">A và B cùng sửa khối #${b.n} trên máy của mình</button>`;return;}
+  const r=S.rw;
+  const nodes=[['A','A – Thủy sản Biển Xanh',true],['B','B – Thức ăn Hải Phong',true],['C','C – Vận tải Nam Trung',false],['D','D – Ngân hàng Sao Mai',false],['E','E – Kiểm toán Minh Bạch',false],['O1','Nút đóng khối 1 – Hiệp hội ngành',false],['O2','Nút đóng khối 2 – Ngân hàng Sao Mai',false],['O3','Nút đóng khối 3 – Đơn vị hạ tầng',false],['PX','100 đối tác khác',false]];
+  el.innerHTML=`<div class="small">A và B sửa “Tổng thanh toán” trong hóa đơn từ <b>${esc(target.data['Tổng thanh toán']||'')}</b> thành <b>${esc(r.val)}</b> và tính lại khối #${b.n} trên máy của mình.</div>
+  <div class="grid g2" style="margin-top:10px"><div><div class="small muted">Hash khối #${b.n} gốc (đang nằm ở mọi máy khác):</div><div class="hbox">${b.hash}</div></div><div><div class="small muted">Hash khối #${b.n} sau khi A, B sửa:</div><div class="hbox">${diffHTML(r.newHash,b.hash)}</div></div></div>
+  ${next?`<div class="small" style="margin-top:8px">Khối #${next.n} vẫn ghi “trỏ về” <span class="mono">${next.prev.slice(0,16)}…</span> nên trên máy A và B, <b style="color:var(--bad)">mắt xích #${b.n} → #${next.n} bị đứt</b>.</div>`:''}
+  <div class="scroll" style="margin-top:10px"><table class="tbl"><tr><th>Máy</th><th>Khối #${b.n} trên máy này</th><th>Kết quả đối chiếu</th></tr>${nodes.map(([k,n,mod])=>`<tr><td>${esc(n)}</td><td class="mono">${(mod?r.newHash:b.hash).slice(0,20)}…</td><td>${mod?'<span class="chip bad">Lệch với mạng</span>':'<span class="chip ok">Khớp bản gốc</span>'}</td></tr>`).join('')}</table></div>
+  <div class="note warn small" style="margin-top:10px"><b>Kết quả:</b> 2 máy lệch, mọi máy còn lại (kể cả 3 nút đóng khối và 100 đối tác) giữ bản gốc. Mạng coi bản của A và B là hỏng; khi đồng bộ, phần mềm của A và B tự tải lại khối gốc. Giao dịch sửa không có hiệu lực.</div>
+  <div class="small" style="margin-top:10px"><b>Muốn sửa thành công, A và B phải làm được cả ba điều:</b><ol style="margin:6px 0 0;padding-left:18px"><li>Có chữ ký lại của <b>mọi bên</b> có giao dịch trong khối #${b.n}, vì sửa khối là đụng vào giao dịch của cả họ: ${[...new Set(b.entries.flatMap(e=>e.coll.split('-')))].filter(x=>x!=='A'&&x!=='B').map(x=>esc(pshort(x))).join(', ')||'không có'}.</li><li>Được <b>2/3 nút đóng khối</b> đồng ý tạo lại khối #${b.n} và <b>mọi khối sau</b> (${S.blocks.length-1-b.n} khối).</li><li><b>Mọi thành viên</b> chấp nhận thay bản sao của mình. Thực chất đây là cả mạng cùng quyết định tách chuỗi, không còn là việc riêng của A và B.</li></ol></div>
+  <div class="row" style="margin-top:10px"><button class="btn sec" id="rwReset">Khôi phục (A, B tải lại khối gốc)</button></div>`;
+}
 
 /* ---------- Phòng kiểm toán ---------- */
 S.aud={id:null,step:0,fraud:false,field:null,val:''};
@@ -392,13 +460,22 @@ document.addEventListener('click',e=>{
   if(e.target.id==='audAll'){auditAll();}
   if(e.target.id==='hsSave'){S.hsRef={t:$('hsIn').value,h:sha256($('hsIn').value)};hashSandbox();toast('Đã lưu dấu vân tay. Giờ hãy sửa nội dung.');}
   if(e.target.id==='hsReset'&&S.hsRef){$('hsIn').value=S.hsRef.t;hashSandbox();}
+  if(e.target.id==='adjSend')sendAdjust();
+  if(e.target.id==='adjDemo'){const t=S.txs.find(x=>x.id===S.adj.id);Object.assign(S.adj.vals,{'Tiền hàng':'480.000.000 đ','Thuế GTGT 10%':'48.000.000 đ','Tổng thanh toán':'528.000.000 đ'});S.adj.reason='Sai đơn giá: đúng là 24.000.000 đ/tấn theo hợp đồng';renderAdjust.force=true;renderAdjust();}
+  if(e.target.id==='rwGo'){const t=S.txs.find(x=>x.status==='committed'&&x.key==='s3')||S.txs.find(x=>x.status==='committed'&&x.members.length===2&&x.members.includes('A')&&x.members.includes('B'));const b=S.blocks.find(x=>x.n===t.block);const field=('Tổng thanh toán' in t.data)?'Tổng thanh toán':Object.keys(t.data)[0];const val='450.000.000 đ';const nh=sha256(JSON.stringify({...t.data,[field]:val})+'|'+t.salt);const entries=b.entries.map(x=>x.id===t.id?{...x,hash:nh}:x);S.rw={id:t.id,val,newHash:blockHashOf(b,entries)};renderRewrite();}
+  if(e.target.id==='rwReset'){S.rw=null;renderRewrite();toast('A và B đã tải lại khối gốc từ mạng.');}
   if(e.target.id==='themeBtn'){const cur=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=cur==='dark'?'light':'dark';}
 });
 document.addEventListener('input',e=>{
+  if(e.target.dataset&&e.target.dataset.adjf){S.adj.vals[e.target.dataset.adjf]=e.target.value;}
+  if(e.target.id==='adjReason')S.adj.reason=e.target.value;
   if(e.target.id==='hsIn')hashSandbox();
   if(e.target.id==='audVal'){S.aud.val=e.target.value;S.aud.step=0;S.audTable='';}
 });
 document.addEventListener('change',e=>{
+  if(e.target.id==='adjTx'){const t=S.txs.find(x=>x.id===e.target.value);S.adj={id:t.id,vals:{...currentData(t)},reason:'',refuse:S.adj.refuse};renderAdjust.force=true;renderAdjust();}
+  if(e.target.id==='adjRefuse'){S.adj.refuse=e.target.checked;}
+  if(e.target.dataset&&e.target.dataset.adjf){renderAdjust.force=true;renderAdjust();}
   if(e.target.id==='audTx'){renderAudit.force=true;S.aud.id=e.target.value;S.aud.step=0;S.audTable='';const tx=S.txs.find(t=>t.id===S.aud.id);S.aud.field=Object.keys(tx.data)[0];S.aud.val=tx.data[S.aud.field];renderAudit();}
   if(e.target.id==='audFraud'){renderAudit.force=true;S.aud.fraud=e.target.checked;S.aud.step=0;S.audTable='';renderAudit();}
   if(e.target.id==='audField'){renderAudit.force=true;const tx=S.txs.find(t=>t.id===S.aud.id);S.aud.field=e.target.value;S.aud.val=tx.data[e.target.value];S.aud.step=0;S.audTable='';renderAudit();}
