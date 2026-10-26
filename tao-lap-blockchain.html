@@ -133,8 +133,14 @@ td.num,th.num{text-align:right}
 @media (prefers-reduced-motion:reduce){.node.flash{animation:none}}
 
 header.top{background:none;border-bottom:0}
-header.top .wrap{padding-block:18px 0}
-h1{font-size:clamp(20px,2.6vw,24px);font-weight:700;letter-spacing:-.01em}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
 html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
 html.embedded header.top .wrap{padding-block:2px 0}
 
@@ -142,7 +148,12 @@ html.embedded header.top .wrap{padding-block:2px 0}
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <h1>Tạo lập Blockchain</h1>
+  <div class="logo" aria-hidden="true">#</div>
+  <div class="ttl"><h1>Tạo lập Blockchain</h1><div class="sub">Từng bước: hàm băm · cây Merkle · Proof-of-Work · nối chuỗi · thử giả mạo</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <a class="btnlink" href="./doanh-nghiep.html">Sổ cái DN</a>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
 </div></header>
 
 <nav class="steps wrap" role="tablist" aria-label="Các bước">
@@ -484,6 +495,8 @@ $('remineAll').onclick=async()=>{for(let i=1;i<chain.length;i++){if(issues(i).is
   const zs=[0,1,2,3,4,5,6,8,10];$('pHead').innerHTML='<th>z</th>'+zs.map(k=>`<th class="num">${k}</th>`).join('');$('pRow').innerHTML='<td>P</td>'+zs.map(k=>`<td class="num mono">${attackerSuccess(q,k).toFixed(4).replace('.',',')}</td>`).join('');}
   $('qIn').oninput=upd;$('zIn').oninput=upd;upd();})();
 
+/* theme */
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
 /* init */
 (function(){const m=(location.hash||'').match(/buoc([1-5])/);go(m?+m[1]:1);buildInitial();})();
 
