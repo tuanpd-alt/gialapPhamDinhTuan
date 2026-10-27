@@ -130,6 +130,46 @@ td.num,th.num{text-align:right}
 .bar span{display:block;height:100%;background:var(--accent)}
 .foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
 .navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:4px}
+
+/* Ví dụ sổ quỹ lớp 6A */
+.vidu{grid-column:1/-1;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.vidu h3{font-family:var(--f-display);font-size:19px;margin:0;text-wrap:balance}
+.vidu .lead{margin:0;max-width:72ch}
+.vd-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px;align-items:start}
+@media (max-width:860px){.vd-cols{grid-template-columns:minmax(0,1fr)}}
+.vd-story{display:grid;gap:10px;font-size:14.5px}
+.vd-story p{margin:0}
+.vd-story ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.vd-story code{font-family:var(--f-mono);background:var(--sunk);padding:1px 5px;border-radius:4px}
+.vd-map{width:100%;border-collapse:collapse;font-size:13.5px}
+.vd-map td{padding:5px 8px;border-bottom:1px solid var(--line);white-space:normal}
+.vd-map td:first-child{color:var(--muted);width:46%}
+.vd-tree{display:grid;gap:8px}
+.vd-lv{display:grid;gap:8px}
+.vd-l1{grid-template-columns:minmax(0,1fr);max-width:220px;margin:0 auto;width:100%}
+.vd-l2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.vd-l4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.vd-nd{border:1px solid var(--line);border-radius:8px;padding:7px 4px;text-align:center;background:var(--sunk);transition:background .3s,border-color .3s}
+.vd-nd .k{font-size:12px;color:var(--muted)}
+.vd-nd .c{font:600 18px var(--f-mono);color:var(--ink)}
+.vd-nd.root{background:var(--accent-soft);border-color:var(--accent)}
+.vd-nd.root .c,.vd-nd.root .k{color:var(--accent)}
+.vd-nd.chg{background:var(--bad-bg);border-color:var(--bad)}
+.vd-nd.chg .c,.vd-nd.chg .k{color:var(--bad)}
+.vd-nd.need{background:var(--zero-bg);border-color:var(--zero-ink)}
+.vd-nd.need .c,.vd-nd.need .k{color:var(--zero-ink)}
+.vd-nd.path{outline:2px solid var(--accent);outline-offset:1px}
+.vd-ar{text-align:center;color:var(--muted);font-size:12px}
+.vd-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.vd-in label{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+.vd-in input{font-size:13px;padding:7px 8px}
+@media (max-width:560px){.vd-in{grid-template-columns:repeat(2,minmax(0,1fr))}.vd-nd .c{font-size:16px}}
+.vd-msg{font-weight:600;text-align:center;padding:8px 10px;border-radius:8px}
+.vd-msg.ok{background:var(--ok-bg);color:var(--ok)}.vd-msg.bad{background:var(--bad-bg);color:var(--bad)}
+.vd-check{border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:10px}
+.vd-check ol{margin:0;padding-left:20px;display:grid;gap:4px;font-size:14px}
+.vd-check code{font-family:var(--f-mono);font-weight:600}
+.vd-table{font-size:13px}
 @media (prefers-reduced-motion:reduce){.node.flash{animation:none}}
 
 header.top{background:none;border-bottom:0}
@@ -209,6 +249,7 @@ html.embedded header.top .wrap{padding-block:2px 0}
       <li>Sửa một giao dịch: các nút trên đường từ lá lên gốc nhấp nháy, Merkle root thay đổi.</li>
       <li>Bấm vào một lá để xem bằng chứng Merkle: các nút màu vàng là đủ để chứng minh giao dịch nằm trong khối, chỉ cần ⌈log₂n⌉ giá trị băm. Đây là cơ sở của ví nhẹ SPV.</li>
       <li>Số nút lẻ: phần tử cuối được nhân đôi (viền đứt), giống cách Bitcoin làm.</li>
+      <li>Mới làm quen? Xem ví dụ <a href="#vidu" style="color:var(--accent)">Sổ quỹ lớp 6A</a> ở cuối bước này.</li>
     </ul>
     <p class="src">Merkle (1987); Nakamoto (2008), mục 7–8.</p>
   </div>
@@ -218,6 +259,55 @@ html.embedded header.top .wrap{padding-block:2px 0}
     <div class="row"><button class="btn sm" id="addTx">Thêm giao dịch</button><span class="note" id="proofTxt"></span></div>
     <h4>Cây băm</h4>
     <div class="scroll"><div class="tree" id="tree"></div></div>
+  </div>
+  <div class="vidu" id="vidu">
+    <h3>Ví dụ dễ hiểu: Sổ quỹ lớp 6A</h3>
+    <p class="lead">Lớp 6A có cuốn sổ ghi tiền quỹ với 4 dòng. Cô giáo muốn niêm phong cuốn sổ sao cho ai lén sửa một dòng là cô biết ngay, và khi cần kiểm tra một dòng thì không phải đọc lại cả cuốn. Cách cô làm chính là cây Merkle.</p>
+    <div class="vd-cols">
+      <div class="vd-story">
+        <p><b>Máy tạo mã.</b> Bỏ vào máy bất cứ câu gì, máy in ra một mã ngắn giống như dấu vân tay của câu đó. Cùng một câu luôn ra cùng một mã; sửa một chữ là mã đổi hẳn; nhìn mã không đoán ngược được câu gốc. Trong blockchain, máy này là hàm băm SHA-256 (trang chỉ hiện 4 ký tự đầu của mã cho dễ nhìn).</p>
+        <ol>
+          <li><b>Mỗi dòng lấy một dấu vân tay:</b> dòng 1 ra <code>d024</code>, dòng 2 ra <code>f461</code>, dòng 3 ra <code>5ed8</code>, dòng 4 ra <code>8e39</code>.</li>
+          <li><b>Ghép từng đôi như bạn cùng bàn:</b> Bàn 1 ghép <code>d024</code> với <code>f461</code> ra <code>d09d</code>; Bàn 2 ghép <code>5ed8</code> với <code>8e39</code> ra <code>00ac</code>.</li>
+          <li><b>Ghép tiếp đến khi còn một mã:</b> <code>d09d</code> ghép <code>00ac</code> ra <code>561d</code>. Đây là gốc của cây (Merkle root). Cô chỉ cần ghi lại mã <code>561d</code> là cả cuốn sổ đã được niêm phong.</li>
+        </ol>
+        <p><b>Ai sửa là lộ.</b> Sửa dòng 3 thì mã dòng 3 đổi, kéo theo mã Bàn 2 đổi, kéo theo gốc đổi, giống một dây domino. Cô so với <code>561d</code> đã ghi là phát hiện ngay.</p>
+        <p><b>Kiểm tra nhanh.</b> Muốn biết một dòng có trong sổ không, cô chỉ cần thêm 2 mã (sổ 4 dòng). Sổ 1.000 dòng cần 10 mã, sổ 1.000.000 dòng cũng chỉ cần 20 mã.</p>
+        <table class="vd-map">
+          <tr><td>Cuốn sổ quỹ tuần này</td><td>Một khối</td></tr>
+          <tr><td>Mỗi dòng trong sổ</td><td>Một giao dịch</td></tr>
+          <tr><td>Máy tạo mã</td><td>Hàm băm SHA-256</td></tr>
+          <tr><td>Mã gốc <code>561d</code> cô giữ</td><td>Merkle root ghi trên đầu khối</td></tr>
+          <tr><td>Dũng kiểm tra dòng của mình</td><td>Ví điện thoại kiểm tra giao dịch (SPV)</td></tr>
+        </table>
+      </div>
+      <div class="panel" style="gap:12px">
+        <h4>Tự tay thử: sửa một dòng bất kỳ</h4>
+        <div class="vd-msg ok" id="vdMsg" role="status">Mã gốc vẫn là 561d: sổ chưa bị sửa.</div>
+        <div class="vd-tree">
+          <div class="vd-lv vd-l1"><div class="vd-nd root" id="vd7"><div class="k">Gốc của cây</div><div class="c">561d</div></div></div>
+          <div class="vd-ar">ghép đôi rồi lấy mã ↑</div>
+          <div class="vd-lv vd-l2"><div class="vd-nd" id="vd5"><div class="k">Bàn 1 (dòng 1 + 2)</div><div class="c">d09d</div></div><div class="vd-nd" id="vd6"><div class="k">Bàn 2 (dòng 3 + 4)</div><div class="c">00ac</div></div></div>
+          <div class="vd-ar">ghép đôi rồi lấy mã ↑</div>
+          <div class="vd-lv vd-l4"><div class="vd-nd" id="vd1"><div class="k">Mã dòng 1</div><div class="c">d024</div></div><div class="vd-nd" id="vd2"><div class="k">Mã dòng 2</div><div class="c">f461</div></div><div class="vd-nd" id="vd3"><div class="k">Mã dòng 3</div><div class="c">5ed8</div></div><div class="vd-nd" id="vd4"><div class="k">Mã dòng 4</div><div class="c">8e39</div></div></div>
+          <div class="vd-ar">bỏ từng dòng vào máy tạo mã ↑</div>
+        </div>
+        <div class="vd-in">
+          <label for="vdT1">Dòng 1<input type="text" id="vdT1" value="An → Bình: 10"></label>
+          <label for="vdT2">Dòng 2<input type="text" id="vdT2" value="Bình → Chi: 3"></label>
+          <label for="vdT3">Dòng 3<input type="text" id="vdT3" value="Chi → Dũng: 1,5"></label>
+          <label for="vdT4">Dòng 4<input type="text" id="vdT4" value="Dũng → An: 0,7"></label>
+        </div>
+        <div class="row"><button class="btn sm" id="vdReset">Trả sổ về như cũ</button><button class="btn sm" id="vdTamper">Thử sửa dòng 3 thành 150</button></div>
+        <div class="vd-check">
+          <h4>Kiểm tra nhanh một dòng</h4>
+          <label class="f" for="vdPick">Dòng cần kiểm tra
+            <select id="vdPick"><option value="0">Dòng 1</option><option value="1">Dòng 2</option><option value="2" selected>Dòng 3</option><option value="3">Dòng 4</option></select></label>
+          <ol id="vdSteps"></ol>
+          <p class="note" style="margin:0">Ô viền xanh là đường đi từ dòng được chọn lên gốc; ô vàng là 2 mã cô cần thêm. Không cần đọc các dòng còn lại.</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -429,6 +519,35 @@ function merkleRoot(strs){const lv=merkleLevels(strs.map(s=>sha256(s)));return l
   $('addTx').onclick=()=>{txs.push(`Giao dịch mới ${txs.length+1}: 1`);renderList();renderTree();};
   renderList();renderTree();})();
 
+
+/* ---------- Ví dụ sổ quỹ lớp 6A ---------- */
+(function(){const ORIG=['An → Bình: 10','Bình → Chi: 3','Chi → Dũng: 1,5','Dũng → An: 0,7'];
+  const tree=t=>{const a=t.map(x=>sha256(x));const b=sha256(a[0]+a[1]),c=sha256(a[2]+a[3]);return [...a,b,c,sha256(b+c)];};
+  const BASE=tree(ORIG);const s4=h=>h.slice(0,4);
+  const ins=[1,2,3,4].map(i=>$('vdT'+i));
+  function upd(){const v=tree(ins.map(x=>x.value));
+    for(let i=0;i<7;i++){const n=$('vd'+(i+1));n.querySelector('.c').textContent=s4(v[i]);n.classList.toggle('chg',v[i]!==BASE[i]);}
+    const m=$('vdMsg');
+    if(v[6]===BASE[6]){m.className='vd-msg ok';m.textContent='Mã gốc vẫn là '+s4(BASE[6])+': sổ chưa bị sửa.';}
+    else{m.className='vd-msg bad';m.textContent='Mã gốc thành '+s4(v[6])+', khác '+s4(BASE[6])+' cô đã ghi: có người sửa sổ!';}
+    check(v);}
+  function check(v){const k=+$('vdPick').value;const sib=k^1;const pair=k<2?5:6;const other=k<2?6:5;
+    const mine=v[k];const left=k%2===0;
+    const mid=left?sha256(mine+BASE[sib]):sha256(BASE[sib]+mine);
+    const root=pair===5?sha256(mid+BASE[5]):sha256(BASE[4]+mid);
+    for(let i=1;i<=7;i++){const n=$('vd'+i);n.classList.remove('need','path');}
+    $('vd'+(k+1)).classList.add('path');$('vd'+pair).classList.add('path');$('vd7').classList.add('path');
+    $('vd'+(sib+1)).classList.add('need');$('vd'+other).classList.add('need');
+    const ok=root===BASE[6];const name='Bàn '+(pair-4);
+    $('vdSteps').innerHTML=
+      `<li>Bỏ dòng ${k+1} vào máy tạo mã: ra <code>${s4(mine)}</code>.</li>`+
+      `<li>Ghép với mã dòng ${sib+1} (<code>${s4(BASE[sib])}</code>, cô được đưa thêm): ra mã ${name} là <code>${s4(mid)}</code>.</li>`+
+      `<li>Ghép với mã Bàn ${other-4} (<code>${s4(BASE[other-1])}</code>, cô được đưa thêm): ra gốc <code>${s4(root)}</code>.</li>`+
+      `<li>${ok?`Khớp với <code>${s4(BASE[6])}</code> cô đã ghi: dòng ${k+1} đúng là có trong sổ.`:`Không khớp với <code>${s4(BASE[6])}</code> cô đã ghi: dòng ${k+1} đã bị sửa hoặc không có trong sổ.`}</li>`;}
+  ins.forEach(x=>x.addEventListener('input',upd));$('vdPick').addEventListener('change',upd);
+  $('vdReset').onclick=()=>{ORIG.forEach((t,i)=>ins[i].value=t);upd();};
+  $('vdTamper').onclick=()=>{ORIG.forEach((t,i)=>ins[i].value=t);ins[2].value='Chi → Dũng: 150';upd();};
+  upd();})();
 /* ---------- STEP 3 ---------- */
 const S3={index:1,timestamp:nowStr(),prev:'',merkle:'',difficulty:4,nonce:0,hash:''};
 (function(){$('bTime').value=S3.timestamp;
