@@ -38,7 +38,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)
 body{padding-bottom:max(24px,env(safe-area-inset-bottom))}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;padding:12px 0 6px}
+.brand{display:flex;align-items:center;gap:8px 10px;padding:12px 0 6px;flex-wrap:wrap}
 .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--btc),var(--eth));display:grid;place-items:center;color:#fff;font-weight:700;font-size:17px;flex:none}
 .brand h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.01em}
 .brand .sub{font-size:12.5px;color:var(--muted)}
@@ -158,6 +158,7 @@ svg.spark{width:100%;height:56px;display:block;margin-top:6px}
       <div class="sp"></div>
       <span class="chip" id="netDot" data-s="connecting">● Đang kết nối…</span>
       <a class="iconbtn" href="./tao-lap-blockchain.html" style="text-decoration:none;display:inline-flex;align-items:center" title="Mô phỏng từng bước tạo lập một chuỗi khối">Tạo lập Blockchain</a>
+      <a class="iconbtn" href="./khoa-va-chu-ky.html" style="text-decoration:none;display:inline-flex;align-items:center" title="Mô phỏng khóa riêng, khóa công khai, 12 từ khôi phục và chữ ký số">Khóa và chữ ký</a>
       <a class="iconbtn" href="./doanh-nghiep.html" style="text-decoration:none;display:inline-flex;align-items:center" title="Mô phỏng blockchain doanh nghiệp">Sổ cái DN</a>
       <button class="iconbtn" id="gvLoginBtn" title="Đăng nhập dành cho giảng viên">Giảng viên</button>
       <button class="iconbtn" id="themeBtn" title="Đổi giao diện sáng/tối">Sáng/Tối</button>

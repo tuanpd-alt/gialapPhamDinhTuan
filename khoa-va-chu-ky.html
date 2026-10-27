@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Khóa và chữ ký</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+/* Merkle */
+.txrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+.txrow .tag{font:600 12px var(--f-mono);color:var(--muted);width:34px}
+.tree{display:grid;gap:14px;padding:6px 2px;min-width:max-content}
+.lvl{display:flex;gap:8px;justify-content:space-around}
+.node{font:12px var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:5px 7px;text-align:center;min-width:92px;cursor:default}
+.node small{display:block;font:500 11px var(--f-body);color:var(--muted)}
+.node.leaf{cursor:pointer}
+.node.dup{border-style:dashed;opacity:.75}
+.node.root{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.node.root small{color:var(--on-accent);opacity:.85}
+.node.path{outline:2px solid var(--accent)}
+.node.proof{background:var(--proof);border-color:var(--proof)}
+.node.flash{animation:fl 1s ease-out}
+@keyframes fl{0%{background:var(--zero-bg);color:var(--zero-ink)}100%{}}
+/* Chain */
+.chain{display:flex;gap:0;align-items:stretch;padding-bottom:6px}
+.card{flex:0 0 280px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start}
+.card.valid{border-color:var(--ok)}.card.invalid{border-color:var(--bad);background:var(--bad-bg)}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .hd b{font-family:var(--f-display);font-size:17px}
+.kv{display:grid;grid-template-columns:78px minmax(0,1fr);gap:2px 8px;font-size:12.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--f-mono);word-break:break-all}
+.txs{display:grid;gap:4px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:8px}
+.tx{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.tx input{width:84px;padding:3px 6px;font:12.5px var(--f-mono);text-align:right}
+.tx .cb{color:var(--muted);font-style:italic}
+.issues{font-size:12.5px;color:var(--bad);display:grid;gap:2px}
+.link{flex:0 0 34px;display:grid;place-items:center;color:var(--muted);font-size:20px}
+.link.broken{color:var(--bad)}
+.pending{display:grid;gap:4px;font-size:13.5px}
+.empty{color:var(--muted);font-style:italic;font-size:13px}
+.prob{font:600 28px var(--f-mono);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent)}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:4px}
+
+@media (prefers-reduced-motion:reduce){.node.flash{animation:none}}
+
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+
+
+/* Khóa và chữ ký */
+.sub-block{border-top:1px dashed var(--line);padding-top:14px;display:grid;gap:10px}
+.words{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.words span{background:var(--sunk);border-radius:8px;padding:7px 9px;font:14px var(--f-mono);display:flex;gap:6px;align-items:baseline;min-width:0}
+.words span i{color:var(--muted);font-style:normal;font-size:11.5px;min-width:16px;text-align:right}
+.words span b{font-weight:600;overflow-wrap:anywhere}
+.words.masked span b{filter:blur(6px);user-select:none}
+@media (max-width:420px){.words{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.flow{display:grid;gap:6px}
+.fstep{display:grid;gap:6px;background:var(--sunk);border-radius:10px;padding:10px 12px}
+.fstep .lbl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.fstep .hash{background:var(--surface);padding:6px 8px}
+.fstep .hash.addr{font-size:15px;font-weight:600;color:var(--accent)}
+.fop{text-align:center;color:var(--muted);font-size:12.5px}
+.fop .oneway{color:var(--bad)}
+.verdict{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:10px;font-weight:600;font-size:17px;line-height:1.35}
+.verdict.sm{font-size:15px;padding:10px 12px}
+.verdict.ok{background:var(--ok-bg);color:var(--ok)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict .ic{font-size:26px;line-height:1;flex:none}
+.verdict.sm .ic{font-size:20px}
+.verdict small{display:block;font-weight:400;font-size:13.5px;margin-top:3px;overflow-wrap:anywhere}
+.hash.changed{background:var(--bad-bg);color:var(--bad)}
+.kv2{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center}
+.kv2>span{font:600 13px var(--f-mono);color:var(--muted)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.scen{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px}
+.scen h5{margin:0;font-size:15px}
+.slog{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+.slog li{overflow-wrap:anywhere}
+.slog li.okl{color:var(--ok)}.slog li.badl{color:var(--bad)}.slog li.warnl{color:var(--zero-ink);font-weight:600}
+.explain ol li,.explain ul li,.panel .note{overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">⚿</div>
+  <div class="ttl"><h1>Khóa và chữ ký</h1><div class="sub">Từng bước: 12 từ khôi phục · khóa riêng · khóa công khai · ký lệnh · kiểm tra chữ ký</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <a class="btnlink" href="./tao-lap-blockchain.html">Tạo lập Blockchain</a>
+  <a class="btnlink" href="./doanh-nghiep.html">Sổ cái DN</a>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<nav class="steps wrap" role="tablist" aria-label="Các bước">
+  <button role="tab" data-go="1" aria-selected="true"><span class="n">1</span>12 từ &amp; khóa riêng</button>
+  <button role="tab" data-go="2" aria-selected="false"><span class="n">2</span>Khóa công khai &amp; địa chỉ</button>
+  <button role="tab" data-go="3" aria-selected="false"><span class="n">3</span>Ký lệnh chuyển tiền</button>
+  <button role="tab" data-go="4" aria-selected="false"><span class="n">4</span>Kiểm tra chữ ký</button>
+  <button role="tab" data-go="5" aria-selected="false"><span class="n">5</span>Kẻ gian thử sức</button>
+</nav>
+
+<main class="wrap">
+
+<!-- STEP 1 -->
+<section class="step" id="s1">
+  <div class="explain">
+    <h2>Bước 1. 12 từ khôi phục và khóa riêng</h2>
+    <p>Trong bài này bạn đóng vai <b>An</b>. Ví của An bắt đầu từ một con số ngẫu nhiên 128 bit. Ví đổi con số đó thành <b>12 từ tiếng Anh</b> lấy trong danh sách chuẩn 2.048 từ để dễ chép ra giấy. Từ 12 từ này, ví tính ra <b>khóa riêng</b>: một con số 256 bit dùng để ký lệnh tiêu tiền.</p>
+    <h3>Ví dụ đời thường</h3>
+    <p>12 từ giống <b>khuôn đúc chìa khóa</b>. Mất điện thoại (mất chìa) thì vẫn đúc lại được chìa từ khuôn. Nhưng ai lấy được khuôn cũng tự đúc được chìa mở hộp tiền của bạn.</p>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Bấm "Tạo ví mới": 12 từ, khóa riêng và địa chỉ đều đổi.</li>
+      <li>Khôi phục bằng đúng 12 từ của An: ra lại đúng ví của An.</li>
+      <li>Đổi chỗ hai từ: ví thường báo "sai mã kiểm tra" vì 4 bit cuối của từ thứ 12 là mã kiểm tra. Nếu lọt qua được thì sẽ ra một ví khác hẳn. Thứ tự từ cũng là bí mật.</li>
+    </ul>
+    <p class="src">Chuẩn BIP-39 (12 từ, PBKDF2-HMAC-SHA512, 2.048 vòng) và BIP-32 (khóa gốc). Trang dừng ở khóa gốc; ví thật còn suy tiếp theo đường dẫn như m/44'/0'/0'/0/0.</p>
+  </div>
+  <div class="panel">
+    <div class="row" style="justify-content:space-between"><h4>12 từ khôi phục của An</h4><span class="chip bad">Bí mật tuyệt đối</span></div>
+    <div class="words" id="wWords"><span class="empty">Đang tạo ví…</span></div>
+    <div class="row"><button class="btn primary" id="wNew">Tạo ví mới cho An</button><button class="btn" id="wMask">Che 12 từ</button></div>
+    <div class="stats">
+      <div class="stat"><b>2.048</b><span>Từ trong danh sách chuẩn</span></div>
+      <div class="stat"><b>11 bit</b><span>Mỗi từ mang</span></div>
+      <div class="stat"><b>≈ 3,4 × 10³⁸</b><span>Số bộ 12 từ có thể có (2¹²⁸)</span></div>
+    </div>
+    <div><div class="row" style="justify-content:space-between"><h4>Khóa riêng của An (64 ký tự hệ 16)</h4><span class="chip bad">Bí mật</span></div>
+      <div class="hash" id="wPriv" style="margin-top:6px">…</div>
+      <p class="note" id="wPrivDec" style="margin:6px 0 0"></p></div>
+    <div><div class="row" style="justify-content:space-between"><h4>Địa chỉ ví của An</h4><span class="chip ok">Công khai</span></div>
+      <div class="hash" id="wAddr" style="margin-top:6px">…</div></div>
+    <div class="sub-block">
+      <h4>Khôi phục ví từ 12 từ</h4>
+      <label class="f" for="rIn">Gõ hoặc dán 12 từ, cách nhau bằng dấu cách
+        <textarea id="rIn" class="mono" spellcheck="false" autocomplete="off"></textarea></label>
+      <div class="row">
+        <button class="btn sm" id="rFill">Điền đúng 12 từ của An</button>
+        <button class="btn sm" id="rSwap">Đổi chỗ từ 1 và 2</button>
+        <button class="btn sm" id="rTypo">Chép sai từ thứ 5</button>
+        <button class="btn primary sm" id="rGo">Khôi phục</button>
+      </div>
+      <div id="rOut" role="status"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section class="step" id="s2" hidden>
+  <div class="explain">
+    <h2>Bước 2. Khóa công khai và địa chỉ ví</h2>
+    <p>Ví lấy khóa riêng nhân với một điểm cố định <b>G</b> trên đường cong elliptic <b>secp256k1</b> (đường cong Bitcoin dùng) để ra <b>khóa công khai</b>. Sau đó ví băm khóa công khai bằng SHA-256 rồi RIPEMD-160, thêm mã kiểm tra và viết lại theo bảng chữ Base58 để ra <b>địa chỉ ví</b> bắt đầu bằng chữ "1".</p>
+    <h3>Ví dụ đời thường</h3>
+    <p>Giống <b>pha màu</b>: trộn vàng với xanh dương ra xanh lá thì dễ, nhưng từ xô sơn xanh lá không ai tách lại được đúng lượng vàng và xanh dương. Mỗi mũi tên bên phải chỉ đi một chiều.</p>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Địa chỉ ví giống <b>số hộp thư</b>: ai biết cũng chỉ nhét tiền vào được, không lấy ra được.</li>
+      <li>Khóa công khai giống <b>mẫu chữ ký</b> để đối chiếu, dùng ở bước 4.</li>
+      <li>Từ địa chỉ hay khóa công khai, không ai suy ngược ra khóa riêng.</li>
+    </ul>
+    <p class="src" id="vecCheck"></p>
+  </div>
+  <div class="panel">
+    <div class="flow" id="flow"></div>
+    <div class="sub-block">
+      <h4>Đoán ngược khóa riêng mất bao lâu?</h4>
+      <p style="margin:0">Có khoảng 1,16 × 10⁷⁷ khóa riêng. Một máy tính thử <b>1 tỷ khóa mỗi giây</b> cần trung bình khoảng <b>1,8 × 10⁶⁰ năm</b> mới trúng. Tuổi của vũ trụ chỉ khoảng 1,38 × 10¹⁰ năm.</p>
+    </div>
+    <div class="sub-block">
+      <h4>Sổ địa chỉ của lớp (ai xem cũng được)</h4>
+      <div class="scroll"><table><thead><tr><th>Bạn</th><th>Địa chỉ ví</th><th>Khóa công khai</th></tr></thead><tbody id="book"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section class="step" id="s3" hidden>
+  <div class="explain">
+    <h2>Bước 3. Ký lệnh chuyển tiền</h2>
+    <p>An viết lệnh chuyển tiền. Máy băm lệnh bằng SHA-256, rồi dùng <b>khóa riêng</b> của An tính ra <b>chữ ký</b> gồm hai con số <b>r</b> và <b>s</b> (thuật toán ECDSA). Lệnh và chữ ký được gửi đi cho cả mạng lưới; <b>khóa riêng không bao giờ rời máy của An</b>.</p>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Mỗi lần ký, máy dùng một số ngẫu nhiên mới, nên bấm "Ký lại" sẽ ra chữ ký khác. Chữ ký nào cũng hợp lệ.</li>
+      <li>Sửa số tiền hay lời nhắn thì mã băm của lệnh đổi hẳn, nên chữ ký cũ không dùng được cho lệnh mới.</li>
+      <li>Khác chữ ký tay: chữ ký tay trên mọi tờ giấy đều giống nhau nên có thể cắt dán. Chữ ký số gắn chặt với từng nội dung.</li>
+    </ul>
+    <p class="src">Trang ký trực tiếp mã SHA-256 của nội dung lệnh cho dễ quan sát. Bitcoin thật ký mã băm của giao dịch đã mã hóa nhị phân.</p>
+  </div>
+  <div class="panel">
+    <div class="grid2f">
+      <label class="f" for="oFrom">Người gửi<input type="text" id="oFrom" readonly class="mono"></label>
+      <label class="f" for="oTo">Người nhận<select id="oTo"></select></label>
+      <label class="f" for="oAmt">Số tiền (nghìn đồng)<input type="text" id="oAmt" value="10" inputmode="decimal"></label>
+      <label class="f" for="oNote">Lời nhắn<input type="text" id="oNote" value="Trả tiền quỹ lớp"></label>
+    </div>
+    <div><h4>Nội dung lệnh (máy đọc từng ký tự)</h4><pre class="hash" id="oText" style="margin:6px 0 0;white-space:pre-wrap"></pre></div>
+    <div><h4>Mã băm của lệnh (SHA-256)</h4><div class="hash" id="oHash" style="margin-top:6px"></div></div>
+    <div class="row"><button class="btn primary" id="oSign">Ký bằng khóa riêng của An</button><button class="btn" id="oResign" disabled>Ký lại lần nữa</button></div>
+    <div id="oSigBox" hidden>
+      <div class="row" style="justify-content:space-between"><h4>Chữ ký của An</h4><span class="note" id="oSigNo"></span></div>
+      <div class="kv2"><span>r</span><div class="hash" id="oR"></div><span>s</span><div class="hash" id="oS"></div></div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="oSend">Gửi lệnh đã ký sang bước 4 →</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- STEP 4 -->
+<section class="step" id="s4" hidden>
+  <div class="explain">
+    <h2>Bước 4. Kiểm tra chữ ký</h2>
+    <p>Mọi máy trong mạng lưới đều tự kiểm tra lệnh của An. Chúng chỉ cần ba thứ: <b>nội dung lệnh</b>, <b>chữ ký</b>, và <b>khóa công khai</b> của An. Không ai cần biết khóa riêng.</p>
+    <p>Nếu chữ ký <b>khớp</b>: lệnh đúng là do người giữ khóa riêng của An ký, và chưa bị sửa ký tự nào. Nếu <b>không khớp</b>: lệnh bị từ chối.</p>
+    <h3>Thử ngay</h3>
+    <ol>
+      <li>Sửa số tiền từ 10 thành 100: chữ ký báo không khớp.</li>
+      <li>Trả về như cũ: khớp trở lại.</li>
+      <li>Đổi người nhận, sửa lời nhắn, hay sửa một ký tự của chữ ký: đều không khớp.</li>
+      <li>Kiểm tra bằng khóa công khai của Bình: không khớp, vì Bình không phải người ký.</li>
+    </ol>
+  </div>
+  <div class="panel">
+    <div class="verdict" id="vRes" role="status"></div>
+    <div><h4>Lệnh nhận được (bạn được sửa thử)</h4></div>
+    <div class="grid2f">
+      <label class="f" for="vTo">Người nhận<select id="vTo"></select></label>
+      <label class="f" for="vAmt">Số tiền (nghìn đồng)<input type="text" id="vAmt" inputmode="decimal"></label>
+      <label class="f" for="vNote">Lời nhắn<input type="text" id="vNote"></label>
+      <label class="f" for="vKey">Kiểm tra bằng khóa công khai của<select id="vKey"></select></label>
+    </div>
+    <div class="row">
+      <button class="btn sm" id="vT100">Sửa 10 thành 100</button>
+      <button class="btn sm" id="vTChi">Đổi người nhận thành Chi</button>
+      <button class="btn sm" id="vTSig">Sửa 1 ký tự của chữ ký</button>
+      <button class="btn primary sm" id="vReset">Trả về như lúc ký</button>
+    </div>
+    <div class="cmp">
+      <div><h4>Mã băm lúc An ký</h4><div class="hash" id="vH0" style="margin-top:6px"></div></div>
+      <div><h4>Mã băm của lệnh đang kiểm tra</h4><div class="hash" id="vH1" style="margin-top:6px"></div></div>
+    </div>
+    <div><h4>Chữ ký kèm theo lệnh</h4><div class="kv2" style="margin-top:6px"><span>r</span><div class="hash" id="vR"></div><span>s</span><div class="hash" id="vS"></div></div></div>
+  </div>
+</section>
+
+<!-- STEP 5 -->
+<section class="step" id="s5" hidden>
+  <div class="explain">
+    <h2>Bước 5. Kẻ gian thử sức</h2>
+    <p>Kẻ gian muốn lấy tiền của An. Hãy chạy thử ba cách hắn có thể làm và xem mạng lưới phản ứng thế nào.</p>
+    <h3>Năm quy tắc an toàn</h3>
+    <ol>
+      <li><b>Không bao giờ</b> cho ai biết 12 từ hay khóa riêng, kể cả người xưng là nhân viên sàn, công an hay bạn thân. Người đàng hoàng không bao giờ hỏi.</li>
+      <li>Chép 12 từ ra <b>giấy</b>, cất nơi an toàn. Không chụp màn hình, không lưu ghi chú, không gửi qua Zalo hay email.</li>
+      <li>Chép <b>đủ 12 từ, đúng thứ tự</b>.</li>
+      <li>Không có nút "quên mật khẩu": mất 12 từ và mất máy là <b>mất tiền vĩnh viễn</b>.</li>
+      <li>Địa chỉ ví thì cứ thoải mái cho người khác biết.</li>
+    </ol>
+    <p class="src">"Not your keys, not your coins": không giữ chìa thì tiền không thật sự là của mình.</p>
+  </div>
+  <div class="panel">
+    <div class="scen">
+      <div class="row" style="justify-content:space-between"><h5>Cách 1. Chặn lệnh của An rồi sửa người nhận</h5><button class="btn sm" data-scen="1">Chạy thử</button></div>
+      <p class="note" style="margin:0">Kẻ gian chặn lệnh An vừa ký (ở bước 3), đổi người nhận thành địa chỉ của hắn, giữ nguyên chữ ký của An.</p>
+      <div id="sc1"></div>
+    </div>
+    <div class="scen">
+      <div class="row" style="justify-content:space-between"><h5>Cách 2. Tự viết lệnh rồi ký giả</h5><button class="btn sm" data-scen="2">Chạy thử</button></div>
+      <p class="note" style="margin:0">Kẻ gian viết lệnh "An chuyển cho Kẻ gian 1000" và ký bằng khóa riêng của chính hắn, vì hắn không có khóa của An.</p>
+      <div id="sc2"></div>
+    </div>
+    <div class="scen">
+      <div class="row" style="justify-content:space-between"><h5>Cách 3. Lừa An đọc 12 từ</h5><button class="btn sm" data-scen="3">Chạy thử</button></div>
+      <p class="note" style="margin:0">Kẻ gian nhắn tin giả làm "nhân viên hỗ trợ ví": "Ví của bạn bị lỗi, gửi 12 từ để chúng tôi sửa giúp". An gửi.</p>
+      <div id="sc3"></div>
+    </div>
+  </div>
+</section>
+
+<div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
+</main>
+<footer class="wrap foot">Mô phỏng chạy hoàn toàn trong trình duyệt, không gửi khóa đi đâu. Dùng đúng chuẩn Bitcoin: đường cong secp256k1, ECDSA, danh sách 2.048 từ BIP-39, địa chỉ P2PKH (Base58Check). Đây là ví tập luyện: không gửi tiền thật vào các địa chỉ trên trang.</footer>
+
+<script>
+/* ===== Mật mã cho trang Khóa và chữ ký (chuẩn Bitcoin: secp256k1, BIP-39, P2PKH) ===== */
+const KC=(function(){
+const enc=new TextEncoder();
+const hex=b=>Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');
+const unhex=h=>{const o=new Uint8Array(h.length/2);for(let i=0;i<o.length;i++)o[i]=parseInt(h.substr(i*2,2),16);return o;};
+const cat=(...a)=>{const o=new Uint8Array(a.reduce((s,x)=>s+x.length,0));let p=0;for(const x of a){o.set(x,p);p+=x.length;}return o;};
+const b2n=b=>BigInt('0x'+(hex(b)||'0'));
+const n2b=(n,len=32)=>unhex(n.toString(16).padStart(len*2,'0'));
+/* SHA-256 trên byte */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+function sha256(m){if(typeof m==='string')m=enc.encode(m);const l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+  const W=new Uint32Array(64);let h=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];W[t]=(W[t-16]+(((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3))+W[t-7]+(((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10)))|0;}
+    let [a,b,c,d,e,f,g,hh]=h;
+    for(let t=0;t<64;t++){const t1=(hh+(((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)))+((e&f)^(~e&g))+K[t]+W[t])|0;const t2=((((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)))+((a&b)^(a&c)^(b&c)))|0;hh=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+    h=[(h[0]+a)|0,(h[1]+b)|0,(h[2]+c)|0,(h[3]+d)|0,(h[4]+e)|0,(h[5]+f)|0,(h[6]+g)|0,(h[7]+hh)|0];}
+  const out=new Uint8Array(32),odv=new DataView(out.buffer);h.forEach((x,i)=>odv.setUint32(i*4,x>>>0));return out;}
+/* RIPEMD-160 */
+function ripemd160(m){const l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-8,bl>>>0,true);dv.setUint32(n-4,Math.floor(bl/4294967296),true);
+  const r=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,7,4,13,1,10,6,15,3,12,0,9,5,2,14,11,8,3,10,14,4,9,15,8,1,2,7,0,6,13,11,5,12,1,9,11,10,0,8,12,4,13,3,7,15,14,5,6,2,4,0,5,9,7,12,2,10,14,1,3,8,11,6,15,13];
+  const rp=[5,14,7,0,9,2,11,4,13,6,15,8,1,10,3,12,6,11,3,7,0,13,5,10,14,15,8,12,4,9,1,2,15,5,1,3,7,14,6,9,11,8,12,2,10,0,4,13,8,6,4,1,3,11,15,0,5,12,2,13,9,7,10,14,12,15,10,4,1,5,8,7,6,2,13,14,0,3,9,11];
+  const s=[11,14,15,12,5,8,7,9,11,13,14,15,6,7,9,8,7,6,8,13,11,9,7,15,7,12,15,9,11,7,13,12,11,13,6,7,14,9,13,15,14,8,13,6,5,12,7,5,11,12,14,15,14,15,9,8,9,14,5,6,8,6,5,12,9,15,5,11,6,8,13,12,5,12,13,14,11,8,5,6];
+  const sp=[8,9,9,11,13,15,15,5,7,7,8,11,14,14,12,6,9,13,15,7,12,8,9,11,7,7,12,7,6,15,13,11,9,7,15,11,8,6,6,14,12,13,5,14,13,13,7,5,15,5,8,11,14,14,6,14,6,9,12,9,12,5,15,8,8,5,12,9,12,5,14,6,8,13,6,5,15,13,11,11];
+  const KL=[0,0x5a827999,0x6ed9eba1,0x8f1bbcdc,0xa953fd4e],KR=[0x50a28be6,0x5c4dd124,0x6d703ef3,0x7a6d76e9,0];
+  const f=(j,x,y,z)=>j<16?(x^y^z):j<32?((x&y)|(~x&z)):j<48?((x|~y)^z):j<64?((x&z)|(y&~z)):(x^(y|~z));
+  const rl=(x,k)=>(x<<k)|(x>>>(32-k));
+  let h0=0x67452301,h1=0xefcdab89,h2=0x98badcfe,h3=0x10325476,h4=0xc3d2e1f0;const X=new Array(16);
+  for(let o=0;o<n;o+=64){for(let i=0;i<16;i++)X[i]=dv.getUint32(o+i*4,true);
+    let al=h0,bl2=h1,cl=h2,dl=h3,el=h4,ar=h0,br=h1,cr=h2,dr=h3,er=h4;
+    for(let j=0;j<80;j++){let t=(rl((al+f(j,bl2,cl,dl)+X[r[j]]+KL[j>>4])|0,s[j])+el)|0;al=el;el=dl;dl=rl(cl,10);cl=bl2;bl2=t;
+      t=(rl((ar+f(79-j,br,cr,dr)+X[rp[j]]+KR[j>>4])|0,sp[j])+er)|0;ar=er;er=dr;dr=rl(cr,10);cr=br;br=t;}
+    const t=(h1+cl+dr)|0;h1=(h2+dl+er)|0;h2=(h3+el+ar)|0;h3=(h4+al+br)|0;h4=(h0+bl2+cr)|0;h0=t;}
+  const out=new Uint8Array(20),odv=new DataView(out.buffer);[h0,h1,h2,h3,h4].forEach((x,i)=>odv.setUint32(i*4,x>>>0,true));return out;}
+/* Base58Check */
+const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function base58check(payload){const full=cat(payload,sha256(sha256(payload)).slice(0,4));let x=b2n(full),s='';while(x>0n){s=B58[Number(x%58n)]+s;x/=58n;}for(const b of full){if(b===0)s='1'+s;else break;}return s;}
+/* secp256k1 */
+const P=0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2fn;
+const N=0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
+const G={x:0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798n,y:0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8n};
+const mod=(a,m=P)=>{const r=a%m;return r>=0n?r:r+m;};
+function inv(a,m=P){let [lm,hm,lo,hi]=[1n,0n,mod(a,m),m];while(lo>1n){const q=hi/lo;[lm,hm]=[hm-lm*q,lm];[lo,hi]=[hi-lo*q,lo];}return mod(lm,m);}
+/* toạ độ Jacobian để nhân điểm nhanh */
+function jDbl([X,Y,Z]){if(Y===0n)return [0n,1n,0n];const S=mod(4n*X*Y*Y),M=mod(3n*X*X),X2=mod(M*M-2n*S);return [X2,mod(M*(S-X2)-8n*Y*Y*Y*Y),mod(2n*Y*Z)];}
+function jAdd(p,q){if(p[2]===0n)return q;if(q[2]===0n)return p;const [X1,Y1,Z1]=p,[X2,Y2,Z2]=q;
+  const U1=mod(X1*Z2*Z2),U2=mod(X2*Z1*Z1),S1=mod(Y1*Z2*Z2*Z2),S2=mod(Y2*Z1*Z1*Z1);
+  if(U1===U2)return S1!==S2?[0n,1n,0n]:jDbl(p);const H=mod(U2-U1),R=mod(S2-S1),H2=mod(H*H),H3=mod(H*H2),U1H2=mod(U1*H2);
+  const X3=mod(R*R-H3-2n*U1H2);return [X3,mod(R*(U1H2-X3)-S1*H3),mod(H*Z1*Z2)];}
+function toAff([X,Y,Z]){if(Z===0n)return null;const zi=inv(Z),z2=mod(zi*zi);return {x:mod(X*z2),y:mod(Y*z2*zi)};}
+function mul(k,Pt=G){let R=[0n,1n,0n],A=[Pt.x,Pt.y,1n];while(k>0n){if(k&1n)R=jAdd(R,A);A=jDbl(A);k>>=1n;}return toAff(R);}
+function add(p,q){return toAff(jAdd([p.x,p.y,1n],[q.x,q.y,1n]));}
+const pubCompressed=pt=>(pt.y&1n?'03':'02')+pt.x.toString(16).padStart(64,'0');
+function decompress(h){const x=BigInt('0x'+h.slice(2));const y2=mod(x*x*x+7n);let y=1n,b=y2,e=(P+1n)/4n;while(e>0n){if(e&1n)y=mod(y*b);b=mod(b*b);e>>=1n;}if(mod(y*y)!==y2)return null;if((y&1n)!==(h.startsWith('03')?1n:0n))y=P-y;return {x,y};}
+function randScalar(){const b=new Uint8Array(32);for(;;){crypto.getRandomValues(b);const k=b2n(b);if(k>0n&&k<N)return k;}}
+/* Khóa & địa chỉ */
+function keyInfo(d){const pt=mul(d);const pub=pubCompressed(pt);const s=sha256(unhex(pub));const r=ripemd160(s);
+  return {d,dHex:d.toString(16).padStart(64,'0'),pt,pub,sha:hex(s),ripe:hex(r),address:base58check(cat(new Uint8Array([0]),r))};}
+/* ECDSA */
+const msgHash=msg=>sha256(msg);
+function sign(d,msg){const z=b2n(msgHash(msg));for(;;){const k=randScalar();const R=mul(k);const r=mod(R.x,N);if(r===0n)continue;let s=mod(inv(k,N)*(z+r*d),N);if(s===0n)continue;if(s>N/2n)s=N-s;return {r,s};}}
+function verify(pubHex,msg,sig){try{const Q=decompress(pubHex);if(!Q)return false;const {r,s}=sig;if(r<=0n||r>=N||s<=0n||s>=N)return false;const z=b2n(msgHash(msg));const w=inv(s,N);
+  const X=add(mul(mod(z*w,N)),mul(mod(r*w,N),Q));return !!X&&mod(X.x,N)===r;}catch(e){return false;}}
+/* BIP-39 */
+const WL='abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo'.split(' ');const WIDX=new Map(WL.map((w,i)=>[w,i]));
+function entropyToWords(ent){const cs=sha256(ent)[0]>>4;let bits='';for(const b of ent)bits+=b.toString(2).padStart(8,'0');bits+=cs.toString(2).padStart(4,'0');
+  const w=[];for(let i=0;i<12;i++)w.push(WL[parseInt(bits.slice(i*11,i*11+11),2)]);return w;}
+function newWords(){const e=new Uint8Array(16);crypto.getRandomValues(e);return entropyToWords(e);}
+function checkWords(words){if(words.length!==12)return {ok:false,why:'count',n:words.length};const bad=words.filter(w=>!WIDX.has(w));if(bad.length)return {ok:false,why:'unknown',bad};
+  let bits='';for(const w of words)bits+=WIDX.get(w).toString(2).padStart(11,'0');const ent=new Uint8Array(16);for(let i=0;i<16;i++)ent[i]=parseInt(bits.slice(i*8,i*8+8),2);
+  const cs=parseInt(bits.slice(128),2);if((sha256(ent)[0]>>4)!==cs)return {ok:false,why:'checksum'};return {ok:true,ent};}
+async function wordsToPriv(words){const pw=enc.encode(words.join(' ').normalize('NFKD'));const salt=enc.encode('mnemonic');
+  const base=await crypto.subtle.importKey('raw',pw,'PBKDF2',false,['deriveBits']);
+  const seed=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',hash:'SHA-512',salt,iterations:2048},base,512));
+  const hk=await crypto.subtle.importKey('raw',enc.encode('Bitcoin seed'),{name:'HMAC',hash:'SHA-512'},false,['sign']);
+  const I=new Uint8Array(await crypto.subtle.sign('HMAC',hk,seed));let d=b2n(I.slice(0,32));if(d===0n||d>=N)d=mod(d,N)||1n;return {seed:hex(seed),d};}
+return {hex,unhex,sha256,ripemd160,base58check,mul,keyInfo,sign,verify,msgHash,newWords,checkWords,wordsToPriv,entropyToWords,WL,N,randScalar};
+})();
+
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const short=a=>a.length>16?a.slice(0,8)+'…'+a.slice(-6):a;
+const h64=n=>n.toString(16).padStart(64,'0');
+
+/* ---------- navigation ---------- */
+let cur=1;
+function go(n){cur=Math.max(1,Math.min(5,n));for(let i=1;i<=5;i++)$('s'+i).hidden=i!==cur;
+  document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
+  $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===5;
+  try{history.replaceState(null,'','#buoc'+cur)}catch(e){}}
+document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('prevStep').onclick=()=>{go(cur-1);window.scrollTo({top:0})};$('nextStep').onclick=()=>{go(cur+1);window.scrollTo({top:0})};
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+
+/* ---------- state ---------- */
+const S={an:null,words:[],people:{},signed:null,signCount:0,sigTamper:false};
+const NAMES={an:'An',binh:'Bình',chi:'Chi',gian:'Kẻ gian'};
+function nameOf(addr){for(const k in S.people)if(S.people[k].address===addr)return NAMES[k];return 'Không rõ';}
+async function makeAn(){S.words=KC.newWords();const r=await KC.wordsToPriv(S.words);S.an=KC.keyInfo(r.d);S.people.an=S.an;}
+function makeOthers(){for(const k of ['binh','chi','gian'])S.people[k]=KC.keyInfo(KC.randScalar());}
+const orderText=(from,to,amt,note)=>`Người gửi: ${from}\nNgười nhận: ${to}\nSố tiền: ${amt}\nLời nhắn: ${note}`;
+
+/* ---------- STEP 1 ---------- */
+let masked=false;
+function renderWallet(){
+  $('wWords').innerHTML=S.words.map((w,i)=>`<span><i>${i+1}</i><b>${w}</b></span>`).join('');
+  $('wWords').classList.toggle('masked',masked);
+  $('wPriv').textContent=S.an.dHex;
+  $('wPrivDec').textContent='Viết theo hệ thập phân, khóa riêng này là một số có '+S.an.d.toString().length+' chữ số: '+S.an.d.toString();
+  $('wAddr').textContent=S.an.address;}
+$('wMask').onclick=()=>{masked=!masked;$('wMask').textContent=masked?'Hiện 12 từ':'Che 12 từ';renderWallet();};
+$('wNew').onclick=async()=>{$('wNew').disabled=true;await makeAn();$('wNew').disabled=false;$('rOut').innerHTML='';renderAll();signDefault();};
+$('rFill').onclick=()=>{$('rIn').value=S.words.join(' ');};
+$('rSwap').onclick=()=>{const w=[...S.words];[w[0],w[1]]=[w[1],w[0]];$('rIn').value=w.join(' ');};
+$('rTypo').onclick=()=>{const w=[...S.words];const i=KC.WL.indexOf(w[4]);w[4]=KC.WL[(i+1)%2048];$('rIn').value=w.join(' ');};
+$('rGo').onclick=async()=>{
+  const words=$('rIn').value.trim().toLowerCase().split(/\s+/).filter(Boolean);const out=$('rOut');
+  const c=KC.checkWords(words);
+  if(!c.ok){let msg;
+    if(c.why==='count')msg=`Cần đúng 12 từ, bạn mới nhập ${c.n} từ.`;
+    else if(c.why==='unknown')msg=`Từ không có trong danh sách 2.048 từ chuẩn: ${c.bad.map(esc).join(', ')}. Hãy kiểm tra chính tả.`;
+    else msg='Sai mã kiểm tra: 12 từ này không phải một bộ hợp lệ. Có thể bạn chép sai từ hoặc sai thứ tự. Ví từ chối khôi phục để bạn không vào nhầm một ví trống.';
+    out.innerHTML=`<div class="verdict bad sm"><span class="ic">✗</span><span>Không khôi phục được<small>${msg}</small></span></div>`;return;}
+  $('rGo').disabled=true;const r=await KC.wordsToPriv(words);$('rGo').disabled=false;const k=KC.keyInfo(r.d);
+  if(k.address===S.an.address)out.innerHTML=`<div class="verdict ok sm"><span class="ic">✓</span><span>Khôi phục đúng ví của An<small>Địa chỉ ${esc(k.address)} trùng với ví gốc. Mất điện thoại cũng không mất tiền, miễn còn giữ 12 từ.</small></span></div>`;
+  else out.innerHTML=`<div class="verdict bad sm"><span class="ic">!</span><span>Ra một ví khác, không phải ví của An<small>Địa chỉ ${esc(k.address)}. Bộ từ này hợp lệ nhưng khác bộ từ của An, nên ví này trống trơn.</small></span></div>`;};
+
+/* ---------- STEP 2 ---------- */
+function renderFlow(){const k=S.an;
+  const box=(t,chip,v,cls)=>`<div class="fstep"><div class="lbl"><span>${t}</span>${chip}</div><div class="hash ${cls||''}">${v}</div></div>`;
+  const op=t=>`<div class="fop">↓ ${t} <span class="oneway">(không đi ngược được)</span></div>`;
+  $('flow').innerHTML=
+    box('Khóa riêng','<span class="chip bad">Bí mật</span>',k.dHex)+
+    op('nhân với điểm G trên đường cong secp256k1')+
+    box('Khóa công khai (33 byte, dạng nén)','<span class="chip ok">Công khai</span>',k.pub)+
+    op('băm SHA-256')+
+    box('Mã băm SHA-256','',k.sha)+
+    op('băm RIPEMD-160 (còn 20 byte)')+
+    box('Mã băm RIPEMD-160','',k.ripe)+
+    op('thêm số phiên bản 00, thêm mã kiểm tra, viết bằng Base58')+
+    box('Địa chỉ ví','<span class="chip ok">Công khai</span>',k.address,'addr');
+  $('book').innerHTML=['an','binh','chi'].map(p=>`<tr><td>${NAMES[p]}${p==='an'?' (bạn)':''}</td><td class="mono">${S.people[p].address}</td><td class="mono" title="${S.people[p].pub}">${short(S.people[p].pub)}</td></tr>`).join('');}
+(function(){const t=KC.keyInfo(1n);$('vecCheck').textContent=(t.address==='1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH'?'✓ Kiểm định: với khóa riêng bằng 1, trang tính ra địa chỉ 1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH, trùng với vector công khai của Bitcoin.':'✗ Vector kiểm định không khớp.');})();
+
+/* ---------- STEP 3 ---------- */
+function fillPeopleSelect(sel,keys,val){sel.innerHTML=keys.map(k=>`<option value="${S.people[k].address}">${NAMES[k]} (${short(S.people[k].address)})</option>`).join('');if(val)sel.value=val;}
+function curOrder(){return orderText(S.an.address,$('oTo').value,$('oAmt').value.trim(),$('oNote').value);}
+function renderOrder(){$('oFrom').value=S.an.address;const t=curOrder();$('oText').textContent=t;$('oHash').textContent=KC.hex(KC.msgHash(t));}
+['oTo','oAmt','oNote'].forEach(id=>$(id).addEventListener('input',()=>{renderOrder();$('oSigBox').hidden=true;$('oResign').disabled=true;}));
+function doSign(){const t=curOrder();const sig=KC.sign(S.an.d,t);S.signCount++;
+  S.pending={to:$('oTo').value,amt:$('oAmt').value.trim(),note:$('oNote').value,text:t,sig};
+  $('oR').textContent=h64(sig.r);$('oS').textContent=h64(sig.s);$('oSigBox').hidden=false;$('oResign').disabled=false;
+  $('oSigNo').textContent='Lần ký thứ '+S.signCount+' cho lệnh này';}
+$('oSign').onclick=()=>{S.signCount=0;doSign();};
+$('oResign').onclick=doSign;
+$('oSend').onclick=()=>{if(!S.pending)return;S.signed=S.pending;S.sigTamper=false;loadVerify();go(4);window.scrollTo({top:0});};
+
+/* ---------- STEP 4 ---------- */
+function loadVerify(){const o=S.signed;fillPeopleSelect($('vTo'),['binh','chi','gian','an'],o.to);$('vAmt').value=o.amt;$('vNote').value=o.note;
+  fillPeopleSelect($('vKey'),['an','binh','chi'],S.an.address);renderVerify();}
+function verifySig(){const o=S.signed;return S.sigTamper?{r:o.sig.r,s:(o.sig.s^1n)}:o.sig;}
+function renderVerify(){const o=S.signed;if(!o)return;
+  const t=orderText(S.an.address,$('vTo').value,$('vAmt').value.trim(),$('vNote').value);
+  const keyOwner=Object.keys(S.people).find(k=>S.people[k].address===$('vKey').value);const pub=S.people[keyOwner].pub;
+  const sig=verifySig();const ok=KC.verify(pub,t,sig);
+  const h0=KC.hex(KC.msgHash(o.text)),h1=KC.hex(KC.msgHash(t));
+  $('vH0').textContent=h0;$('vH1').textContent=h1;$('vH1').classList.toggle('changed',h0!==h1);
+  $('vR').textContent=h64(sig.r);$('vS').textContent=h64(sig.s);$('vS').classList.toggle('changed',S.sigTamper);
+  const why=[];if(h0!==h1)why.push('nội dung lệnh đã khác lúc An ký (mã băm đổi hẳn)');if(S.sigTamper)why.push('chữ ký đã bị sửa');if(keyOwner!=='an')why.push('đang đối chiếu bằng khóa công khai của '+NAMES[keyOwner]+', mà người ký là An');
+  $('vRes').className='verdict '+(ok?'ok':'bad');
+  $('vRes').innerHTML=ok?`<span class="ic">✓</span><span>Chữ ký khớp<small>Lệnh đúng là do An ký và chưa bị sửa ký tự nào. Mạng lưới chấp nhận: ${esc(nameOf($('vTo').value))} nhận ${esc($('vAmt').value.trim())} nghìn.</small></span>`
+    :`<span class="ic">✗</span><span>Chữ ký không khớp<small>Lý do: ${why.join('; ')}. Mạng lưới từ chối lệnh này.</small></span>`;}
+['vTo','vAmt','vNote','vKey'].forEach(id=>$(id).addEventListener('input',renderVerify));
+$('vT100').onclick=()=>{$('vAmt').value=$('vAmt').value.trim()==='10'?'100':$('vAmt').value.trim()+'0';renderVerify();};
+$('vTChi').onclick=()=>{$('vTo').value=S.people.chi.address;renderVerify();};
+$('vTSig').onclick=()=>{S.sigTamper=!S.sigTamper;$('vTSig').textContent=S.sigTamper?'Trả chữ ký về như cũ':'Sửa 1 ký tự của chữ ký';renderVerify();};
+$('vReset').onclick=()=>{S.sigTamper=false;$('vTSig').textContent='Sửa 1 ký tự của chữ ký';loadVerify();};
+
+/* ---------- STEP 5 ---------- */
+const line=(ok,txt)=>`<li class="${ok===true?'okl':ok===false?'badl':ok==='warn'?'warnl':''}">${txt}</li>`;
+function scen1(){const o=S.signed;const fake=orderText(S.an.address,S.people.gian.address,o.amt,o.note);const ok=KC.verify(S.an.pub,fake,o.sig);
+  $('sc1').innerHTML=`<ol class="slog">${line(null,'Lệnh gốc: An chuyển '+esc(nameOf(o.to))+' '+esc(o.amt)+' nghìn, có chữ ký của An.')}${line(null,'Kẻ gian đổi người nhận thành '+short(S.people.gian.address)+', giữ nguyên chữ ký.')}${line(null,'Mã băm của lệnh đổi từ '+KC.hex(KC.msgHash(o.text)).slice(0,12)+'… thành '+KC.hex(KC.msgHash(fake)).slice(0,12)+'…')}${line(ok,ok?'Chữ ký khớp (không mong đợi).':'Mạng lưới kiểm tra bằng khóa công khai của An: <b>không khớp</b>. Lệnh bị từ chối.')}</ol>`;}
+function scen2(){const t=orderText(S.an.address,S.people.gian.address,'1000','Chuyển hết');const sig=KC.sign(S.people.gian.d,t);const ok=KC.verify(S.an.pub,t,sig);const okOwn=KC.verify(S.people.gian.pub,t,sig);
+  $('sc2').innerHTML=`<ol class="slog">${line(null,'Kẻ gian viết lệnh: Người gửi là An, người nhận là hắn, số tiền 1000.')}${line(null,'Hắn ký bằng khóa riêng của chính hắn. Chữ ký r = '+h64(sig.r).slice(0,12)+'…')}${line(ok,ok?'Khớp (không mong đợi).':'Mạng lưới kiểm tra bằng khóa công khai của An (người gửi ghi trong lệnh): <b>không khớp</b>. Lệnh bị từ chối.')}${line(null,'Chữ ký này chỉ khớp với khóa công khai của kẻ gian ('+(okOwn?'đúng vậy':'không')+'), nên chỉ tiêu được tiền của chính hắn.')}</ol>`;}
+async function scen3(){const btn=document.querySelector('[data-scen="3"]');btn.disabled=true;
+  const r=await KC.wordsToPriv([...S.words]);const k=KC.keyInfo(r.d);const t=orderText(S.an.address,S.people.gian.address,'1000','Chuyển hết');const sig=KC.sign(k.d,t);const ok=KC.verify(S.an.pub,t,sig);btn.disabled=false;
+  $('sc3').innerHTML=`<ol class="slog">${line(null,'Kẻ gian nhận được 12 từ: '+esc(S.words.slice(0,3).join(' '))+' …')}${line(null,'Hắn cài một ví bất kỳ trên máy của hắn, nhập 12 từ và khôi phục ra địa chỉ '+short(k.address)+(k.address===S.an.address?', trùng ví của An.':'.'))}${line(null,'Hắn viết lệnh chuyển 1000 nghìn cho hắn và ký bằng khóa riêng vừa khôi phục.')}${line(ok?'warn':false,ok?'Mạng lưới kiểm tra bằng khóa công khai của An: <b>khớp</b>. Lệnh được chấp nhận và tiền của An bị chuyển đi, không ai lấy lại được.':'Không khớp.')}</ol><div class="verdict bad sm"><span class="ic">!</span><span>Bài học<small>Mật mã không bị phá: kẻ gian thắng vì An tự đưa bí mật. Không ai cần 12 từ của bạn để "sửa lỗi" hay "tặng quà".</small></span></div>`;}
+document.querySelectorAll('[data-scen]').forEach(b=>b.onclick=()=>({1:scen1,2:scen2,3:scen3})[b.dataset.scen]());
+
+/* ---------- init ---------- */
+function signDefault(){fillPeopleSelect($('oTo'),['binh','chi'],S.people.binh.address);$('oAmt').value='10';$('oNote').value='Trả tiền quỹ lớp';renderOrder();
+  S.signCount=0;doSign();S.signed=S.pending;S.sigTamper=false;$('vTSig').textContent='Sửa 1 ký tự của chữ ký';loadVerify();['sc1','sc2','sc3'].forEach(i=>$(i).innerHTML='');}
+function renderAll(){renderWallet();renderFlow();}
+(async function(){const m=(location.hash||'').match(/buoc([1-5])/);go(m?+m[1]:1);
+  if(!(window.crypto&&crypto.subtle)){$('wWords').innerHTML='<span class="empty">Trình duyệt không hỗ trợ mật mã (cần mở trang qua https).</span>';return;}
+  makeOthers();await makeAn();renderAll();signDefault();})();
+</script>
+</body>
+</html>

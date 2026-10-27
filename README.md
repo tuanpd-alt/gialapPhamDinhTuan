@@ -10,6 +10,12 @@ Mô phỏng từng bước tạo lập một chuỗi khối: hàm băm SHA-256, 
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/tao-lap-blockchain.html
 
+# Khóa và chữ ký
+
+Mô phỏng từng bước: 12 từ khôi phục (BIP-39), khóa riêng, khóa công khai (secp256k1), địa chỉ ví, ký lệnh chuyển tiền (ECDSA), kiểm tra chữ ký và các cách kẻ gian tấn công.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/khoa-va-chu-ky.html
+
 # ERP Lab HTTTKT
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.
