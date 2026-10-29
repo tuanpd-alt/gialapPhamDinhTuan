@@ -16,6 +16,12 @@ Mô phỏng từng bước: 12 từ khôi phục (BIP-39), khóa riêng, khóa c
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/khoa-va-chu-ky.html
 
+# Luồng giao dịch
+
+Sơ đồ so sánh từng bước luồng một giao dịch trên Bitcoin và trên chuỗi liên minh: tạo khóa, ký, phát lên mạng, hàng chờ, gom khối, đồng thuận, nối chuỗi.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/luong-giao-dich.html
+
 # ERP Lab HTTTKT
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.

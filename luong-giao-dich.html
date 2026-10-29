@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Luồng giao dịch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+/* Merkle */
+.txrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center}
+.txrow .tag{font:600 12px var(--f-mono);color:var(--muted);width:34px}
+.tree{display:grid;gap:14px;padding:6px 2px;min-width:max-content}
+.lvl{display:flex;gap:8px;justify-content:space-around}
+.node{font:12px var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:6px;padding:5px 7px;text-align:center;min-width:92px;cursor:default}
+.node small{display:block;font:500 11px var(--f-body);color:var(--muted)}
+.node.leaf{cursor:pointer}
+.node.dup{border-style:dashed;opacity:.75}
+.node.root{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.node.root small{color:var(--on-accent);opacity:.85}
+.node.path{outline:2px solid var(--accent)}
+.node.proof{background:var(--proof);border-color:var(--proof)}
+.node.flash{animation:fl 1s ease-out}
+@keyframes fl{0%{background:var(--zero-bg);color:var(--zero-ink)}100%{}}
+/* Chain */
+.chain{display:flex;gap:0;align-items:stretch;padding-bottom:6px}
+.card{flex:0 0 280px;background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start}
+.card.valid{border-color:var(--ok)}.card.invalid{border-color:var(--bad);background:var(--bad-bg)}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card .hd b{font-family:var(--f-display);font-size:17px}
+.kv{display:grid;grid-template-columns:78px minmax(0,1fr);gap:2px 8px;font-size:12.5px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--f-mono);word-break:break-all}
+.txs{display:grid;gap:4px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:8px}
+.tx{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.tx input{width:84px;padding:3px 6px;font:12.5px var(--f-mono);text-align:right}
+.tx .cb{color:var(--muted);font-style:italic}
+.issues{font-size:12.5px;color:var(--bad);display:grid;gap:2px}
+.link{flex:0 0 34px;display:grid;place-items:center;color:var(--muted);font-size:20px}
+.link.broken{color:var(--bad)}
+.pending{display:grid;gap:4px;font-size:13.5px}
+.empty{color:var(--muted);font-style:italic;font-size:13px}
+.prob{font:600 28px var(--f-mono);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent)}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:4px}
+
+@media (prefers-reduced-motion:reduce){.node.flash{animation:none}}
+
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+
+
+/* Luồng giao dịch */
+main.lg{display:grid;gap:22px;padding-block:20px 40px}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px;min-width:0}
+.block h2{font-family:var(--f-display);font-size:20px;margin:0;text-wrap:balance}
+.block h3{font-size:15px;margin:0 0 6px}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.layer{background:var(--sunk);border-radius:10px;padding:12px 14px}
+.layer b{font-size:15px}.layer p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+table.types td{white-space:normal;vertical-align:top;min-width:120px}
+table.types td:first-child{min-width:96px}
+.flowhead{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stepno{font-weight:600;font-size:14px;min-width:12ch}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 13px var(--f-mono);cursor:pointer}
+.dots button.past{background:var(--sunk);color:var(--muted)}
+.dots button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.lanes,.frow{display:grid;grid-template-columns:150px minmax(0,1fr) minmax(0,1fr);gap:10px}
+.lanehead{display:grid;gap:2px;padding:10px 12px;border-radius:10px}
+.lanehead:first-child{padding:0}
+.lanehead.btc{background:var(--zero-bg);color:var(--zero-ink)}
+.lanehead.lm{background:var(--accent-soft);color:var(--accent)}
+.lanehead b{font-size:16px}
+.where{font-size:13px;font-weight:600}
+.rows{display:grid;gap:10px}
+.frow{transition:opacity .3s}
+.slbl{display:flex;gap:10px;align-items:flex-start;padding-top:10px}
+.slbl .n{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+.slbl b{font-size:14.5px;line-height:1.35;padding-top:3px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px;align-content:start;background:var(--bg);min-width:0}
+.cell.both{grid-column:2/4}
+.cell p{margin:0;font-size:14px}
+.cell .who{font-size:12.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.cell.btc .who{color:var(--zero-ink)}.cell.lm .who{color:var(--accent)}.cell.both .who{color:var(--ok)}
+.cell .lanelbl{display:none;font-size:12px;color:var(--muted)}
+.try{font-size:13px;font-weight:600;color:var(--accent);text-decoration:none;justify-self:start;margin-top:2px}
+.try:hover{text-decoration:underline}
+.frow.later{opacity:.38}
+.frow.now .cell{border-width:2px;background:var(--surface)}
+.frow.now .cell.btc{border-color:var(--zero-ink)}.frow.now .cell.lm{border-color:var(--accent)}.frow.now .cell.both{border-color:var(--ok)}
+.frow.now .slbl .n{background:var(--accent);color:var(--on-accent)}
+.frow.done .slbl .n{background:var(--ok-bg);color:var(--ok)}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.rolecol ul{margin:0 0 8px;padding-left:20px;display:grid;gap:6px;font-size:14.5px}
+.rolecol .note{margin:0}
+blockquote.sum{margin:0;padding:14px 16px;background:var(--sunk);border-radius:10px;font-size:15px;line-height:1.65;max-width:90ch}
+.mwhere{display:none;gap:6px}
+.mwhere span{font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px}
+.mwhere .btc{background:var(--zero-bg);color:var(--zero-ink)}.mwhere .lm{background:var(--accent-soft);color:var(--accent)}
+@media (max-width:760px){
+  .mwhere{display:grid}
+  .lanes{display:none}
+  .frow{grid-template-columns:minmax(0,1fr);gap:8px;border-top:1px dashed var(--line);padding-top:10px}
+  .slbl{padding-top:0}
+  .cell.both{grid-column:auto}
+  .cell .lanelbl{display:block}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">⇄</div>
+  <div class="ttl"><h1>Luồng giao dịch</h1><div class="sub">Bitcoin và chuỗi liên minh: từ ví đến khối, so sánh từng bước</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <a class="btnlink" href="./tao-lap-blockchain.html">Tạo lập Blockchain</a>
+  <a class="btnlink" href="./khoa-va-chu-ky.html">Khóa và chữ ký</a>
+  <a class="btnlink" href="./doanh-nghiep.html">Sổ cái DN</a>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<main class="wrap lg">
+
+<section class="block">
+  <h2>Blockchain gồm ba lớp</h2>
+  <div class="layers">
+    <div class="layer"><b>Sổ cái</b><p>Chuỗi các khối dữ liệu, mỗi khối chứa mã băm của khối trước nên không sửa ngầm được.</p></div>
+    <div class="layer"><b>Giao thức</b><p>Bộ luật chung: chữ ký thế nào là hợp lệ, khối tối đa bao nhiêu, ai được tạo khối, dùng hàm băm nào.</p></div>
+    <div class="layer"><b>Phần mềm nút</b><p>Chương trình thực thi giao thức, cài trên máy của từng bên tham gia và kết nối ngang hàng, không có máy chủ trung tâm.</p></div>
+  </div>
+</section>
+
+<section class="block">
+  <h2>Ba loại mạng</h2>
+  <div class="scroll"><table class="types">
+    <thead><tr><th>Loại</th><th>Ai được ghi khối</th><th>Tham gia</th><th>Ví dụ</th></tr></thead>
+    <tbody>
+      <tr><td><b>Công khai</b></td><td>Bất kỳ ai đáp ứng điều kiện: có máy đào (PoW) hoặc đặt cọc (PoS)</td><td>Tự cài phần mềm nút, không cần xin phép</td><td>Bitcoin, Ethereum</td></tr>
+      <tr><td><b>Liên minh</b></td><td>Một nhóm thành viên được chỉ định</td><td>Phải được liên minh cấp chứng thư số</td><td>Liên minh ngân hàng, chuỗi cung ứng (Hyperledger Fabric)</td></tr>
+      <tr><td><b>Riêng tư</b></td><td>Một tổ chức duy nhất</td><td>Do tổ chức đó cho phép</td><td>Chuỗi nội bộ của một doanh nghiệp</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note" style="margin:8px 0 0">"Loại mạng" khác "cơ chế đồng thuận" (cách các nút thống nhất khối mới): Bitcoin dùng Proof-of-Work, Ethereum dùng Proof-of-Stake, chuỗi liên minh thường dùng biểu quyết BFT hoặc Raft.</p>
+</section>
+
+<section class="block">
+  <div class="flowhead">
+    <h2>Luồng một giao dịch: An chuyển cho Bình 10</h2>
+    <div class="ctrl">
+      <button class="btn sm" id="fPrev">← Bước trước</button>
+      <span class="stepno" id="fNo" aria-live="polite">Bước 1/7</span>
+      <button class="btn primary sm" id="fNext">Bước tiếp →</button>
+      <button class="btn sm" id="fPlay">Chạy tự động</button>
+      <button class="btn sm" id="fAll">Xem tất cả</button>
+    </div>
+  </div>
+  <div class="dots" id="fDots" role="tablist" aria-label="Chọn bước"></div>
+  <div class="mwhere"><span class="btc" id="mBtc"></span><span class="lm" id="mLm"></span></div>
+  <div class="lanes">
+    <div class="lanehead"></div>
+    <div class="lanehead btc"><b>Bitcoin</b><span class="where" id="wBtc"></span></div>
+    <div class="lanehead lm"><b>Chuỗi liên minh</b><span class="where" id="wLm"></span></div>
+  </div>
+  <div class="rows" id="fRows"></div>
+</section>
+
+<section class="block">
+  <h2>Ai làm gì?</h2>
+  <div class="roles">
+    <div class="rolecol">
+      <h3>Ba vai trò trong Bitcoin</h3>
+      <ul>
+        <li><b>Người dùng ví</b> (đa số): chỉ lập, ký và gửi giao dịch. Không xác nhận gì.</li>
+        <li><b>Nút đầy đủ</b>: tự kiểm tra mọi giao dịch, mọi khối theo giao thức, nhưng không tạo khối.</li>
+        <li><b>Thợ đào</b>: gom giao dịch và tạo khối mới bằng Proof-of-Work, nhận phần thưởng và phí.</li>
+      </ul>
+      <p class="note">Ai cũng <i>có quyền</i> làm nút hay thợ đào mà không cần xin phép. Không phải ai cũng <i>đang</i> xác nhận.</p>
+    </div>
+    <div class="rolecol">
+      <h3>Vai trò trong chuỗi liên minh</h3>
+      <ul>
+        <li><b>Tổ chức cấp chứng thư số (CA)</b> của liên minh: cấp khóa và chứng thư gắn với danh tính thật của từng thành viên.</li>
+        <li><b>Nút validator</b> (thường 4 đến vài chục, do thành viên chính giữ): đề xuất và biểu quyết khối.</li>
+        <li><b>Thành viên còn lại</b>: gửi giao dịch, giữ bản sao sổ cái và tự kiểm tra.</li>
+      </ul>
+      <p class="note">BFT cần ít nhất 3f + 1 nút để chịu được f nút gian lận, nên 4 nút là mức tối thiểu để chịu được 1 nút xấu.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <h2>So sánh nhanh</h2>
+  <div class="scroll"><table class="types">
+    <thead><tr><th></th><th>Bitcoin</th><th>Chuỗi liên minh</th></tr></thead>
+    <tbody>
+      <tr><td>Danh tính</td><td>Ẩn danh (chỉ thấy địa chỉ)</td><td>Biết rõ thành viên là ai</td></tr>
+      <tr><td>Khóa</td><td>Ví tự sinh 12 từ, khóa riêng, khóa công khai</td><td>Tổ chức cấp chứng thư số của liên minh cấp</td></tr>
+      <tr><td>Phần mềm ví</td><td>Nhiều nhóm độc lập viết theo chuẩn chung</td><td>Thường do liên minh cung cấp hoặc chỉ định</td></tr>
+      <tr><td>Hàng chờ</td><td>Mempool trên mọi nút</td><td>Trên các nút của liên minh</td></tr>
+      <tr><td>Gom khối</td><td>Thợ đào chọn theo phí, giới hạn dung lượng</td><td>Theo thời gian hoặc số lượng tối đa</td></tr>
+      <tr><td>Đồng thuận</td><td>Proof-of-Work</td><td>Biểu quyết BFT/Raft</td></tr>
+      <tr><td>Thời gian khối</td><td>Trung bình khoảng 10 phút</td><td>Thường vài giây</td></tr>
+      <tr><td>Tính dứt điểm</td><td>Theo xác suất: thông lệ chờ 6 xác nhận (khoảng 1 giờ)</td><td>Dứt điểm ngay khi khối được chốt</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="block">
+  <h2>Tóm tắt</h2>
+  <blockquote class="sum">Blockchain là một sổ cái dùng chung, gồm các khối nối với nhau bằng mã băm, được vận hành bởi phần mềm nút cài trên máy của nhiều bên theo một giao thức chung. Có ba loại mạng: công khai (ai cũng tham gia được, như Bitcoin), liên minh (một nhóm thành viên được chỉ định giữ các nút xác nhận, như liên minh ngân hàng) và riêng tư (một tổ chức). Người dùng dùng phần mềm ví, do nhiều nhà phát triển độc lập viết theo chuẩn chung, để tự sinh 12 từ khôi phục, khóa riêng và khóa công khai ngay trên máy mình; ở chuỗi liên minh, khóa thường do tổ chức cấp chứng thư số của liên minh cấp. Khi giao dịch, ví băm nội dung giao dịch rồi ký bằng khóa riêng, sau đó phát giao dịch kèm chữ ký lên mạng. Các nút tự kiểm tra chữ ký bằng khóa công khai và đưa giao dịch hợp lệ vào hàng chờ. Bên tạo khối (thợ đào ở Bitcoin, hoặc các nút validator ở chuỗi liên minh) chọn giao dịch từ hàng chờ, gom thành khối có cây Merkle, rồi được chấp nhận theo cơ chế đồng thuận: Proof-of-Work, hoặc biểu quyết của các thành viên liên minh. Khi đó khối mới được nối vào chuỗi trên máy của tất cả các bên.</blockquote>
+</section>
+
+</main>
+<footer class="wrap foot">Tài liệu: Nakamoto (2008); Castro &amp; Liskov (1999) về PBFT; Androulaki et al. (2018) về Hyperledger Fabric. Thời gian khối của chuỗi liên minh phụ thuộc cấu hình từng mạng.</footer>
+
+<script>
+
+const $=id=>document.getElementById(id);
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+
+const KC='./khoa-va-chu-ky.html',TL='./tao-lap-blockchain.html';
+const STEPS=[
+ {t:'Tạo khóa',same:false,
+  btc:{who:'Ví của An',txt:'Ví <b>tự sinh</b> 12 từ khôi phục ngay trên máy của An, từ đó ra khóa riêng, khóa công khai và địa chỉ. Không ai cấp, không cần mạng.',link:[KC+'#buoc1','Thử: 12 từ và khóa riêng']},
+  lm:{who:'Tổ chức cấp chứng thư (CA)',txt:'Thành viên được <b>tổ chức cấp chứng thư số</b> của liên minh cấp khóa và chứng thư gắn với danh tính thật, thường không dùng 12 từ.'},
+  w:['Chưa có giao dịch','Chưa có giao dịch']},
+ {t:'Lập và ký giao dịch',same:true,
+  both:{who:'Ví của An',txt:'Ví ghi nội dung "An chuyển Bình 10", <b>băm</b> nội dung thành mã băm, rồi dùng <b>khóa riêng</b> của An tạo <b>chữ ký số</b>. Khóa riêng không rời máy.',link:[KC+'#buoc3','Thử: ký lệnh chuyển tiền']},
+  w:['Trong ví của An','Trong ví của An']},
+ {t:'Phát lên mạng',same:false,
+  btc:{who:'Ví → vài nút bất kỳ',txt:'Ví gửi <b>toàn bộ giao dịch kèm chữ ký và khóa công khai</b> (không chỉ gửi mã băm) tới vài nút ngang hàng. Các nút chuyển tiếp cho nhau.'},
+  lm:{who:'Ví → nút liên minh',txt:'Giao dịch kèm chữ ký được gửi tới các nút của liên minh. Chỉ máy có chứng thư hợp lệ mới kết nối được.'},
+  w:['Đang lan trong mạng','Đang tới nút liên minh']},
+ {t:'Kiểm tra và hàng chờ',same:false,
+  btc:{who:'Mọi nút đầy đủ',txt:'Mỗi nút <b>tự kiểm tra</b>: chữ ký có khớp khóa công khai không, có đủ số dư không, có chi tiêu hai lần không. Hợp lệ thì vào <b>hàng chờ (mempool)</b>. Lúc này giao dịch <b>chưa nằm trên chuỗi</b>.',link:[KC+'#buoc4','Thử: kiểm tra chữ ký']},
+  lm:{who:'Nút liên minh',txt:'Nút kiểm tra chữ ký, <b>quyền của thành viên</b> và các quy tắc nghiệp vụ (hợp đồng thông minh), rồi đưa vào hàng chờ để gom khối.'},
+  w:['Trong hàng chờ (chưa trên chuỗi)','Trong hàng chờ (chưa trên chuỗi)']},
+ {t:'Gom thành khối',same:false,
+  btc:{who:'Thợ đào',txt:'Thợ đào <b>chọn giao dịch</b> từ hàng chờ, ưu tiên phí cao, xây <b>cây Merkle</b> và ghi Merkle root vào tiêu đề khối. Khối <b>không có số giao dịch cố định</b>, chỉ giới hạn dung lượng.',link:[TL+'#buoc2','Thử: cây Merkle']},
+  lm:{who:'Nút đề xuất',txt:'Một nút được phân công gom giao dịch thành khối khi <b>hết thời gian chờ</b> (ví dụ 2 giây) hoặc <b>đủ số lượng tối đa</b>, cái nào đến trước.'},
+  w:['Trong khối ứng viên','Trong khối đề xuất']},
+ {t:'Đồng thuận',same:false,
+  btc:{who:'Thợ đào cạnh tranh',txt:'<b>Proof-of-Work</b>: thợ đào thử hàng tỷ tỷ nonce cho đến khi mã băm tiêu đề đạt độ khó. Ai tìm ra trước thì phát khối. Trung bình khoảng <b>10 phút</b> một khối.',link:[TL+'#buoc3','Thử: Proof-of-Work']},
+  lm:{who:'Các nút validator',txt:'Các validator <b>biểu quyết</b> theo BFT. Cần <b>hơn 2/3 đồng ý</b>; với 4 nút, mạng vẫn chạy đúng khi 1 nút gian lận hoặc hỏng.'},
+  w:['Khối vừa được đào','Khối được hơn 2/3 đồng ý']},
+ {t:'Nối chuỗi và chốt',same:false,
+  btc:{who:'Mọi nút đầy đủ',txt:'Các nút <b>tự kiểm tra lại toàn bộ khối</b> rồi nối vào chuỗi của mình. Mỗi khối mới chồng lên là thêm một <b>xác nhận</b>; thông lệ chờ <b>6 xác nhận</b> (khoảng 1 giờ) thì coi như không thể đảo ngược.',link:[TL+'#buoc5','Thử: giả mạo sổ cái']},
+  lm:{who:'Mọi thành viên',txt:'Khối được <b>chốt ngay và dứt điểm</b>, không cần chờ thêm xác nhận. Mọi thành viên cập nhật bản sao sổ cái.'},
+  w:['Trên chuỗi, 1 xác nhận → 6 xác nhận','Trên chuỗi, đã chốt dứt điểm']}
+];
+
+let cur=0,all=false,timer=null;
+function cell(lane,x){return `<div class="cell ${lane}"><span class="lanelbl">${lane==='btc'?'Bitcoin':lane==='lm'?'Chuỗi liên minh':'Cả hai'}</span><span class="who">${x.who}</span><p>${x.txt}</p>${x.link?`<a class="try" href="${x.link[0]}">${x.link[1]} →</a>`:''}</div>`;}
+function build(){
+  $('fRows').innerHTML=STEPS.map((s,i)=>`<div class="frow" id="r${i}"><div class="slbl"><span class="n">${i+1}</span><b>${s.t}</b></div>${s.same?`<div class="cell both"><span class="lanelbl">Giống nhau ở cả hai</span><span class="who">${s.both.who}</span><p>${s.both.txt}</p>${s.both.link?`<a class="try" href="${s.both.link[0]}">${s.both.link[1]} →</a>`:''}</div>`:cell('btc',s.btc)+cell('lm',s.lm)}</div>`).join('');
+  $('fDots').innerHTML=STEPS.map((s,i)=>`<button role="tab" data-i="${i}" aria-label="Bước ${i+1}: ${s.t}">${i+1}</button>`).join('');
+  $('fDots').querySelectorAll('button').forEach(b=>b.onclick=()=>{stop();all=false;show(+b.dataset.i);});}
+function show(i){cur=Math.max(0,Math.min(STEPS.length-1,i));
+  STEPS.forEach((_,k)=>{const r=$('r'+k);r.classList.toggle('done',!all&&k<cur);r.classList.toggle('now',!all&&k===cur);r.classList.toggle('later',!all&&k>cur);});
+  $('fDots').querySelectorAll('button').forEach((b,k)=>{b.setAttribute('aria-selected',String(!all&&k===cur));b.classList.toggle('past',!all&&k<cur);});
+  $('fNo').textContent=all?'Tất cả 7 bước':`Bước ${cur+1}/7: ${STEPS[cur].t}`;
+  const w=STEPS[all?6:cur].w;$('wBtc').textContent='Giao dịch: '+w[0];$('wLm').textContent='Giao dịch: '+w[1];
+  $('mBtc').textContent='Bitcoin: '+w[0];$('mLm').textContent='Liên minh: '+w[1];
+  $('fPrev').disabled=!all&&cur===0;$('fNext').disabled=!all&&cur===STEPS.length-1;
+  $('fAll').textContent=all?'Xem từng bước':'Xem tất cả';}
+function reveal(){if(all)return;const r=$('r'+cur);const b=r.getBoundingClientRect();if(b.top<0||b.bottom>innerHeight)r.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
+function stop(){if(timer){clearInterval(timer);timer=null;$('fPlay').textContent='Chạy tự động';}}
+$('fPrev').onclick=()=>{stop();if(all){all=false;show(0);}else show(cur-1);reveal();};
+$('fNext').onclick=()=>{stop();if(all){all=false;show(0);}else show(cur+1);reveal();};
+$('fAll').onclick=()=>{stop();all=!all;show(all?cur:0);};
+$('fPlay').onclick=()=>{if(timer){stop();return;}all=false;if(cur>=STEPS.length-1)show(0);$('fPlay').textContent='Dừng';
+  timer=setInterval(()=>{if(cur>=STEPS.length-1){stop();return;}show(cur+1);reveal();},2800);};
+build();show(0);
+</script>
+</body>
+</html>
