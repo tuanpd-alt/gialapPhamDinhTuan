@@ -156,6 +156,8 @@ html.gated,html.gated body{overflow:hidden}
 .gmsg.ok{color:var(--ok)}
 .pwrules{margin-top:12px;background:var(--surface2);border-radius:10px;padding:10px 12px}
 .pwrh{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.pwok{font-size:12.5px;color:var(--ink);margin-bottom:6px}
+input.inv{border-color:var(--bad)!important;outline:2px solid var(--bad);outline-offset:0;background:var(--bad-soft)}
 #pwRules{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
 #pwRules li{display:flex;gap:8px;align-items:flex-start}
 #pwRules li::before{content:"○";flex:none;width:1em;text-align:center;font-weight:700}
@@ -183,6 +185,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:tra
       <label class="f" for="pwNew2">Nhập lại mật khẩu mới</label><input id="pwNew2" type="password" autocomplete="new-password" spellcheck="false">
       <div class="pwrules" aria-live="polite">
         <div class="pwrh">Yêu cầu với mật khẩu mới</div>
+        <div class="pwok">Được dùng chữ hoa, chữ thường, chữ số, khoảng trắng ở giữa và ký tự đặc biệt (như ! @ # $ % - _). Mật khẩu phân biệt chữ hoa và chữ thường.</div>
         <ul id="pwRules">
           <li data-r="len">Ít nhất 8 ký tự</li>
           <li data-r="digits">Không chỉ gồm chữ số (có ít nhất một chữ cái hoặc ký hiệu)</li>
@@ -621,10 +624,10 @@ window.__GATE__=(function(){
     try{cl=mqtt.connect(url,{protocolVersion:PV,clean:true,reconnectPeriod:0,connectTimeout:ms,clientId:'ga_'+Math.random().toString(36).slice(2,10)});}catch(e){fin(null);return;}
     cl.on('error',()=>fin(null));setTimeout(()=>fin(null),ms+1500);cl.on('connect',()=>fn(cl,fin));});}
   /* đọc bản đổi mật khẩu mới nhất, hợp lệ; trả {upd, reached} */
-  async function fetchUpdate(id,base){
+  async function fetchUpdate(id,base,wait){wait=wait||2600;
     const got=await Promise.all(BROKERS.map(u=>withBroker(u,(cl,fin)=>{const t=topicOf(id);let best=null;
-      cl.on('message',(tp,buf)=>{if(tp!==t||!buf||!buf.length)return;try{const v=JSON.parse(dec.decode(buf));if(!best||v.q>best.q)best=v;}catch(e){}});
-      cl.subscribe(t,{qos:1},err=>{if(err)fin({best:null});else setTimeout(()=>fin({best}),1800);});},5000)));
+      cl.on('message',(tp,buf)=>{if(tp!==t||!buf||!buf.length)return;try{const v=JSON.parse(dec.decode(buf));if(!best||v.q>best.q)best=v;}catch(e){}setTimeout(()=>fin({best}),400);});
+      cl.subscribe(t,{qos:1},err=>{if(err)fin({best:null});else setTimeout(()=>fin({best}),wait);});},Math.max(5000,wait+2500))));
     let upd=null,reached=false;
     for(const g of got){if(!g)continue;reached=true;if(g.best&&(!upd||g.best.q>upd.q)&&await verifyUpd(g.best,id,base))upd=g.best;}
     return {upd,reached};}
@@ -634,15 +637,19 @@ window.__GATE__=(function(){
   /* ---- đăng nhập ---- */
   async function finish(mssv,raw,kid){const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
     const g={mssv,kid,aes,raw};api.cur=g;resolveReady(g);return g;}
-  async function openAccount(mssv,pw){
+  async function openAccount(mssv,pw,forChange){
     if(!norm(mssv)||!pw)throw new Error('Nhập đủ mã số sinh viên và mật khẩu.');
     const f=await loadFile();if(!f||!f.users)throw new Error('Không tải được danh sách tài khoản. Kiểm tra kết nối mạng rồi thử lại.');
     const id=await idOf(mssv),base=f.users[id];if(!base)throw new Error('Mã số '+norm(mssv)+' chưa được cấp tài khoản. Hãy hỏi giảng viên.');
-    const {upd,reached}=base.p?await fetchUpdate(id,base):{upd:null,reached:true};
-    let sec;try{sec=await unwrapSecret(mssv,pw,upd?upd.e:base,f.iter);}
-    catch(x){throw new Error(upd?'Sai mật khẩu. Tài khoản này đã đổi mật khẩu, hãy dùng mật khẩu bạn tự đặt.'
-      :reached?'Sai mật khẩu. Kiểm tra lại chữ hoa, chữ thường và dấu gạch ngang.'
-      :'Sai mật khẩu, hoặc chưa kết nối được trạm để kiểm tra mật khẩu bạn đã tự đổi. Kiểm tra mạng rồi thử lại.');}
+    let {upd,reached}=base.p?await fetchUpdate(id,base):{upd:null,reached:true};
+    let sec=null;try{sec=await unwrapSecret(mssv,pw,upd?upd.e:base,f.iter);}catch(x){}
+    if(!sec&&!upd&&base.p){const r2=await fetchUpdate(id,base,5000);reached=reached||r2.reached;
+      if(r2.upd){upd=r2.upd;try{sec=await unwrapSecret(mssv,pw,upd.e,f.iter);}catch(x){}}}
+    if(!sec){const lead=forChange?'Ô "Mật khẩu hiện tại" chưa đúng.':'Sai mật khẩu.';
+      const err=new Error(lead+' '+(upd?'Tài khoản này đã từng tự đổi mật khẩu: hãy nhập mật khẩu tự đặt gần nhất.'
+        :reached?'Hãy nhập mật khẩu đang dùng để đăng nhập (mật khẩu giảng viên cấp có dạng abcd-2345, hoặc mật khẩu bạn tự đặt nếu đã đổi).'
+        :'Cũng có thể chưa kết nối được trạm để kiểm tra mật khẩu bạn đã tự đổi; kiểm tra mạng rồi thử lại.')+' Mật khẩu phân biệt chữ hoa và chữ thường.');
+      err.field='old';throw err;}
     const kid=await kidOf(sec.raw);if(kid!==f.kid)throw new Error('Tài khoản này thuộc khóa lớp cũ. Hãy hỏi giảng viên cấp lại.');
     return {f,id,base,upd,sec,kid};}
   async function login(mssv,pw){const a=await openAccount(mssv,pw);
@@ -650,7 +657,7 @@ window.__GATE__=(function(){
     return finish(norm(mssv),a.sec.raw,a.kid);}
   async function changePassword(oldPw,newPw){
     const g=api.cur;if(!g)throw new Error('Hãy đăng nhập trước.');
-    const a=await openAccount(g.mssv,oldPw).catch(e=>{throw new Error(String(e.message).replace(/^Sai mật khẩu\./,'Mật khẩu hiện tại không đúng.'));});
+    const a=await openAccount(g.mssv,oldPw,true);
     if(!a.sec.sk||!a.base.p)throw new Error('Tài khoản này được cấp theo định dạng cũ nên chưa tự đổi được mật khẩu. Hãy nhờ giảng viên cấp lại.');
     const e=await wrapSecret(g.mssv,newPw,a.sec.raw,a.sec.sk,a.f.iter);
     const u={id:a.id,b:a.base.c.slice(0,24),q:Math.max(Date.now(),a.upd?a.upd.q+1:0),e};
@@ -841,20 +848,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   $g('gatePw').onclick=()=>{pb.hidden=false;document.documentElement.classList.add('gated');$g('pwMssv').textContent=G.cur?G.cur.mssv:'';setTimeout(()=>$g('pwOld').focus(),50);};
   $g('pwCancel').onclick=closePw;
   pb.addEventListener('keydown',e=>{if(e.key==='Escape')closePw();});
-  function rules(){const o=$g('pwOld').value.trim(),n=$g('pwNew').value,n2=$g('pwNew2').value,m=G.cur?G.norm(G.cur.mssv):'';
+  function rules(){const o=$g('pwOld').value.trim(),n=$g('pwNew').value.trim(),n2=$g('pwNew2').value.trim(),m=G.cur?G.norm(G.cur.mssv):'';
     const r={len:n.length>=8,digits:n.length>0&&!/^\d+$/.test(n),mssv:n.length>0&&!(m&&G.norm(n).includes(m)),
       easy:n.length>0&&!/^(.)\1+$/.test(n)&&!/^(12345678|password|matkhau|abcd1234|qwerty)/i.test(n),diff:n.length>0&&n!==o,same:n2.length>0&&n===n2};
     pf.querySelectorAll('#pwRules li').forEach(li=>{const k=li.dataset.r;const typed=k==='same'?n2.length>0:n.length>0;li.className=!typed?'':(r[k]?'ok':'no');});
     return Object.values(r).every(Boolean);}
-  ['pwOld','pwNew','pwNew2'].forEach(id=>$g(id).addEventListener('input',()=>{rules();if(pm.classList.contains('bad')){pm.className='gmsg';pm.textContent='';}}));
+  ['pwOld','pwNew','pwNew2'].forEach(id=>$g(id).addEventListener('input',()=>{rules();$g(id).classList.remove('inv');if(pm.classList.contains('bad')){pm.className='gmsg';pm.textContent='';}}));
   pf.addEventListener('submit',async e=>{e.preventDefault();
-    const o=$g('pwOld').value.trim(),n=$g('pwNew').value,n2=$g('pwNew2').value;
+    const o=$g('pwOld').value.trim(),n=$g('pwNew').value.trim(),n2=$g('pwNew2').value.trim();$g('pwOld').classList.remove('inv');
     rules();const bad=G.checkNew(G.cur.mssv,n,n2);if(bad){pm.className='gmsg bad';pm.textContent=bad+' Xem các yêu cầu đánh dấu ✗ ở trên.';return;}
     if(n===o){pm.className='gmsg bad';pm.textContent='Mật khẩu mới phải khác mật khẩu hiện tại.';return;}
     pgo.disabled=true;pm.className='gmsg';pm.textContent='Đang lưu mật khẩu mới lên trạm…';
     try{const k=await G.changePassword(o,n);pm.className='gmsg ok';pm.textContent='Đã đổi mật khẩu'+(k>1?' (lưu ở '+k+' trạm)':'')+'. Lần sau đăng nhập, kể cả trên máy khác, hãy dùng mật khẩu mới.';
       $g('pwOld').value='';$g('pwNew').value='';$g('pwNew2').value='';setTimeout(()=>{if(!pb.hidden&&pm.classList.contains('ok'))closePw();},4000);}
-    catch(x){pm.className='gmsg bad';pm.textContent=x.message||'Không đổi được mật khẩu.';}
+    catch(x){pm.className='gmsg bad';pm.textContent=x.message||'Không đổi được mật khẩu.';if(x.field==='old'){$g('pwOld').classList.add('inv');$g('pwOld').focus();$g('pwOld').select();}}
     pgo.disabled=false;});
   G.auto().then(g=>{if(!g){$g('gWait').hidden=true;form.hidden=false;setTimeout(()=>$g('gMssv').focus(),50);}}).catch(()=>{$g('gWait').hidden=true;form.hidden=false;});
   form.addEventListener('submit',async e=>{e.preventDefault();msg.className='gmsg';msg.textContent='Đang kiểm tra…';btn.disabled=true;
