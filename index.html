@@ -154,6 +154,13 @@ html.gated,html.gated body{overflow:hidden}
 .gatebox[hidden]{display:none}
 #pwBox{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(6px);z-index:101}
 .gmsg.ok{color:var(--ok)}
+.pwrules{margin-top:12px;background:var(--surface2);border-radius:10px;padding:10px 12px}
+.pwrh{font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+#pwRules{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
+#pwRules li{display:flex;gap:8px;align-items:flex-start}
+#pwRules li::before{content:"○";flex:none;width:1em;text-align:center;font-weight:700}
+#pwRules li.ok{color:var(--ok)}#pwRules li.ok::before{content:"✓"}
+#pwRules li.no{color:var(--bad)}#pwRules li.no::before{content:"✗"}
 .gcard{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow);display:grid;gap:4px}
 .gcard .brand{padding:0 0 10px}
 .gcard h2{font-size:18px;margin:0}
@@ -174,6 +181,17 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:tra
       <label class="f" for="pwOld">Mật khẩu hiện tại</label><input id="pwOld" type="password" autocomplete="current-password" spellcheck="false">
       <label class="f" for="pwNew">Mật khẩu mới (ít nhất 8 ký tự)</label><input id="pwNew" type="password" autocomplete="new-password" spellcheck="false">
       <label class="f" for="pwNew2">Nhập lại mật khẩu mới</label><input id="pwNew2" type="password" autocomplete="new-password" spellcheck="false">
+      <div class="pwrules" aria-live="polite">
+        <div class="pwrh">Yêu cầu với mật khẩu mới</div>
+        <ul id="pwRules">
+          <li data-r="len">Ít nhất 8 ký tự</li>
+          <li data-r="digits">Không chỉ gồm chữ số (có ít nhất một chữ cái hoặc ký hiệu)</li>
+          <li data-r="mssv">Không chứa mã số sinh viên của bạn</li>
+          <li data-r="easy">Không quá dễ đoán (như 12345678, abcd1234, password, một ký tự lặp lại)</li>
+          <li data-r="diff">Khác mật khẩu hiện tại</li>
+          <li data-r="same">Hai lần nhập mật khẩu mới giống nhau</li>
+        </ul>
+      </div>
       <div class="btns"><button class="btn" id="pwGo" type="submit" style="flex:1">Lưu mật khẩu mới</button><button class="btn sec" id="pwCancel" type="button">Đóng</button></div>
       <div class="gmsg" id="pwMsg" role="status"></div>
     </form>
@@ -653,11 +671,11 @@ window.__GATE__=(function(){
     if(!upd||upd.q<u.q)await publishUpdate(u.id,u);}
   function logout(reload){try{localStorage.removeItem(LS);localStorage.removeItem(LU);}catch(e){}if(reload!==false)location.reload();}
   function checkNew(mssv,pw,pw2){
-    if(pw!==pw2)return 'Hai lần nhập mật khẩu mới không giống nhau.';
     if(pw.length<8)return 'Mật khẩu mới cần ít nhất 8 ký tự.';
     if(/^\d+$/.test(pw))return 'Mật khẩu không nên chỉ có chữ số.';
     if(norm(pw).includes(norm(mssv)))return 'Mật khẩu không được chứa mã số sinh viên.';
     if(/^(.)\1+$/.test(pw)||/^(12345678|password|matkhau|abcd1234|qwerty)/i.test(pw))return 'Mật khẩu này quá dễ đoán.';
+    if(pw!==pw2)return 'Hai lần nhập mật khẩu mới không giống nhau.';
     return '';}
   /* ---- công cụ của giảng viên ---- */
   const AL='abcdefghjkmnpqrstuvwxyz23456789';
@@ -819,14 +837,19 @@ document.addEventListener('DOMContentLoaded',()=>{
   $g('gateOut').onclick=()=>G.logout();
   /* ---- tự đổi mật khẩu ---- */
   const pb=$g('pwBox'),pf=$g('pwForm'),pm=$g('pwMsg'),pgo=$g('pwGo');
-  const closePw=()=>{pb.hidden=true;document.documentElement.classList.remove('gated');pf.reset();pm.className='gmsg';pm.textContent='';};
+  const closePw=()=>{pb.hidden=true;document.documentElement.classList.remove('gated');pf.reset();pm.className='gmsg';pm.textContent='';pf.querySelectorAll('#pwRules li').forEach(li=>li.className='');};
   $g('gatePw').onclick=()=>{pb.hidden=false;document.documentElement.classList.add('gated');$g('pwMssv').textContent=G.cur?G.cur.mssv:'';setTimeout(()=>$g('pwOld').focus(),50);};
   $g('pwCancel').onclick=closePw;
   pb.addEventListener('keydown',e=>{if(e.key==='Escape')closePw();});
-  ['pwOld','pwNew','pwNew2'].forEach(id=>$g(id).addEventListener('input',()=>{if(pm.classList.contains('bad')){pm.className='gmsg';pm.textContent='';}}));
+  function rules(){const o=$g('pwOld').value.trim(),n=$g('pwNew').value,n2=$g('pwNew2').value,m=G.cur?G.norm(G.cur.mssv):'';
+    const r={len:n.length>=8,digits:n.length>0&&!/^\d+$/.test(n),mssv:n.length>0&&!(m&&G.norm(n).includes(m)),
+      easy:n.length>0&&!/^(.)\1+$/.test(n)&&!/^(12345678|password|matkhau|abcd1234|qwerty)/i.test(n),diff:n.length>0&&n!==o,same:n2.length>0&&n===n2};
+    pf.querySelectorAll('#pwRules li').forEach(li=>{const k=li.dataset.r;const typed=k==='same'?n2.length>0:n.length>0;li.className=!typed?'':(r[k]?'ok':'no');});
+    return Object.values(r).every(Boolean);}
+  ['pwOld','pwNew','pwNew2'].forEach(id=>$g(id).addEventListener('input',()=>{rules();if(pm.classList.contains('bad')){pm.className='gmsg';pm.textContent='';}}));
   pf.addEventListener('submit',async e=>{e.preventDefault();
     const o=$g('pwOld').value.trim(),n=$g('pwNew').value,n2=$g('pwNew2').value;
-    const bad=G.checkNew(G.cur.mssv,n,n2);if(bad){pm.className='gmsg bad';pm.textContent=bad;return;}
+    rules();const bad=G.checkNew(G.cur.mssv,n,n2);if(bad){pm.className='gmsg bad';pm.textContent=bad+' Xem các yêu cầu đánh dấu ✗ ở trên.';return;}
     if(n===o){pm.className='gmsg bad';pm.textContent='Mật khẩu mới phải khác mật khẩu hiện tại.';return;}
     pgo.disabled=true;pm.className='gmsg';pm.textContent='Đang lưu mật khẩu mới lên trạm…';
     try{const k=await G.changePassword(o,n);pm.className='gmsg ok';pm.textContent='Đã đổi mật khẩu'+(k>1?' (lưu ở '+k+' trạm)':'')+'. Lần sau đăng nhập, kể cả trên máy khác, hãy dùng mật khẩu mới.';
