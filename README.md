@@ -4,7 +4,7 @@ Mô phỏng lớp học về Bitcoin và Ethereum: ví, giao dịch, đào (PoW)
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/
 
-Học viên đăng nhập bằng MSSV và mật khẩu do giảng viên cấp. Dữ liệu của làng trên trạm MQTT được mã hóa bằng khóa lớp; tệp `hocvien.json` chỉ chứa khóa lớp đã bọc bằng mật khẩu từng người. Giảng viên cấp, đặt lại, xóa tài khoản trong tab Giảng viên → "Tài khoản học viên", rồi tải tệp `hocvien.json` mới lên kho. Không đưa danh sách mật khẩu lên kho.
+Học viên đăng nhập bằng MSSV và mật khẩu do giảng viên cấp. Dữ liệu của làng trên trạm MQTT được mã hóa bằng khóa lớp; tệp `hocvien.json` chỉ chứa khóa lớp đã bọc bằng mật khẩu từng người. Giảng viên cấp, đặt lại, xóa tài khoản trong tab Giảng viên → "Tài khoản học viên", rồi tải tệp `hocvien.json` mới lên kho. Không đưa danh sách mật khẩu lên kho. Sau khi đăng nhập, học viên có thể bấm "Đổi mật khẩu" để tự đặt mật khẩu dễ nhớ: bản mật khẩu mới được ký bằng khóa riêng của tài khoản và lưu trên trạm trung chuyển; giảng viên cấp lại mật khẩu thì bản tự đổi cũ hết hiệu lực.
 
 # Tạo lập Blockchain
 

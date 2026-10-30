@@ -149,9 +149,11 @@ svg.spark{width:100%;height:56px;display:block;margin-top:6px}
 @media (max-width:560px){ .brand .sub{display:none} .big{font-size:22px} .card{padding:14px} .seed{grid-template-columns:repeat(2,1fr)} }
 /* ===== Đăng nhập học viên ===== */
 html.gated,html.gated body{overflow:hidden}
-#gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;overflow-y:auto;
+.gatebox{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;overflow-y:auto;
   padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
-#gate[hidden]{display:none}
+.gatebox[hidden]{display:none}
+#pwBox{background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(6px);z-index:101}
+.gmsg.ok{color:var(--ok)}
 .gcard{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow);display:grid;gap:4px}
 .gcard .brand{padding:0 0 10px}
 .gcard h2{font-size:18px;margin:0}
@@ -163,7 +165,21 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:tra
 </style>
 </head>
 <body>
-<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+<div id="pwBox" class="gatebox" role="dialog" aria-modal="true" aria-labelledby="pwTitle" hidden>
+  <div class="gcard">
+    <form id="pwForm" autocomplete="on">
+      <h2 id="pwTitle">Đổi mật khẩu</h2>
+      <p>Tài khoản <b id="pwMssv"></b>. Đặt mật khẩu dễ nhớ với bạn nhưng khó đoán với người khác, ví dụ một cụm từ như <span class="mono">ca-heo-bien-xanh-7</span>.</p>
+      <input type="text" name="username" autocomplete="username" hidden>
+      <label class="f" for="pwOld">Mật khẩu hiện tại</label><input id="pwOld" type="password" autocomplete="current-password" spellcheck="false">
+      <label class="f" for="pwNew">Mật khẩu mới (ít nhất 8 ký tự)</label><input id="pwNew" type="password" autocomplete="new-password" spellcheck="false">
+      <label class="f" for="pwNew2">Nhập lại mật khẩu mới</label><input id="pwNew2" type="password" autocomplete="new-password" spellcheck="false">
+      <div class="btns"><button class="btn" id="pwGo" type="submit" style="flex:1">Lưu mật khẩu mới</button><button class="btn sec" id="pwCancel" type="button">Đóng</button></div>
+      <div class="gmsg" id="pwMsg" role="status"></div>
+    </form>
+  </div>
+</div>
+<div id="gate" class="gatebox" role="dialog" aria-modal="true" aria-labelledby="gTitle">
   <div class="gcard">
     <div class="brand"><div class="logo" aria-hidden="true">₿</div><div><h1>Làng Tiền Số</h1><div class="sub" style="display:block">Giả lập lớp học</div></div></div>
     <div id="gWait" class="gmsg">Đang kiểm tra đăng nhập…</div>
@@ -189,6 +205,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:tra
       <a class="iconbtn" href="./luong-giao-dich.html" style="text-decoration:none;display:inline-flex;align-items:center" title="Sơ đồ luồng giao dịch: Bitcoin và chuỗi liên minh">Luồng giao dịch</a>
       <a class="iconbtn" href="./doanh-nghiep.html" style="text-decoration:none;display:inline-flex;align-items:center" title="Mô phỏng blockchain doanh nghiệp">Sổ cái DN</a>
       <button class="iconbtn" id="gvLoginBtn" title="Đăng nhập dành cho giảng viên">Giảng viên</button>
+      <button class="iconbtn" id="gatePw" hidden title="Tự đặt mật khẩu mới, dễ nhớ hơn">Đổi mật khẩu</button>
       <button class="iconbtn" id="gateOut" hidden title="Đăng xuất khỏi Làng Tiền Số"></button>
       <button class="iconbtn" id="themeBtn" title="Đổi giao diện sáng/tối">Sáng/Tối</button>
     </div>
@@ -545,12 +562,15 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:tra
 <div class="toast" id="toast"></div>
 <script>
 /* ===== Đăng nhập học viên: MSSV + mật khẩu mở "khóa lớp" (PBKDF2-SHA256 + AES-GCM) =====
-   Tệp hocvien.json chỉ chứa khóa lớp đã được bọc bằng mật khẩu của từng học viên; không chứa mật khẩu. */
+   hocvien.json chỉ chứa khóa lớp và khóa ký riêng của từng tài khoản, đã bọc bằng mật khẩu; không chứa mật khẩu.
+   Học viên tự đổi mật khẩu: bản bọc mới được ký bằng khóa ký riêng của tài khoản và giữ lại trên trạm trung chuyển. */
 window.__GATE__=(function(){
   const sub=crypto.subtle,enc=new TextEncoder(),dec=new TextDecoder();
   const b64=u=>{u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);};
   const ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-  const LS='ltso-login',ITER=150000;
+  const LS='ltso-login',LU='ltso-upd',ITER=150000;
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},lsDel=k=>{try{localStorage.removeItem(k);}catch(e){}};
+  const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'};
   const norm=s=>String(s||'').trim().toUpperCase().replace(/\s+/g,'');
   async function hex(s){return Array.from(new Uint8Array(await sub.digest('SHA-256',enc.encode(s))),x=>x.toString(16).padStart(2,'0')).join('');}
   const idOf=async m=>(await hex('ltso-sv|'+norm(m))).slice(0,32);
@@ -562,33 +582,94 @@ window.__GATE__=(function(){
     return sub.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
   async function seal(aes,str){const iv=crypto.getRandomValues(new Uint8Array(12));return b64(iv)+'.'+b64(await sub.encrypt({name:'AES-GCM',iv},aes,enc.encode(str)));}
   async function open(aes,s){const p=String(s).split('.');return dec.decode(await sub.decrypt({name:'AES-GCM',iv:ub(p[0])},aes,ub(p[1])));}
+  /* bọc / mở bí mật của tài khoản: {k: khóa lớp, sk: khóa ký riêng} */
+  async function wrapSecret(mssv,pw,raw,skJwk,iter){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const k=await wrapKey(mssv,pw,salt,iter||ITER);const pt=enc.encode(JSON.stringify({k:b64(raw),sk:skJwk}));
+    return {s:b64(salt),i:b64(iv),c:b64(await sub.encrypt({name:'AES-GCM',iv},k,pt))};}
+  async function unwrapSecret(mssv,pw,e,iter){const k=await wrapKey(mssv,pw,ub(e.s),iter||ITER);
+    const pt=new Uint8Array(await sub.decrypt({name:'AES-GCM',iv:ub(e.i)},k,ub(e.c)));
+    if(pt.length===32)return {raw:pt,sk:null};const o=JSON.parse(dec.decode(pt));return {raw:ub(o.k),sk:o.sk};}
+  /* ---- bản ghi đổi mật khẩu trên trạm trung chuyển ---- */
+  const qs=new URLSearchParams(location.search);
+  const BROKERS=qs.get('broker')?[qs.get('broker')]:['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+  const PV=+(qs.get('v')||5);
+  const topicOf=id=>'gialapPhamDinhTuan/'+((window.__ADMIN__&&window.__ADMIN__.room)||'x')+'/acct/'+id;
+  const canon=u=>JSON.stringify({id:u.id,b:u.b,q:u.q,e:{s:u.e.s,i:u.e.i,c:u.e.c}});
+  async function verifyUpd(u,id,base){try{if(!u||u.id!==id||!base.p||u.b!==base.c.slice(0,24))return false;const[x,y]=base.p.split('.');
+    const pk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},EC,false,['verify']);
+    return await sub.verify(SG,pk,ub(u.sig),enc.encode(canon(u)));}catch(e){return false;}}
+  function withBroker(url,fn,ms){return new Promise(res=>{if(typeof mqtt==='undefined'){res(null);return;}let done=false,cl;
+    const fin=v=>{if(done)return;done=true;try{cl&&cl.end(true);}catch(e){}res(v);};
+    try{cl=mqtt.connect(url,{protocolVersion:PV,clean:true,reconnectPeriod:0,connectTimeout:ms,clientId:'ga_'+Math.random().toString(36).slice(2,10)});}catch(e){fin(null);return;}
+    cl.on('error',()=>fin(null));setTimeout(()=>fin(null),ms+1500);cl.on('connect',()=>fn(cl,fin));});}
+  /* đọc bản đổi mật khẩu mới nhất, hợp lệ; trả {upd, reached} */
+  async function fetchUpdate(id,base){
+    const got=await Promise.all(BROKERS.map(u=>withBroker(u,(cl,fin)=>{const t=topicOf(id);let best=null;
+      cl.on('message',(tp,buf)=>{if(tp!==t||!buf||!buf.length)return;try{const v=JSON.parse(dec.decode(buf));if(!best||v.q>best.q)best=v;}catch(e){}});
+      cl.subscribe(t,{qos:1},err=>{if(err)fin({best:null});else setTimeout(()=>fin({best}),1800);});},5000)));
+    let upd=null,reached=false;
+    for(const g of got){if(!g)continue;reached=true;if(g.best&&(!upd||g.best.q>upd.q)&&await verifyUpd(g.best,id,base))upd=g.best;}
+    return {upd,reached};}
+  async function publishUpdate(id,u){
+    const ok=await Promise.all(BROKERS.map(url=>withBroker(url,(cl,fin)=>{cl.publish(topicOf(id),JSON.stringify(u),{qos:1,retain:true},err=>fin(!err));},6000)));
+    return ok.filter(Boolean).length;}
+  /* ---- đăng nhập ---- */
   async function finish(mssv,raw,kid){const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
     const g={mssv,kid,aes,raw};api.cur=g;resolveReady(g);return g;}
-  async function login(mssv,pw){
+  async function openAccount(mssv,pw){
     if(!norm(mssv)||!pw)throw new Error('Nhập đủ mã số sinh viên và mật khẩu.');
     const f=await loadFile();if(!f||!f.users)throw new Error('Không tải được danh sách tài khoản. Kiểm tra kết nối mạng rồi thử lại.');
-    const e=f.users[await idOf(mssv)];if(!e)throw new Error('Mã số '+norm(mssv)+' chưa được cấp tài khoản. Hãy hỏi giảng viên.');
-    let raw;try{const k=await wrapKey(mssv,pw,ub(e.s),f.iter||ITER);raw=new Uint8Array(await sub.decrypt({name:'AES-GCM',iv:ub(e.i)},k,ub(e.c)));}
-    catch(x){throw new Error('Sai mật khẩu. Kiểm tra lại chữ thường và dấu gạch ngang.');}
-    const kid=await kidOf(raw);if(kid!==f.kid)throw new Error('Tài khoản này thuộc khóa lớp cũ. Hãy hỏi giảng viên cấp lại.');
-    try{localStorage.setItem(LS,JSON.stringify({m:norm(mssv),k:b64(raw),kid}));}catch(x){}
-    return finish(norm(mssv),raw,kid);}
+    const id=await idOf(mssv),base=f.users[id];if(!base)throw new Error('Mã số '+norm(mssv)+' chưa được cấp tài khoản. Hãy hỏi giảng viên.');
+    const {upd,reached}=base.p?await fetchUpdate(id,base):{upd:null,reached:true};
+    let sec;try{sec=await unwrapSecret(mssv,pw,upd?upd.e:base,f.iter);}
+    catch(x){throw new Error(upd?'Sai mật khẩu. Tài khoản này đã đổi mật khẩu, hãy dùng mật khẩu bạn tự đặt.'
+      :reached?'Sai mật khẩu. Kiểm tra lại chữ hoa, chữ thường và dấu gạch ngang.'
+      :'Sai mật khẩu, hoặc chưa kết nối được trạm để kiểm tra mật khẩu bạn đã tự đổi. Kiểm tra mạng rồi thử lại.');}
+    const kid=await kidOf(sec.raw);if(kid!==f.kid)throw new Error('Tài khoản này thuộc khóa lớp cũ. Hãy hỏi giảng viên cấp lại.');
+    return {f,id,base,upd,sec,kid};}
+  async function login(mssv,pw){const a=await openAccount(mssv,pw);
+    lsSet(LS,JSON.stringify({m:norm(mssv),k:b64(a.sec.raw),kid:a.kid}));if(a.upd)lsSet(LU,JSON.stringify(a.upd));else lsDel(LU);
+    return finish(norm(mssv),a.sec.raw,a.kid);}
+  async function changePassword(oldPw,newPw){
+    const g=api.cur;if(!g)throw new Error('Hãy đăng nhập trước.');
+    const a=await openAccount(g.mssv,oldPw).catch(e=>{throw new Error(String(e.message).replace(/^Sai mật khẩu\./,'Mật khẩu hiện tại không đúng.'));});
+    if(!a.sec.sk||!a.base.p)throw new Error('Tài khoản này được cấp theo định dạng cũ nên chưa tự đổi được mật khẩu. Hãy nhờ giảng viên cấp lại.');
+    const e=await wrapSecret(g.mssv,newPw,a.sec.raw,a.sec.sk,a.f.iter);
+    const u={id:a.id,b:a.base.c.slice(0,24),q:Math.max(Date.now(),a.upd?a.upd.q+1:0),e};
+    const sk=await sub.importKey('jwk',a.sec.sk,EC,false,['sign']);u.sig=b64(await sub.sign(SG,sk,enc.encode(canon(u))));
+    const n=await publishUpdate(a.id,u);if(n)lsSet(LU,JSON.stringify(u));if(!n)throw new Error('Không kết nối được trạm trung chuyển nên chưa lưu được mật khẩu mới. Mật khẩu cũ vẫn dùng được; hãy thử lại sau.');
+    return n;}
   async function auto(){let s=null;try{s=JSON.parse(localStorage.getItem(LS)||'null');}catch(e){}
     if(!s||!s.k||!s.m)return null;
     const f=await loadFile();
     if(f&&(f.kid!==s.kid||!f.users[await idOf(s.m)])){logout(false);return null;}
+    setTimeout(()=>heal(f).catch(()=>{}),3000);
     return finish(s.m,ub(s.k),s.kid);}
-  function logout(reload){try{localStorage.removeItem(LS);}catch(e){}if(reload!==false)location.reload();}
+  /* tự phục hồi: nếu bản đổi mật khẩu trên trạm bị xóa hoặc ghi đè, máy này phát lại bản hợp lệ nó đang giữ */
+  async function heal(f){let u=null;try{u=JSON.parse(lsGet(LU)||'null');}catch(e){}if(!u||!f||!f.users)return;
+    const base=f.users[u.id];if(!base||!(await verifyUpd(u,u.id,base))){lsDel(LU);return;}
+    const {upd,reached}=await fetchUpdate(u.id,base);if(!reached)return;
+    if(upd&&upd.q>u.q){lsSet(LU,JSON.stringify(upd));return;}
+    if(!upd||upd.q<u.q)await publishUpdate(u.id,u);}
+  function logout(reload){try{localStorage.removeItem(LS);localStorage.removeItem(LU);}catch(e){}if(reload!==false)location.reload();}
+  function checkNew(mssv,pw,pw2){
+    if(pw!==pw2)return 'Hai lần nhập mật khẩu mới không giống nhau.';
+    if(pw.length<8)return 'Mật khẩu mới cần ít nhất 8 ký tự.';
+    if(/^\d+$/.test(pw))return 'Mật khẩu không nên chỉ có chữ số.';
+    if(norm(pw).includes(norm(mssv)))return 'Mật khẩu không được chứa mã số sinh viên.';
+    if(/^(.)\1+$/.test(pw)||/^(12345678|password|matkhau|abcd1234|qwerty)/i.test(pw))return 'Mật khẩu này quá dễ đoán.';
+    return '';}
   /* ---- công cụ của giảng viên ---- */
   const AL='abcdefghjkmnpqrstuvwxyz23456789';
   function genPw(){let s='';while(s.replace('-','').length<8){const b=crypto.getRandomValues(new Uint8Array(1))[0];if(b<248){s+=AL[b%31];if(s.length===4)s+='-';}}return s;}
-  async function makeEntry(mssv,name,pw,raw,iter){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
-    const k=await wrapKey(mssv,pw,salt,iter||ITER);const c=await sub.encrypt({name:'AES-GCM',iv},k,raw);
-    const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt']);
-    return [await idOf(mssv),{s:b64(salt),i:b64(iv),c:b64(c),l:await seal(aes,JSON.stringify({m:norm(mssv),n:name||''}))}];}
+  async function makeEntry(mssv,name,pw,raw,iter){
+    const kp=await sub.generateKey(EC,true,['sign','verify']);const skJwk=await sub.exportKey('jwk',kp.privateKey);
+    const e=await wrapSecret(mssv,pw,raw,skJwk,iter);e.p=skJwk.x+'.'+skJwk.y;
+    const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt']);e.l=await seal(aes,JSON.stringify({m:norm(mssv),n:name||''}));
+    return [await idOf(mssv),e];}
   async function listUsers(f,aes){const out=[];for(const id in (f&&f.users)||{}){try{out.push(JSON.parse(await open(aes,f.users[id].l)));}catch(e){out.push({m:'(không đọc được)',n:''});}}
     return out.sort((a,b)=>a.m.localeCompare(b.m));}
-  const api={ready,login,auto,logout,seal,open,loadFile,makeEntry,genPw,listUsers,idOf,kidOf,norm,b64,ub,ITER,cur:null};
+  const api={ready,login,auto,logout,changePassword,checkNew,seal,open,loadFile,makeEntry,genPw,listUsers,idOf,kidOf,norm,b64,ub,ITER,cur:null};
   return api;
 })();
 </script>
@@ -734,8 +815,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   function done(g){ov.hidden=true;document.documentElement.classList.remove('gated');
     const o=$g('gateOut');o.hidden=false;o.textContent=g.mssv+' · Thoát';
     const jn=$g('joinName');if(jn&&!jn.value)jn.value=g.mssv+' – ';}
-  G.ready.then(done);
+  G.ready.then(g=>{done(g);$g('gatePw').hidden=false;});
   $g('gateOut').onclick=()=>G.logout();
+  /* ---- tự đổi mật khẩu ---- */
+  const pb=$g('pwBox'),pf=$g('pwForm'),pm=$g('pwMsg'),pgo=$g('pwGo');
+  const closePw=()=>{pb.hidden=true;document.documentElement.classList.remove('gated');pf.reset();pm.className='gmsg';pm.textContent='';};
+  $g('gatePw').onclick=()=>{pb.hidden=false;document.documentElement.classList.add('gated');$g('pwMssv').textContent=G.cur?G.cur.mssv:'';setTimeout(()=>$g('pwOld').focus(),50);};
+  $g('pwCancel').onclick=closePw;
+  pb.addEventListener('keydown',e=>{if(e.key==='Escape')closePw();});
+  ['pwOld','pwNew','pwNew2'].forEach(id=>$g(id).addEventListener('input',()=>{if(pm.classList.contains('bad')){pm.className='gmsg';pm.textContent='';}}));
+  pf.addEventListener('submit',async e=>{e.preventDefault();
+    const o=$g('pwOld').value.trim(),n=$g('pwNew').value,n2=$g('pwNew2').value;
+    const bad=G.checkNew(G.cur.mssv,n,n2);if(bad){pm.className='gmsg bad';pm.textContent=bad;return;}
+    if(n===o){pm.className='gmsg bad';pm.textContent='Mật khẩu mới phải khác mật khẩu hiện tại.';return;}
+    pgo.disabled=true;pm.className='gmsg';pm.textContent='Đang lưu mật khẩu mới lên trạm…';
+    try{const k=await G.changePassword(o,n);pm.className='gmsg ok';pm.textContent='Đã đổi mật khẩu'+(k>1?' (lưu ở '+k+' trạm)':'')+'. Lần sau đăng nhập, kể cả trên máy khác, hãy dùng mật khẩu mới.';
+      $g('pwOld').value='';$g('pwNew').value='';$g('pwNew2').value='';setTimeout(()=>{if(!pb.hidden&&pm.classList.contains('ok'))closePw();},4000);}
+    catch(x){pm.className='gmsg bad';pm.textContent=x.message||'Không đổi được mật khẩu.';}
+    pgo.disabled=false;});
   G.auto().then(g=>{if(!g){$g('gWait').hidden=true;form.hidden=false;setTimeout(()=>$g('gMssv').focus(),50);}}).catch(()=>{$g('gWait').hidden=true;form.hidden=false;});
   form.addEventListener('submit',async e=>{e.preventDefault();msg.className='gmsg';msg.textContent='Đang kiểm tra…';btn.disabled=true;
     try{await G.login($g('gMssv').value,$g('gPw').value.trim());msg.textContent='';}
