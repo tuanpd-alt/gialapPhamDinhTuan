@@ -24,6 +24,12 @@ Sơ đồ so sánh từng bước luồng một giao dịch trên Bitcoin và tr
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/luong-giao-dich.html
 
+# Đào và đồng thuận
+
+Mô phỏng tình huống ba người đào A, B, C cạnh tranh khối 900.001: mỗi người tự lập khối ứng viên, cuộc đua Proof-of-Work theo sức băm, lan truyền gossip và kiểm tra độc lập ở từng nút (kể cả khi có nút bị sửa phần mềm), rẽ nhánh tạm thời và quy tắc coinbase phải chờ 100 khối. Có phiếu bài tập 12 câu tự chấm và in được.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/dao-va-dong-thuan.html (thêm `#buoc6` để vào thẳng phần bài tập)
+
 # ERP Lab HTTTKT
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.
