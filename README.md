@@ -30,6 +30,12 @@ Mô phỏng tình huống ba người đào A, B, C cạnh tranh khối 900.001:
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/dao-va-dong-thuan.html (thêm `#buoc6` để vào thẳng phần bài tập)
 
+# Token hóa tài sản
+
+Mô phỏng token hóa một bất động sản (sổ đỏ) qua 8 bước: quét Giấy chứng nhận và đối chiếu cơ sở dữ liệu đất đai (4 tình huống: hợp lệ, bị sửa, đang thế chấp, sổ giả), thẩm định giá và lập SPV, niêm phong hồ sơ bằng cây Merkle, đúc NFT tài sản (ERC-721), thiết lập danh tính và luật tuân thủ (ERC-3643; chế độ sandbox hoặc NQ 05/2025/NQ-CP), khóa NFT và phân mảnh thành token, chào bán với thanh toán DvP, ghi khối trên chuỗi liên minh (ngưỡng 2/3), phân phối thu nhập, chuyển nhượng thứ cấp và sự kiện kê biên qua oracle. Có phiếu bài tập 13 câu tự chấm và in được.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/token-hoa-tai-san.html (thêm `#buoc9` để vào thẳng phần bài tập)
+
 # ERP Lab HTTTKT
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.

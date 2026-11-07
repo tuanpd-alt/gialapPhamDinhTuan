@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Token hóa tài sản</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:16px}
+
+/* ===== Trang Token hóa tài sản ===== */
+:root{--deed:#f7e1e1;--deed-ink:#8a1c1c;--deed-line:#d9a3a3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}}
+:root[data-theme="dark"]{--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.checks{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li .m{flex:none;width:18px;font-weight:700}
+.checks li.p .m{color:var(--ok)}.checks li.f .m{color:var(--bad)}.checks li.s .m{color:var(--muted)}
+.log{font:12.5px var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:220px;overflow:auto;display:grid;gap:2px}
+pre.json{font:12px/1.5 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px;margin:0;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-all}
+
+/* Giấy chứng nhận */
+.scanwrap{position:relative;border-radius:12px;overflow:hidden}
+.deed{background:var(--deed);border:2px solid var(--deed-line);border-radius:12px;padding:14px 16px;color:var(--ink);display:grid;gap:8px;font-size:13px}
+.deed .hd{text-align:center;color:var(--deed-ink);line-height:1.35}
+.deed .hd b{display:block;font-size:12px;letter-spacing:.04em}
+.deed .hd .t{font:700 15px var(--f-display);margin-top:4px;text-wrap:balance}
+.deed .body{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:start}
+.deed dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px}
+.deed dt{color:var(--muted);font-size:12px}
+.deed dd{margin:0;font-weight:500}
+.deed dd.tamper{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(189,52,52,.16) 3px 6px);border-radius:3px}
+.deed .qr{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--muted);text-align:center}
+.deed .qr svg{width:104px;height:104px;background:#fff;border-radius:4px;padding:4px}
+@media (max-width:560px){.deed .body{grid-template-columns:minmax(0,1fr)}.deed dl{grid-template-columns:minmax(0,1fr)}.deed dt{margin-top:4px}.deed .qr{justify-items:start;text-align:left}}
+.deed .ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--deed-ink);border-top:1px dashed var(--deed-line);padding-top:6px}
+.laser{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 14px 4px rgba(34,211,238,.55);top:0;opacity:0;pointer-events:none}
+.scanwrap.scanning .laser{opacity:1;animation:sweep 1.6s ease-in-out infinite alternate}
+.scanwrap.scanning::after{content:"";position:absolute;inset:0;background:rgba(34,211,238,.06);pointer-events:none}
+@keyframes sweep{from{top:0}to{top:calc(100% - 3px)}}
+@media (prefers-reduced-motion:reduce){.scanwrap.scanning .laser{animation:none;top:50%}}
+.ocr{display:grid;gap:4px}
+.ocr .r{display:grid;grid-template-columns:150px minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px}
+.ocr .r input{padding:5px 8px;font-size:13px}
+.ocr .r .cf{font:12px var(--f-mono);text-align:right;color:var(--muted)}
+.ocr .r .cf.lo{color:var(--bad);font-weight:600}
+.ocr .r.diff input{border-color:var(--bad);background:var(--bad-bg)}
+@media (max-width:560px){.ocr .r{grid-template-columns:minmax(0,1fr) 58px}.ocr .r>span:first-child{grid-column:1/-1}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+
+/* Dòng thời gian SPV */
+.tl{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;opacity:.45;transition:opacity .3s}
+.tl li.on{opacity:1}
+.tl li .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font:600 13px var(--f-mono)}
+.tl li.on .n{background:var(--ok);color:#fff}
+.tl li b{display:block}
+.tl li .hash{margin-top:4px;padding:4px 8px;font-size:12px}
+
+/* Cây Merkle */
+.mtree{display:grid;gap:6px;overflow-x:auto}
+.mtree .lv{display:flex;gap:6px;justify-content:center}
+.mtree .nd{flex:0 0 auto;border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:11.5px var(--f-mono);background:var(--surface);text-align:center;min-width:86px}
+.mtree .nd small{display:block;font-family:var(--f-body);color:var(--muted);font-size:10.5px;max-width:110px;white-space:normal}
+.mtree .nd.root{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+
+/* Phân bổ */
+.alloc{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--sunk);font:600 12px var(--f-body);color:#fff}
+.alloc span{display:grid;place-items:center;white-space:nowrap;overflow:hidden;transition:width .3s}
+.a1{background:#1d5cf0}.a2{background:#11805a}.a3{background:#c8770a}.a4{background:#7c3aed}
+.vault{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.vault .box{border:2px dashed var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;font-size:13px;min-width:180px}
+.vault .box.locked{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.vault .ar{color:var(--muted);font-size:20px}
+
+/* Chuỗi khối */
+.chainv{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 0}
+.blk{flex:0 0 auto;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface);min-width:150px;max-width:190px;display:grid;gap:2px}
+.blk b{font-family:var(--f-mono);font-size:13px}
+.blk .h{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.blk.new{border-color:var(--ok);background:var(--ok-bg)}
+.chainv .ar{flex:0 0 22px;align-self:center;text-align:center;color:var(--muted)}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.val{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.val.off{opacity:.55;border-style:dashed}
+.val.signed{border-color:var(--ok)}
+.val label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.txc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.txc.ok{border-color:var(--ok)}.txc.bad{border-color:var(--bad)}
+.txc .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.txlist{display:grid;gap:8px}
+.gate{display:none}
+.locked-step .gate{display:block}
+td input[type=number]{width:96px;padding:5px 8px}
+td input[type=checkbox]{width:16px;height:16px}
+.pill{display:inline-block;font:600 11.5px var(--f-body);padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--zero-bg);color:var(--zero-ink)}
+
+/* Bài tập */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.q p.qt{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}
+.q label input{margin-top:4px}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.q.right .fb{background:var(--ok-bg)}.q.wrong .fb{background:var(--bad-bg)}
+.q .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.score{font:700 26px var(--f-mono)}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.prac{display:grid;gap:10px}
+.prac .pi{display:grid;gap:5px;font-size:14px}
+@media print{
+  header.top,nav.steps,.navbtns,.foot,.noprint{display:none!important}
+  .step{display:block!important}.step[hidden]{display:none!important}
+  body{background:#fff;color:#000}.q,.panel{break-inside:avoid;border-color:#999}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">⌂</div>
+  <div class="ttl"><h1>Token hóa tài sản</h1><div class="sub">Quét sổ đỏ · thẩm định và SPV · NFT tài sản · danh tính và tuân thủ · phân mảnh · chào bán · ghi khối · vòng đời</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <a class="btnlink" href="./tao-lap-blockchain.html">Tạo lập Blockchain</a>
+  <a class="btnlink" href="./khoa-va-chu-ky.html">Khóa và chữ ký</a>
+  <a class="btnlink" href="./dao-va-dong-thuan.html">Đào và đồng thuận</a>
+  <a class="btnlink" href="./doanh-nghiep.html">Sổ cái DN</a>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<nav class="steps wrap" role="tablist" aria-label="Các bước">
+  <button role="tab" data-go="1" aria-selected="true"><span class="n">1</span>Quét sổ đỏ</button>
+  <button role="tab" data-go="2" aria-selected="false"><span class="n">2</span>Thẩm định &amp; SPV</button>
+  <button role="tab" data-go="3" aria-selected="false"><span class="n">3</span>Đúc NFT tài sản</button>
+  <button role="tab" data-go="4" aria-selected="false"><span class="n">4</span>Danh tính &amp; tuân thủ</button>
+  <button role="tab" data-go="5" aria-selected="false"><span class="n">5</span>Phân mảnh token</button>
+  <button role="tab" data-go="6" aria-selected="false"><span class="n">6</span>Chào bán &amp; đặt lệnh</button>
+  <button role="tab" data-go="7" aria-selected="false"><span class="n">7</span>Ghi lên blockchain</button>
+  <button role="tab" data-go="8" aria-selected="false"><span class="n">8</span>Vòng đời</button>
+  <button role="tab" data-go="9" aria-selected="false"><span class="n">9</span>Bài tập</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ========== BƯỚC 1 ========== -->
+<section class="step" id="s1">
+  <div class="explain">
+    <h2>Bước 1. Quét Giấy chứng nhận và đối chiếu với cơ sở dữ liệu đất đai</h2>
+    <p>Token hóa tài sản thực (<i>real-world asset tokenisation</i>) là việc ghi nhận quyền đối với một tài sản ngoài chuỗi dưới dạng token trên sổ cái phân tán (OECD, 2020). Khâu đầu tiên quyết định chất lượng của toàn bộ chuỗi: nếu dữ liệu đầu vào sai, token được tạo ra cũng sai, dù mật mã học hoàn hảo.</p>
+    <p>Giấy chứng nhận mẫu mới theo Luật Đất đai 2024 (Luật số 31/2024/QH15) và Thông tư 10/2024/TT-BTNMT có <b>mã QR</b> lưu năm nhóm thông tin, thống nhất với cơ sở dữ liệu đất đai; số phát hành gồm 2 chữ cái và 8 chữ số.</p>
+    <h3>Quy trình quét</h3>
+    <ol>
+      <li><b>Chụp và nhận dạng ký tự (OCR):</b> tách các trường in trên Giấy chứng nhận, kèm độ tin cậy.</li>
+      <li><b>Chuẩn hóa và băm:</b> các trường được sắp theo thứ tự cố định rồi băm SHA-256, tạo <b>mã băm tài liệu</b>. Chỉ mã băm được đưa lên chuỗi; dữ liệu cá nhân lưu ngoài chuỗi.</li>
+      <li><b>Đối chiếu:</b> tra số phát hành trong cơ sở dữ liệu đất đai, so từng trường và kiểm tra tình trạng thế chấp, tranh chấp, kê biên.</li>
+    </ol>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn tình huống <b>"Sổ hợp lệ"</b>, bấm <b>"Quét Giấy chứng nhận"</b>. Ghi 8 ký tự đầu của mã băm tài liệu.</li>
+      <li>Sửa ô "Diện tích" từ 120 thành 121. Mã băm thay đổi bao nhiêu ký tự?</li>
+      <li>Lần lượt thử ba tình huống còn lại. Kiểm tra nào thất bại ở mỗi tình huống?</li>
+    </ol>
+    <p class="src">Dữ liệu Giấy chứng nhận, người sử dụng đất và địa chỉ là giả định. Căn cứ: Luật Đất đai 2024; Thông tư 09/2024/TT-BTNMT và 10/2024/TT-BTNMT (Điều 14 về mã QR); OECD (2020).</p>
+  </div>
+  <div class="panel">
+    <div class="row"><span class="note">Tình huống:</span>
+      <div class="seg" id="sceneSeg">
+        <button data-sc="real" aria-pressed="true">Sổ hợp lệ</button>
+        <button data-sc="tamper" aria-pressed="false">Sổ bị sửa diện tích</button>
+        <button data-sc="mortgage" aria-pressed="false">Sổ đang thế chấp</button>
+        <button data-sc="fake" aria-pressed="false">Sổ giả</button>
+      </div></div>
+    <div class="scanwrap" id="scanWrap"><div id="deed"></div><div class="laser"></div></div>
+    <div class="row">
+      <button class="btn primary" id="scanBtn">Quét Giấy chứng nhận</button>
+      <label class="btn sm" style="display:inline-flex;gap:6px;align-items:center">Băm ảnh thật (tùy chọn)<input type="file" id="imgFile" accept="image/*,application/pdf" hidden></label>
+      <span class="note" id="imgHashNote">Ảnh chỉ được băm trong trình duyệt, không gửi đi đâu.</span>
+    </div>
+    <div id="ocrBox" hidden>
+      <h4>Kết quả nhận dạng (có thể sửa)</h4>
+      <div class="ocr" id="ocrRows"></div>
+    </div>
+    <div id="hashBox" hidden>
+      <h4>Mã băm tài liệu SHA-256 (đưa lên chuỗi)</h4>
+      <div class="hash" id="docHash"></div>
+      <div class="note" id="docHashNote"></div>
+    </div>
+    <div id="regBox" hidden>
+      <h4>Đối chiếu cơ sở dữ liệu đất đai (giả lập)</h4>
+      <ul class="checks" id="regChecks"></ul>
+    </div>
+    <div id="s1msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 2 ========== -->
+<section class="step" id="s2" hidden>
+  <div class="explain">
+    <h2>Bước 2. Thẩm định giá, lập SPV và niêm phong hồ sơ pháp lý</h2>
+    <p>Blockchain không tự chuyển quyền sử dụng đất. Tại Việt Nam, quyền sử dụng đất chỉ thay đổi chủ thể khi đăng ký biến động tại cơ quan đăng ký đất đai. Vì vậy các dự án token hóa bất động sản thường dùng một <b>pháp nhân mục đích đặc biệt (SPV)</b>: SPV đứng tên trên Giấy chứng nhận, còn token đại diện cho quyền lợi kinh tế gắn với phần vốn của SPV.</p>
+    <p>Thương vụ St. Regis Aspen (Hoa Kỳ, 10/2018) là ví dụ: 18,9% khách sạn được bán qua token giá 1 USD, thu 18 triệu USD, thông qua cấu trúc quỹ/SPV và chỉ dành cho nhà đầu tư được chứng nhận (Aspen Times, 2018).</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Điều chỉnh giả định định giá. Ghi giá trị theo hai phương pháp và giá trị chốt.</li>
+      <li>Tăng tỷ suất vốn hóa từ 4,8% lên 6%. Giá trị theo phương pháp thu nhập giảm bao nhiêu %?</li>
+      <li>Bấm <b>"Lập SPV và chuyển tài sản"</b>, quan sát bốn bước pháp lý và chi phí giao dịch.</li>
+      <li>Bấm <b>"Niêm phong hồ sơ"</b> để tạo gốc Merkle của sáu tài liệu.</li>
+    </ol>
+    <p class="src">Thuế thu nhập cá nhân 2% và lệ phí trước bạ 0,5% trên giá chuyển nhượng là giả định minh họa theo quy định hiện hành về chuyển nhượng bất động sản; cần đối chiếu văn bản tại thời điểm giao dịch. Nguồn: OECD (2020); Aspen Times (09/10/2018).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần hoàn thành Bước 1 với kết quả đối chiếu hợp lệ trước.</div>
+    <h4>Thẩm định giá</h4>
+    <div class="grid2f">
+      <label class="f">Diện tích đất (m²)<input type="number" id="vLand" value="120" readonly></label>
+      <label class="f">Đơn giá đất thị trường (triệu đ/m²)<input type="number" id="vLandP" value="200" min="1"></label>
+      <label class="f">Diện tích sàn xây dựng (m²)<input type="number" id="vFloor" value="420" min="0"></label>
+      <label class="f">Đơn giá xây dựng mới (triệu đ/m²)<input type="number" id="vBuild" value="7" min="0" step="0.5"></label>
+      <label class="f">Chất lượng còn lại công trình (%)<input type="number" id="vRemain" value="80" min="0" max="100"></label>
+      <label class="f">Tiền thuê thị trường (triệu đ/tháng)<input type="number" id="vRent" value="120" min="0"></label>
+      <label class="f">Chi phí vận hành (% tiền thuê)<input type="number" id="vOpex" value="15" min="0" max="90"></label>
+      <label class="f">Tỷ suất vốn hóa (%)<input type="number" id="vCap" value="4.8" min="1" max="20" step="0.1"></label>
+      <label class="f">Trọng số PP so sánh – chi phí (%)<input type="number" id="vW" value="50" min="0" max="100" step="10"></label>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="vMk">–</b><span>PP so sánh – chi phí (tỷ đ)</span></div>
+      <div class="stat"><b id="vInc">–</b><span>PP thu nhập (tỷ đ)</span></div>
+      <div class="stat"><b id="vFin">–</b><span>Giá trị chốt (tỷ đ)</span></div>
+      <div class="stat"><b id="vNoi">–</b><span>Thu nhập ròng/năm (triệu đ)</span></div>
+    </div>
+    <h4>Cấu trúc pháp lý</h4>
+    <div class="row"><button class="btn primary" id="spvBtn">Lập SPV và chuyển tài sản</button><span class="note" id="spvCost"></span></div>
+    <ol class="tl" id="spvTl"></ol>
+    <h4>Hồ sơ niêm phong</h4>
+    <div class="row"><button class="btn" id="sealBtn" disabled>Niêm phong hồ sơ</button></div>
+    <div class="mtree" id="mtree"></div>
+    <div id="s2msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 3 ========== -->
+<section class="step" id="s3" hidden>
+  <div class="explain">
+    <h2>Bước 3. Đúc NFT tài sản (chứng thư số)</h2>
+    <p>Một bất động sản là duy nhất, nên trước hết nó được đại diện bằng <b>một token không thể thay thế</b> theo chuẩn ERC-721: mỗi token có một mã định danh riêng và không chia nhỏ được (Entriken và cộng sự, 2018).</p>
+    <p>Bộ dữ liệu mô tả (<i>metadata</i>) của NFT không chứa ảnh sổ hay thông tin cá nhân. Nó chỉ chứa mã băm tài liệu ở Bước 1, gốc Merkle hồ sơ ở Bước 2, giá trị thẩm định và tên tổ chức lưu ký. Ai có bản gốc đều kiểm chứng được bằng cách băm lại và so sánh.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Đọc metadata. Xác định trường nào nối NFT với Giấy chứng nhận ngoài đời.</li>
+      <li>Bấm <b>"Đúc NFT"</b>. Ghi mã token và số khối.</li>
+      <li>Thảo luận: vì sao không đưa ảnh sổ đỏ lên chuỗi?</li>
+    </ol>
+    <p class="src">Nguồn: ERC-721 Non-Fungible Token Standard (Entriken, Shirley, Evans, &amp; Sachs, 2018); OECD (2020).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần hoàn thành Bước 2 (lập SPV và niêm phong hồ sơ) trước.</div>
+    <h4>Metadata của NFT</h4>
+    <pre class="json" id="metaJson"></pre>
+    <div class="grid2f">
+      <div><h4>Mã băm metadata (địa chỉ nội dung)</h4><div class="hash" id="metaHash">–</div></div>
+      <div><h4>Mã token (tokenId)</h4><div class="hash" id="tokenId">–</div></div>
+    </div>
+    <div class="row"><button class="btn primary" id="mintBtn">Đúc NFT</button></div>
+    <div id="s3msg"></div>
+    <h4>Chuỗi khối</h4>
+    <div class="chainv" id="chain3"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 4 ========== -->
+<section class="step" id="s4" hidden>
+  <div class="explain">
+    <h2>Bước 4. Thiết lập danh tính và luật tuân thủ</h2>
+    <p>Token đại diện quyền lợi tài sản không được chuyển tự do như ERC-20. Chuẩn <b>ERC-3643 (T-REX)</b> gắn mỗi ví với một danh tính trên chuỗi; trước mọi lần chuyển, hợp đồng token gọi <span class="mono">isVerified()</span> để kiểm tra người nhận có xác thực KYC do tổ chức tin cậy cấp, và <span class="mono">canTransfer()</span> để kiểm tra các luật như hạn mức mỗi nhà đầu tư hay giới hạn theo quốc gia (ERC-3643, 2021).</p>
+    <h3>Khung pháp lý tại Việt Nam</h3>
+    <p>Nghị quyết 05/2025/NQ-CP (hiệu lực 09/9/2025, thí điểm 5 năm) quy định tài sản mã hóa phải phát hành dựa trên <b>tài sản cơ sở là tài sản thực</b>, không phải chứng khoán hay tiền pháp định; tổ chức phát hành là doanh nghiệp Việt Nam; và chỉ được chào bán, phát hành <b>cho nhà đầu tư nước ngoài</b>. Luật Công nghiệp công nghệ số (Luật số 71/2025/QH15, hiệu lực 01/01/2026) lần đầu điều chỉnh tài sản số.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Giữ chế độ <b>"Sandbox giả định"</b>. Quan sát cột "isVerified" của từng nhà đầu tư.</li>
+      <li>Chuyển sang <b>"NQ 05/2025"</b>. Những ai mất tư cách? Có ảnh hưởng đến Ông An không?</li>
+      <li>Đổi tên dòng "Học viên" thành tên của bạn.</li>
+    </ol>
+    <p class="src">Nguồn: ERC-3643 (Final), Ethereum Improvement Proposals (2021); Nghị quyết 05/2025/NQ-CP, Điều 3, 5, 6, 18.</p>
+  </div>
+  <div class="panel">
+    <h4>Khung pháp lý áp dụng</h4>
+    <div class="seg" id="legalSeg">
+      <button data-lg="sandbox" aria-pressed="true">Sandbox giả định (NĐT trong và ngoài nước đã KYC)</button>
+      <button data-lg="nq05" aria-pressed="false">NQ 05/2025 (chỉ NĐT nước ngoài)</button>
+    </div>
+    <div id="legalNote"></div>
+    <h4>Mô-đun tuân thủ (canTransfer)</h4>
+    <div class="grid2f">
+      <label class="f">Hạn mức tối đa mỗi nhà đầu tư (% tổng cung)<input type="number" id="mCap" value="10" min="1" max="100"></label>
+      <label class="f">Lô tối thiểu mỗi lệnh (token)<input type="number" id="mLot" value="10" min="1"></label>
+    </div>
+    <h4>Sổ đăng ký danh tính (Identity Registry)</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Nhà đầu tư</th><th>Ví</th><th>Quốc gia</th><th>Xác nhận KYC</th><th>Đóng băng</th><th>isVerified</th></tr></thead>
+      <tbody id="idTable"></tbody>
+    </table></div>
+    <p class="note">Tổ chức cấp xác nhận tin cậy (Trusted Issuer): Ngân hàng giám sát, giả định. Ví ẩn danh không có danh tính trên chuỗi.</p>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 5 ========== -->
+<section class="step" id="s5" hidden>
+  <div class="explain">
+    <h2>Bước 5. Khóa NFT vào kho và phân mảnh thành token</h2>
+    <p>NFT được chuyển vào một hợp đồng kho (<i>vault</i>) và bị khóa. Đổi lại, hợp đồng token ERC-3643 đúc ra <b>N token</b> có thể thay thế. Bất biến của hệ thống: chừng nào NFT còn trong kho, tổng cung token luôn bằng N và đại diện cho đúng một tài sản. Muốn rút NFT phải thu hồi đủ N token.</p>
+    <p>Phân mảnh hạ ngưỡng đầu tư. Nền tảng Prypco Mint do Cục Đất đai Dubai triển khai trên XRP Ledger (05/2025) cho phép mua phần bất động sản từ 2.000 AED, chỉ cho người có thẻ căn cước UAE, thanh toán bằng dirham, chịu giám sát của VARA và Ngân hàng Trung ương UAE (Ledger Insights, 2025).</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn tổng cung và tỷ lệ phân bổ. Ghi giá mỗi token.</li>
+      <li>Bấm <b>"Khóa NFT và đúc token"</b>. Nếu đang ở chế độ NQ 05/2025, quan sát điều gì xảy ra với phần giữ lại của Ông An.</li>
+    </ol>
+    <p class="src">Nguồn: Ledger Insights (26/5/2025); ERC-3643 (2021), hàm mint chỉ kiểm tra isVerified của người nhận.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần đúc NFT ở Bước 3 trước.</div>
+    <div class="grid2f">
+      <label class="f">Tổng cung N (token)<input type="number" id="fN" value="10000" min="100" max="1000000" step="100"></label>
+      <label class="f">Chủ tài sản giữ lại (%)<input type="number" id="fKeep" value="30" min="0" max="100"></label>
+      <label class="f">Quỹ dự phòng thanh khoản (%)<input type="number" id="fRes" value="5" min="0" max="50"></label>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="fPrice">–</b><span>Giá mỗi token (đ)</span></div>
+      <div class="stat"><b id="fOffer">–</b><span>Token chào bán</span></div>
+      <div class="stat"><b id="fKeepN">–</b><span>Token giữ lại</span></div>
+      <div class="stat"><b id="fResN">–</b><span>Token dự phòng</span></div>
+    </div>
+    <div class="alloc" id="allocBar"></div>
+    <div class="vault">
+      <div class="box" id="nftBox"><b>NFT tài sản</b><span class="mono" id="nftBoxId">–</span><span class="note" id="nftBoxSt">Trong ví SPV</span></div>
+      <span class="ar">→</span>
+      <div class="box" id="vaultBox"><b>Kho khóa (vault)</b><span class="note" id="vaultSt">Trống</span></div>
+      <span class="ar">⇒</span>
+      <div class="box" id="tokBox"><b>Token TP18 (ERC-3643)</b><span class="note" id="tokSt">Chưa phát hành</span></div>
+    </div>
+    <div class="row"><button class="btn primary" id="fracBtn">Khóa NFT và đúc token</button><button class="btn" id="fracReset">Đặt lại bước này</button></div>
+    <div id="s5msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 6 ========== -->
+<section class="step" id="s6" hidden>
+  <div class="explain">
+    <h2>Bước 6. Tạo đợt chào bán và đặt lệnh mua</h2>
+    <p>SPV mở một đợt chào bán sơ cấp với giá cố định. Mỗi nhà đầu tư ký một lệnh mua bằng khóa riêng. Thanh toán dùng <b>tiền gửi số hóa (VND-token)</b> do ngân hàng giám sát phát hành, theo nguyên tắc <b>giao hàng đồng thời thanh toán (DvP)</b>: token tài sản và tiền chuyển trong cùng một giao dịch, hoặc cả hai cùng xảy ra, hoặc không bên nào xảy ra (BIS, 2023).</p>
+    <h3>Mỗi lệnh phải qua</h3>
+    <ol>
+      <li>Chữ ký hợp lệ của người mua.</li>
+      <li><span class="mono">isVerified</span>: danh tính, KYC, quốc gia, ví không bị đóng băng.</li>
+      <li><span class="mono">canTransfer</span>: lô tối thiểu, hạn mức mỗi nhà đầu tư (tính cả lệnh đang chờ).</li>
+      <li>Còn đủ token chào bán và người mua đủ VND-token.</li>
+    </ol>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>"Ký và gửi tất cả"</b>. Ghi lệnh nào bị từ chối và lý do.</li>
+      <li>Sửa số lượng của Nguyễn Hoàng Dũng sao cho lệnh hợp lệ, gửi lại.</li>
+    </ol>
+    <p class="src">Nguồn: BIS Annual Economic Report 2023, Chương III; ERC-3643 (2021).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần phát hành token ở Bước 5 trước.</div>
+    <h4>Điều khoản chào bán</h4>
+    <div class="stats" id="offerStats"></div>
+    <h4>Sổ lệnh</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Nhà đầu tư</th><th class="num">VND-token</th><th class="num">Số token mua</th><th class="num">Thành tiền (đ)</th><th></th></tr></thead>
+      <tbody id="orderTable"></tbody>
+    </table></div>
+    <div class="row"><button class="btn primary" id="sendAll">Ký và gửi tất cả</button><button class="btn" id="clearOrders">Xóa lệnh chưa ghi khối</button></div>
+    <h4>Kết quả kiểm tra từng lệnh</h4>
+    <div class="txlist" id="txList"><span class="note">Chưa có lệnh.</span></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 7 ========== -->
+<section class="step" id="s7" hidden>
+  <div class="explain">
+    <h2>Bước 7. Gom khối và ghi lên blockchain liên minh</h2>
+    <p>Token tài sản thực thường chạy trên chuỗi <b>có cấp phép</b>: chỉ các tổ chức được phép mới vận hành nút xác thực. Khối không cần Proof-of-Work; khối được chấp nhận khi có chữ ký của tối thiểu 2/3 số nút xác thực (đồng thuận kiểu BFT).</p>
+    <p>Khi khối được ghi, các giao dịch DvP được thực hiện nguyên tử: số dư token TP18 và VND-token thay đổi cùng lúc, bảng cơ cấu sở hữu được cập nhật.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Tắt một nút xác thực rồi bấm <b>"Gom khối và ký"</b>. Khối có được ghi không?</li>
+      <li>Tắt hai nút. Kết quả thay đổi thế nào? Vì sao?</li>
+      <li>Bật lại, ghi khối. Tính tỷ lệ chào bán thành công.</li>
+    </ol>
+    <p class="src">Nguồn: Castro &amp; Liskov (1999), Practical Byzantine Fault Tolerance; BIS (2023).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần có lệnh hợp lệ trong hàng chờ ở Bước 6.</div>
+    <h4>Hàng chờ giao dịch</h4>
+    <div class="log" id="mempool"></div>
+    <h4>Nút xác thực</h4>
+    <div class="vals" id="vals"></div>
+    <div class="row"><button class="btn primary" id="sealBlock">Gom khối và ký</button></div>
+    <div id="s7msg"></div>
+    <h4>Chuỗi khối</h4>
+    <div class="chainv" id="chain7"></div>
+    <h4>Cơ cấu sở hữu token TP18</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Người nắm giữ</th><th class="num">Token</th><th class="num">Tỷ lệ</th><th class="num">Giá trị (đ)</th></tr></thead>
+      <tbody id="capTable"></tbody>
+    </table></div>
+    <div class="stats" id="saleStats"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 8 ========== -->
+<section class="step" id="s8" hidden>
+  <div class="explain">
+    <h2>Bước 8. Vòng đời sau phát hành</h2>
+    <p>Sau khi bán, token phải tiếp tục phản ánh đúng tài sản. Ba nghiệp vụ cần quan sát:</p>
+    <ul>
+      <li><b>Phân phối thu nhập:</b> tiền thuê ròng của SPV chia theo số token nắm giữ, ghi bằng một giao dịch trên chuỗi.</li>
+      <li><b>Chuyển nhượng thứ cấp:</b> vẫn phải qua <span class="mono">isVerified</span> và <span class="mono">canTransfer</span>.</li>
+      <li><b>Sự kiện ngoài chuỗi:</b> nếu tài sản bị kê biên hoặc giao dịch bảo đảm được đăng ký, chuỗi không tự biết. Cần một nguồn dữ liệu đáng tin (<i>oracle</i>) từ cơ quan đăng ký, và một tác nhân có quyền tạm dừng token.</li>
+    </ul>
+    <p>Rủi ro thứ ba là trọng tâm thảo luận: về pháp lý, <b>sổ địa chính vẫn là nguồn chân lý</b>; blockchain chỉ là bản ghi phái sinh của quyền lợi kinh tế (OECD, 2020).</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Ghi một kỳ phân phối. Bạn (học viên) nhận bao nhiêu?</li>
+      <li>Thử chuyển 50 token từ Kim Ji-ho sang Trần Minh Châu, rồi sang Tanaka Yui.</li>
+      <li>Bấm <b>"Tòa án kê biên tài sản"</b>, rồi thử chuyển lại.</li>
+    </ol>
+    <p class="src">Nguồn: OECD (2020); ERC-3643 (2021), các hàm pause, freeze, forcedTransfer và recovery của tác nhân được ủy quyền.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần ghi khối bán token ở Bước 7 trước.</div>
+    <h4>Phân phối thu nhập tháng</h4>
+    <div class="grid2f">
+      <label class="f">Tiền thuê thực thu (triệu đ)<input type="number" id="dRent" value="120" min="0"></label>
+      <label class="f">Chi phí vận hành và thuế (%)<input type="number" id="dCost" value="15" min="0" max="100"></label>
+    </div>
+    <div class="row"><button class="btn primary" id="distBtn">Ghi giao dịch phân phối</button><span class="note" id="distNote"></span></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Người nắm giữ</th><th class="num">Token</th><th class="num">Nhận (đ)</th></tr></thead>
+      <tbody id="distTable"></tbody>
+    </table></div>
+    <h4>Chuyển nhượng thứ cấp</h4>
+    <div class="grid2f">
+      <label class="f">Bên chuyển<select id="tFrom"></select></label>
+      <label class="f">Bên nhận<select id="tTo"></select></label>
+      <label class="f">Số token<input type="number" id="tQty" value="50" min="1"></label>
+    </div>
+    <div class="row"><button class="btn" id="tBtn">Ký và gửi lệnh chuyển</button></div>
+    <div id="tOut"></div>
+    <h4>Sự kiện ngoài chuỗi</h4>
+    <div class="row">
+      <button class="btn" id="evSeize">Tòa án kê biên tài sản SPV</button>
+      <button class="btn" id="evLift">Gỡ kê biên</button>
+      <span class="pill" id="tokState">Token đang hoạt động</span>
+    </div>
+    <div id="s8msg"></div>
+    <h4>Chuỗi khối</h4>
+    <div class="chainv" id="chain8"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 9 ========== -->
+<section class="step" id="s9" hidden>
+  <div class="explain">
+    <h2>Bước 9. Bài tập</h2>
+    <p><b>Phần I</b> ghi kết quả thực hành từ Bước 1–8. <b>Phần II</b> gồm 13 câu trắc nghiệm, chấm tự động và có giải thích.</p>
+    <p>Làm xong, bấm <b>"Nộp và chấm"</b>, rồi <b>"In / lưu PDF"</b> để nộp cho giảng viên.</p>
+    <h3>Gợi ý cho giảng viên</h3>
+    <ul>
+      <li>Thời lượng: khoảng 60 phút (35 phút thực hành, 25 phút thảo luận).</li>
+      <li>Chia nhóm 3: một người đóng vai chủ tài sản và SPV, một người là ngân hàng giám sát, một người là nhà đầu tư.</li>
+      <li>Câu thảo luận mở: Việt Nam cần thay đổi gì trong hệ thống đăng ký đất đai để token có thể phản ánh quyền sử dụng đất trực tiếp, không qua SPV?</li>
+    </ul>
+    <p class="src">Bài làm chỉ lưu trên trình duyệt của học viên, không gửi đi đâu.</p>
+  </div>
+  <div class="panel">
+    <div class="who">
+      <label class="f">Họ và tên<input type="text" id="stName" autocomplete="name"></label>
+      <label class="f">MSSV<input type="text" id="stId"></label>
+      <label class="f">Lớp / nhóm<input type="text" id="stClass"></label>
+    </div>
+    <h4>Phần I. Kết quả thực hành</h4>
+    <div class="prac" id="pracList"></div>
+    <h4>Phần II. Trắc nghiệm</h4>
+    <div class="quiz" id="quiz"></div>
+    <div class="row noprint">
+      <button class="btn primary" id="grade">Nộp và chấm</button>
+      <button class="btn" id="printBtn">In / lưu PDF</button>
+      <button class="btn" id="clearQuiz">Làm lại</button>
+    </div>
+    <div class="row"><span>Điểm:</span><span class="score" id="scoreOut">–</span><span class="note" id="scoreTime"></span></div>
+  </div>
+</section>
+
+<div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
+</main>
+<footer class="wrap foot">Mô phỏng chạy hoàn toàn trong trình duyệt, dùng SHA-256 thật. Chữ ký, chuỗi liên minh, cơ sở dữ liệu đất đai và oracle là giả lập để quan sát. Mọi tên người, địa chỉ, số Giấy chứng nhận đều giả định. Đây là mô phỏng giảng dạy, không phải mô hình pháp lý được phép triển khai. Tài liệu: OECD (2020) <i>The Tokenisation of Assets and Potential Implications for Financial Markets</i>; BIS (2023) <i>Annual Economic Report</i>, Ch. III; ERC-721 (2018); ERC-3643 (2021); Nghị quyết 05/2025/NQ-CP; Luật Đất đai 2024; Thông tư 10/2024/TT-BTNMT.</footer>
+<script>
+/* ---------- SHA-256 (FIPS 180-4) ---------- */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const ENC=new TextEncoder();const W=new Uint32Array(64);
+function sha256(str){const m=ENC.encode(str),l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+for(let t=0;t<64;t++){const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));const mj=(a&b)^(a&c)^(b&c);const t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;}
+return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const vn=n=>Number(n).toLocaleString('vi-VN');
+const vnd=n=>Math.round(Number(n)).toLocaleString('vi-VN');
+const ty=tr=>(tr/1000).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=x=>(x*100).toLocaleString('vi-VN',{maximumFractionDigits:2})+'%';
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const short=h=>h.slice(0,10)+'…';
+function msg(id,cls,html){$(id).innerHTML=html?`<div class="callout ${cls}">${html}</div>`:'';}
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>sleep(RM?0:ms);
+
+/* ---------- Dữ liệu Giấy chứng nhận (giả định) ---------- */
+const FIELDS=[['seri','Số phát hành'],['sovao','Số vào sổ cấp GCN'],['chu','Người sử dụng đất'],['thua','Thửa đất số'],['to','Tờ bản đồ số'],['dientich','Diện tích (m²)'],['diachi','Địa chỉ thửa đất'],['mucdich','Mục đích sử dụng'],['thoihan','Thời hạn sử dụng'],['taisan','Tài sản gắn liền với đất'],['ghichu','Ghi chú, thay đổi']];
+const SPV_NAME='Công ty TNHH MTV Tài sản số Trần Phú 18 (SPV, giả định)';
+const BASE={seri:'DT 01234567',sovao:'CS 04512',chu:'Ông Nguyễn Văn An (giả định)',thua:'125',to:'18',dientich:'120',diachi:'Số 18 Trần Phú, phường Nha Trang, tỉnh Khánh Hòa (giả định)',mucdich:'Đất ở tại đô thị (ODT)',thoihan:'Lâu dài',taisan:'Nhà ở riêng lẻ 4 tầng, sàn 420 m²',ghichu:'Không'};
+const canon=o=>JSON.stringify(FIELDS.map(([k])=>[k,String(o[k]??'').trim()]));
+function scenario(sc){
+  const paper={...BASE};let reg={...BASE,camco:'Không',tranhchap:'Không',kebien:'Không'};let qrSrc=null;
+  if(sc==='tamper'){paper.dientich='180';}
+  if(sc==='mortgage'){paper.ghichu='Thế chấp tại Ngân hàng TMCP Biển Xanh (giả định), đăng ký 12/3/2026';reg.ghichu=paper.ghichu;reg.camco='Đang thế chấp tại Ngân hàng TMCP Biển Xanh';}
+  if(sc==='fake'){paper.seri='DT 09999999';reg=null;qrSrc=paper;}
+  const qrHash=sha256(canon(qrSrc||reg));
+  return {paper,reg,qrHash};
+}
+
+/* ---------- Trạng thái ---------- */
+const INV0=[
+  {id:'an',name:'Ông Nguyễn Văn An (chủ tài sản)',addr:'0xA11c…02f',country:'VN',kyc:'ok',exp:'12/2027',cash:0,order:0},
+  {id:'binh',name:'Lê Thị Bình',addr:'0xB1d4…9a0',country:'VN',kyc:'ok',exp:'06/2027',cash:300e6,order:100},
+  {id:'chau',name:'Trần Minh Châu',addr:'0xC7a2…41e',country:'VN',kyc:'expired',exp:'09/2026',cash:200e6,order:50},
+  {id:'kim',name:'Kim Ji-ho',addr:'0x4E9b…c77',country:'KR',kyc:'ok',exp:'03/2028',cash:3000e6,order:800},
+  {id:'dung',name:'Nguyễn Hoàng Dũng',addr:'0xD05e…b13',country:'VN',kyc:'ok',exp:'01/2028',cash:5000e6,order:1500},
+  {id:'yui',name:'Tanaka Yui',addr:'0x7Fa3…e08',country:'JP',kyc:'ok',exp:'11/2027',cash:2000e6,order:600},
+  {id:'anon',name:'Ví ẩn danh',addr:'0x9f3c…d5a',country:'—',kyc:'none',exp:'—',cash:2000e6,order:500},
+  {id:'hv',name:'Học viên',addr:'0x5e71…a3b',country:'VN',kyc:'ok',exp:'12/2027',cash:100e6,order:30}];
+const INV=INV0.map(x=>({...x,frozen:false}));
+const inv=id=>INV.find(x=>x.id===id);
+const SYS={spv:'Kho phát hành SPV',res:'Quỹ dự phòng thanh khoản'};
+const nameOf=id=>SYS[id]||inv(id).name;
+const S={sc:'real',scanned:false,ocr:null,first:null,docHash:null,imgHash:null,regOk:false,
+  value:0,noi:0,spv:false,sealed:false,docs:[],root:null,docPost:null,
+  nft:null,legal:'sandbox',frac:null,bal:{},cash:{},mempool:[],txLog:[],seq:0,sold:0,raised:0,saleDone:false,paused:false,dist:0,chain:[]};
+function resetCash(){S.cash={spv:0,res:0};INV.forEach(x=>S.cash[x.id]=INV0.find(y=>y.id===x.id).cash);}
+resetCash();
+
+/* ---------- Chuỗi khối (liên minh, giả lập) ---------- */
+function merkle(list){let c=list.map(s=>sha256(s));if(!c.length)return sha256('');while(c.length>1){if(c.length%2)c.push(c[c.length-1]);const n=[];for(let i=0;i<c.length;i+=2)n.push(sha256(c[i]+c[i+1]));c=n;}return c[0];}
+function addBlock(step,label,txs,signers){const prev=S.chain.length?S.chain[S.chain.length-1].hash:'0'.repeat(64);const h=S.chain.length;
+  const root=merkle(txs);const ts=1794000000+h*5;const hash=sha256(`h=${h}|${prev}|${root}|t=${ts}|${signers.join(',')}`);
+  const b={h,step,label,txs,root,prev,hash,signers};S.chain.push(b);return b;}
+addBlock(0,'Khối khởi tạo',['genesis|TP18-consortium'],['V1','V2','V3']);
+function renderChain(el){const C=S.chain;$(el).innerHTML=C.map((b,i)=>`${i?'<span class="ar">→</span>':''}<div class="blk ${i===C.length-1&&i>0?'new':''}"><b>#${b.h}</b><span>${esc(b.label)}</span><span class="h">${b.txs.length} giao dịch · ${b.signers.length} chữ ký</span><span class="h">hash ${b.hash.slice(0,12)}…</span><span class="h">prev ${b.prev.slice(0,8)}…</span></div>`).join('');
+  const e=$(el);e.scrollLeft=e.scrollWidth;}
+function truncateChain(fromStep){S.chain=S.chain.filter(b=>b.step<fromStep);}
+
+/* ---------- Mã QR giả lập ---------- */
+function qrSvg(seed){const n=25,cells=[];let bits='';for(let i=0;bits.length<n*n;i++)bits+=sha256(seed+':'+i).split('').map(c=>parseInt(c,16).toString(2).padStart(4,'0')).join('');
+  const fin=(x,y)=>{for(const[ox,oy]of[[0,0],[n-7,0],[0,n-7]]){const dx=x-ox,dy=y-oy;if(dx>=0&&dx<7&&dy>=0&&dy<7)return(dx===0||dx===6||dy===0||dy===6||(dx>=2&&dx<=4&&dy>=2&&dy<=4))?1:0;if(dx>=-1&&dx<=7&&dy>=-1&&dy<=7)return 0;}return -1;};
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const f=fin(x,y);const on=f===-1?bits[y*n+x]==='1':f===1;if(on)cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);}
+  return `<svg viewBox="0 0 ${n} ${n}" aria-label="Mã QR giả lập" shape-rendering="crispEdges"><g fill="#111">${cells.join('')}</g></svg>`;}
+
+/* ========== BƯỚC 1 ========== */
+let scanning=false;
+function renderDeed(){const {paper,qrHash}=scenario(S.sc);const tm=S.sc==='tamper';
+  $('deed').innerHTML=`<div class="deed"><div class="hd"><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><span>Độc lập – Tự do – Hạnh phúc</span><div class="t">GIẤY CHỨNG NHẬN QUYỀN SỬ DỤNG ĐẤT, QUYỀN SỞ HỮU TÀI SẢN GẮN LIỀN VỚI ĐẤT</div><span class="note">Mẫu minh họa trong lớp học, không có giá trị pháp lý</span></div>
+  <div class="body"><dl>${FIELDS.filter(([k])=>!['seri','sovao'].includes(k)).map(([k,l])=>`<dt>${l}</dt><dd class="${tm&&k==='dientich'?'tamper':''}">${esc(paper[k])}</dd>`).join('')}</dl>
+  <div class="qr">${qrSvg(qrHash)}<span>Thông tin chi tiết được thể hiện tại mã QR</span></div></div>
+  <div class="ft"><span>Số phát hành: <b class="mono">${esc(paper.seri)}</b></span><span>Số vào sổ cấp GCN: <b class="mono">${esc(paper.sovao)}</b></span></div></div>`;}
+document.querySelectorAll('#sceneSeg button').forEach(b=>b.onclick=()=>{if(scanning)return;if(S.spv&&!confirm('Đổi tình huống sẽ làm lại toàn bộ các bước sau. Tiếp tục?'))return;
+  S.sc=b.dataset.sc;document.querySelectorAll('#sceneSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  S.scanned=false;S.regOk=false;S.first=null;['ocrBox','hashBox','regBox'].forEach(i=>$(i).hidden=true);msg('s1msg','','');resetFrom(2);renderDeed();gate();});
+$('scanBtn').onclick=async()=>{if(scanning)return;scanning=true;if(S.spv)resetFrom(2);
+  const {paper}=scenario(S.sc);S.ocr={...paper};S.first=null;
+  ['ocrBox','hashBox','regBox'].forEach(i=>$(i).hidden=true);msg('s1msg','','');$('scanWrap').classList.add('scanning');$('scanBtn').disabled=true;
+  await wait(1500);$('scanWrap').classList.remove('scanning');$('ocrBox').hidden=false;$('ocrRows').innerHTML='';
+  for(const [k,l] of FIELDS){const cf=S.sc==='tamper'&&k==='dientich'?91.2:(97+((parseInt(sha256(k+S.sc).slice(0,4),16)%280)/100));
+    const r=document.createElement('div');r.className='r';r.dataset.k=k;
+    r.innerHTML=`<span>${l}</span><input type="text" value="${esc(S.ocr[k])}" data-k="${k}" aria-label="${l}"><span class="cf ${cf<95?'lo':''}">${cf.toLocaleString('vi-VN',{maximumFractionDigits:1})}%</span>`;
+    $('ocrRows').appendChild(r);r.querySelector('input').oninput=e=>{if(S.spv)resetFrom(2);S.ocr[k]=e.target.value;runChecks();};await wait(110);}
+  runChecks();$('scanBtn').disabled=false;scanning=false;S.scanned=true;};
+function runChecks(){const {reg,qrHash}=scenario(S.sc);const h=sha256(canon(S.ocr));S.docHash=h;if(!S.first)S.first=h;
+  $('hashBox').hidden=false;$('regBox').hidden=false;$('docHash').textContent=h;
+  const diff=[...h].filter((c,i)=>c!==S.first[i]).length;
+  $('docHashNote').textContent=diff?`So với kết quả quét ban đầu: ${diff}/64 ký tự khác (hiệu ứng thác lũ của SHA-256).`:'Đây là kết quả của lần quét ban đầu. Thử sửa một ký tự trong bảng nhận dạng.';
+  const C=[];const exist=!!reg;C.push([exist,`Số phát hành ${esc(S.ocr.seri)} ${exist?'có':'không có'} trong cơ sở dữ liệu đất đai`]);
+  C.push([qrHash===h,qrHash===h?'Nội dung giải mã từ mã QR khớp với nội dung in và nhận dạng':'Mã băm nội dung mã QR khác mã băm của nội dung in: có trường bị sửa, hoặc mã QR không do cơ quan đăng ký khởi tạo']);
+  if(exist){const bad=FIELDS.filter(([k])=>String(S.ocr[k]).trim()!==String(reg[k]).trim()).map(([k,l])=>`${l} (sổ: "${esc(S.ocr[k])}", CSDL: "${esc(reg[k])}")`);
+    C.push([!bad.length,bad.length?'Lệch so với CSDL: '+bad.join('; '):'Toàn bộ 11 trường khớp với cơ sở dữ liệu đất đai']);
+    C.push([reg.camco==='Không',reg.camco==='Không'?'Không có giao dịch bảo đảm đang đăng ký':'Có giao dịch bảo đảm: '+esc(reg.camco)]);
+    C.push([reg.tranhchap==='Không'&&reg.kebien==='Không','Không tranh chấp, không bị kê biên, không bị ngăn chặn giao dịch']);
+    document.querySelectorAll('#ocrRows .r').forEach(r=>r.classList.toggle('diff',String(S.ocr[r.dataset.k]).trim()!==String(reg[r.dataset.k]).trim()));}
+  else{C.push([null,'Không thể so từng trường vì không có bản ghi gốc']);C.push([null,'Không tra được tình trạng thế chấp']);C.push([null,'Không tra được tình trạng tranh chấp, kê biên']);}
+  $('regChecks').innerHTML=C.map(([ok,t])=>`<li class="${ok===null?'s':ok?'p':'f'}"><span class="m">${ok===null?'–':ok?'✓':'✗'}</span><span>${t}</span></li>`).join('');
+  S.regOk=C.every(c=>c[0]===true);
+  const tail=S.regOk?`<b>Đạt.</b> Giấy chứng nhận hợp lệ và tài sản không có hạn chế giao dịch. Mã băm tài liệu <span class="mono">${h.slice(0,16)}…</span> được dùng ở các bước sau.`:
+    S.sc==='mortgage'?'<b>Dừng quy trình.</b> Tài sản đang thế chấp. Muốn token hóa, chủ tài sản phải tất toán khoản vay và xóa đăng ký thế chấp trước; nếu không, người mua token sẽ đứng sau chủ nợ có bảo đảm.':
+    S.sc==='fake'?'<b>Dừng quy trình.</b> Số phát hành không tồn tại. Mã QR do kẻ giả mạo tạo ra vẫn "khớp" với nội dung in, cho thấy tự quét mã QR là không đủ; phải tra cơ sở dữ liệu gốc.':
+    '<b>Dừng quy trình.</b> Dữ liệu nhận dạng không khớp cơ sở dữ liệu đất đai. Nếu bỏ qua bước này, token sẽ đại diện cho một tài sản không tồn tại như mô tả.';
+  const fz=S.sc==='tamper'?'<div class="callout warn" style="margin-bottom:8px">Mô-đun pháp y ảnh (giả lập) cảnh báo vùng "Diện tích" có mật độ điểm ảnh và phông chữ bất thường; độ tin cậy nhận dạng chỉ 91,2%. Cảnh báo này chưa đủ để kết luận; kết luận dựa trên đối chiếu dữ liệu.</div>':'';
+  $('s1msg').innerHTML=fz+`<div class="callout ${S.regOk?'ok':'bad'}">${tail}</div>`;
+  gate();}
+$('imgFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const buf=await f.arrayBuffer();const d=await crypto.subtle.digest('SHA-256',buf);S.imgHash=[...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  $('imgHashNote').innerHTML=`Mã băm tệp "${esc(f.name)}" (${vn(f.size)} byte): <span class="mono">${S.imgHash.slice(0,24)}…</span>. Tệp không rời khỏi máy của bạn.`;if(S.spv)resetFrom(2);}catch(err){$('imgHashNote').textContent='Không băm được tệp này.';}};
+
+/* ========== BƯỚC 2 ========== */
+const VI=['vLandP','vFloor','vBuild','vRemain','vRent','vOpex','vCap','vW'];
+function valuation(){const g=id=>Math.max(0,+$(id).value||0);const land=g('vLand');
+  const mk=land*g('vLandP')+g('vFloor')*g('vBuild')*Math.min(100,g('vRemain'))/100;
+  const noi=g('vRent')*12*(1-Math.min(90,g('vOpex'))/100);const cap=Math.max(.1,g('vCap'))/100;const inc=noi/cap;const w=Math.min(100,g('vW'))/100;
+  const fin=Math.round((w*mk+(1-w)*inc)/100)*100;
+  $('vMk').textContent=ty(mk);$('vInc').textContent=ty(inc);$('vFin').textContent=ty(fin);$('vNoi').textContent=vn(Math.round(noi));
+  S.value=fin;S.noi=noi;$('spvCost').textContent=`Chi phí chuyển tài sản vào SPV (giả định 2% thuế TNCN + 0,5% lệ phí trước bạ): ${vn(Math.round(fin*0.025))} triệu đ, tức 2,5% giá trị.`;}
+VI.forEach(id=>$(id).addEventListener('input',valuation));
+const SPV_STEPS=[
+  ['Thành lập SPV',`${SPV_NAME}; Ông An góp vốn và sở hữu 100% vốn điều lệ.`,'Điều lệ SPV'],
+  ['Chuyển nhượng quyền sử dụng đất cho SPV','Hợp đồng chuyển nhượng quyền sử dụng đất và tài sản gắn liền với đất, có công chứng; nộp thuế, lệ phí.','Hợp đồng chuyển nhượng (công chứng)'],
+  ['Đăng ký biến động','Văn phòng đăng ký đất đai xác nhận người sử dụng đất mới là SPV và cập nhật cơ sở dữ liệu đất đai. Quyền chỉ chuyển ở bước này.','Xác nhận đăng ký biến động'],
+  ['Lưu ký bản gốc','Bản gốc Giấy chứng nhận lưu ký tại Ngân hàng giám sát; SPV cam kết không thế chấp, chuyển nhượng khi chưa thu hồi đủ token.','Hợp đồng lưu ký và cam kết']];
+let spvRun=false;
+$('spvBtn').onclick=async()=>{if(!S.regOk||spvRun||S.spv)return;spvRun=true;$('spvBtn').disabled=true;VI.forEach(id=>$(id).disabled=true);
+  S.docs=[];$('spvTl').innerHTML=SPV_STEPS.map((s,i)=>`<li id="tl${i}"><span class="n">${i+1}</span><div><b>${s[0]}</b>${esc(s[1])}<div class="hash" hidden></div></div></li>`).join('');
+  for(let i=0;i<SPV_STEPS.length;i++){await wait(650);const dh=sha256(SPV_STEPS[i][2]+'|'+S.docHash+'|'+S.value);S.docs.push([SPV_STEPS[i][2],dh]);
+    const li=$('tl'+i);li.classList.add('on');const hb=li.querySelector('.hash');hb.hidden=false;hb.textContent=`${SPV_STEPS[i][2]}: ${dh.slice(0,32)}…`;}
+  S.docPost=sha256(canon({...S.ocr,chu:SPV_NAME,ghichu:'Nhận chuyển nhượng từ Ông Nguyễn Văn An; đăng ký biến động 2026 (giả định)'}));
+  S.spv=true;spvRun=false;$('sealBtn').disabled=false;
+  msg('s2msg','ok',`Người sử dụng đất trên cơ sở dữ liệu đất đai hiện là <b>${esc(SPV_NAME)}</b>. Mã băm Giấy chứng nhận sau biến động: <span class="mono">${S.docPost.slice(0,16)}…</span><br>Từ đây, token sẽ đại diện cho quyền lợi kinh tế từ SPV, không đại diện trực tiếp quyền sử dụng đất. Bấm "Niêm phong hồ sơ".`);gate();};
+$('sealBtn').onclick=()=>{if(!S.spv||S.sealed)return;
+  const docs=[['Ảnh quét Giấy chứng nhận',S.imgHash||sha256('scan|'+S.docHash)],['Chứng thư thẩm định giá',sha256(`thamdinh|${S.value}|${S.noi}|2026-11-07`)],...S.docs];S.docs=docs;
+  let lv=[docs.map(d=>({h:sha256(d[1]),l:d[0]}))];while(lv[lv.length-1].length>1){const c=lv[lv.length-1].slice();if(c.length%2)c.push({...c[c.length-1],dup:true});const n=[];for(let i=0;i<c.length;i+=2)n.push({h:sha256(c[i].h+c[i+1].h)});lv.push(n);}
+  S.root=lv[lv.length-1][0].h;S.sealed=true;$('sealBtn').disabled=true;
+  $('mtree').innerHTML=lv.slice().reverse().map((L,i)=>`<div class="lv">${L.map(x=>`<div class="nd ${i===0?'root':''}">${x.h.slice(0,8)}${x.l?`<small>${esc(x.l)}</small>`:''}${i===0?'<small>Gốc Merkle</small>':''}</div>`).join('')}</div>`).join('');
+  msg('s2msg','ok',`Gốc Merkle của 6 tài liệu: <span class="mono">${S.root.slice(0,24)}…</span>. Sửa bất kỳ tài liệu nào, gốc Merkle sẽ khác, nên nhà đầu tư có thể kiểm chứng hồ sơ mà không cần xem toàn bộ.`);
+  renderMeta();gate();};
+
+/* ========== BƯỚC 3 ========== */
+function metaObj(){return {name:'Bất động sản Trần Phú 18 (giả định)',standard:'ERC-721',
+  asset:{loai:'Quyền sử dụng đất và nhà ở',so_phat_hanh:S.ocr?S.ocr.seri:'',thua_dat:S.ocr?S.ocr.thua:'',to_ban_do:S.ocr?S.ocr.to:'',dien_tich_m2:S.ocr?+S.ocr.dientich:0,dia_chi:S.ocr?S.ocr.diachi:''},
+  chu_the_phap_ly:SPV_NAME,gia_tri_tham_dinh_vnd:S.value*1e6,ngay_tham_dinh:'2026-11-07',
+  ma_bam_gcn_ban_dau:S.docHash,ma_bam_gcn_sau_bien_dong:S.docPost,goc_merkle_ho_so:S.root,
+  to_chuc_luu_ky:'Ngân hàng giám sát (giả định)',nguon_oracle:'Cơ sở dữ liệu đất đai (giả lập)'};}
+function renderMeta(){if(!S.sealed){$('metaJson').textContent='(Chưa có: hoàn thành Bước 2)';$('metaHash').textContent='–';$('tokenId').textContent='–';return;}
+  const m=metaObj();const js=JSON.stringify(m,null,2);$('metaJson').textContent=js;const mh=sha256(JSON.stringify(m));
+  $('metaHash').textContent=mh;$('tokenId').textContent=S.nft?S.nft.id:'0x'+sha256(`${m.asset.so_phat_hanh}|${m.asset.thua_dat}|${m.asset.to_ban_do}`).slice(0,16);}
+$('mintBtn').onclick=()=>{if(!S.sealed)return;if(S.nft){msg('s3msg','warn',`NFT đã được đúc ở khối #${S.nft.block}. Một tài sản chỉ có một NFT: đúc lần hai sẽ bị hợp đồng từ chối vì mã token đã tồn tại.`);return;}
+  const m=metaObj();const mh=sha256(JSON.stringify(m));const id='0x'+sha256(`${m.asset.so_phat_hanh}|${m.asset.thua_dat}|${m.asset.to_ban_do}`).slice(0,16);
+  const b=addBlock(3,'Đúc NFT tài sản',[`ERC721.mint(to=SPV, tokenId=${id}, tokenURI=cid:${mh.slice(0,46)})`],['V1','V2','V3']);
+  S.nft={id,meta:mh,block:b.h};renderMeta();renderChain('chain3');
+  msg('s3msg','ok',`Đã đúc NFT <span class="mono">${id}</span> cho ví SPV tại khối #${b.h} (hash <span class="mono">${b.hash.slice(0,12)}…</span>).<br>Mã token được suy ra từ số phát hành, số thửa và số tờ bản đồ, nên cùng một thửa đất không thể có hai NFT trong hợp đồng này.`);gate();};
+
+/* ========== BƯỚC 4 ========== */
+function isVerified(x){if(SYS[x])return {ok:true,r:[]};const i=inv(x);const r=[];
+  if(i.kyc==='none')r.push('không có danh tính trên chuỗi');else if(i.kyc==='expired')r.push('xác nhận KYC đã hết hạn');
+  if(i.frozen)r.push('ví đang bị đóng băng');
+  if(S.legal==='nq05'&&i.country==='VN')r.push('NQ 05/2025: chỉ chào bán, phát hành cho nhà đầu tư nước ngoài');
+  return {ok:!r.length,r};}
+function renderIds(){$('idTable').innerHTML=INV.map(x=>{const v=isVerified(x.id);
+  return `<tr><td>${x.id==='hv'?`<input type="text" id="hvName" value="${esc(x.name)}" style="width:160px">`:esc(x.name)}</td><td class="mono">${x.addr}</td><td>${x.country}</td>
+  <td><select data-kyc="${x.id}" style="width:auto">${[['ok','Còn hiệu lực đến '+x.exp],['expired','Hết hạn ('+x.exp+')'],['none','Không có']].map(([k,l])=>`<option value="${k}" ${x.kyc===k?'selected':''}>${l}</option>`).join('')}</select></td>
+  <td><input type="checkbox" data-frz="${x.id}" ${x.frozen?'checked':''} aria-label="Đóng băng ví ${esc(x.name)}"></td>
+  <td>${v.ok?'<span class="pill ok">true</span>':`<span class="pill bad" title="${esc(v.r.join('; '))}">false</span><div class="note" style="white-space:normal;max-width:220px">${esc(v.r.join('; '))}</div>`}</td></tr>`;}).join('');
+  document.querySelectorAll('[data-kyc]').forEach(s=>s.onchange=()=>{inv(s.dataset.kyc).kyc=s.value;refreshAll();});
+  document.querySelectorAll('[data-frz]').forEach(c=>c.onchange=()=>{inv(c.dataset.frz).frozen=c.checked;refreshAll();});
+  const hn=$('hvName');if(hn)hn.onchange=()=>{inv('hv').name=hn.value.trim()||'Học viên';refreshAll();};}
+document.querySelectorAll('#legalSeg button').forEach(b=>b.onclick=()=>{S.legal=b.dataset.lg;document.querySelectorAll('#legalSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));refreshAll();});
+function legalNote(){msg('legalNote',S.legal==='nq05'?'warn':'',S.legal==='nq05'?'Áp dụng điều kiện của Nghị quyết 05/2025/NQ-CP: mọi ví có quốc gia VN, kể cả Ông An, không đủ tư cách nhận token. Lưu ý: nghị quyết còn yêu cầu giao dịch chỉ qua tổ chức cung cấp dịch vụ được Bộ Tài chính cấp phép, vốn điều lệ tối thiểu 10.000 tỷ đồng; mô phỏng không thể hiện các điều kiện này.':'Chế độ sandbox là giả định giảng dạy: nhà đầu tư trong và ngoài nước đã KYC đều được tham gia. Khung này hiện <b>chưa</b> có trong pháp luật Việt Nam.');}
+['mCap','mLot'].forEach(id=>$(id).addEventListener('input',refreshAll));
+const capPct=()=>Math.min(100,Math.max(1,+$('mCap').value||10))/100;
+const lot=()=>Math.max(1,Math.floor(+$('mLot').value||1));
+
+/* ========== BƯỚC 5 ========== */
+const FI=['fN','fKeep','fRes'];
+function fracCalc(){const N=Math.max(100,Math.floor(+$('fN').value||0));const kp=Math.max(0,+$('fKeep').value||0),rs=Math.max(0,+$('fRes').value||0);
+  const keepN=Math.floor(N*kp/100),resN=Math.floor(N*rs/100),offerN=N-keepN-resN;const price=Math.round(S.value*1e6/N);return {N,kp,rs,keepN,resN,offerN,price};}
+function renderFrac(){const f=S.frac||fracCalc();$('fPrice').textContent=S.value?vnd(f.price):'–';$('fOffer').textContent=vn(f.offerN);$('fKeepN').textContent=vn(f.keepN);$('fResN').textContent=vn(f.resN);
+  const seg=(n,c,l)=>n>0?`<span class="${c}" style="width:${n/f.N*100}%">${n/f.N>=.12?l+' '+pct(n/f.N):''}</span>`:'';
+  $('allocBar').innerHTML=f.offerN<0?'':seg(f.keepN,'a1','Giữ lại')+seg(f.offerN,'a2','Chào bán')+seg(f.resN,'a3','Dự phòng');
+  $('nftBoxId').textContent=S.nft?S.nft.id:'–';$('nftBoxSt').textContent=S.frac?'Đã chuyển vào kho':S.nft?'Trong ví SPV':'Chưa đúc';
+  $('vaultBox').classList.toggle('locked',!!S.frac);$('vaultSt').textContent=S.frac?'Đang khóa 1 NFT; chỉ mở khi thu hồi đủ '+vn(S.frac.N)+' token':'Trống';
+  $('tokBox').classList.toggle('locked',!!S.frac);$('tokSt').textContent=S.frac?`Tổng cung ${vn(S.frac.N)} · giá ${vnd(S.frac.price)} đ`:'Chưa phát hành';}
+FI.forEach(id=>$(id).addEventListener('input',renderFrac));
+$('fracBtn').onclick=()=>{if(!S.nft)return;if(S.frac){msg('s5msg','warn','Token đã được phát hành. Bấm "Đặt lại bước này" nếu muốn thử cấu hình khác.');return;}
+  const f=fracCalc();if(f.offerN<=0){msg('s5msg','bad','Tỷ lệ giữ lại và dự phòng vượt 100%: không còn token để chào bán.');return;}
+  if(f.price<10000){msg('s5msg','warn',`Giá mỗi token chỉ ${vnd(f.price)} đ. Mô phỏng không cấm, nhưng thử nghĩ: chi phí giao dịch và quản lý danh tính trên mỗi nhà đầu tư có còn hợp lý?`);}
+  if(f.keepN>0&&!isVerified('an').ok){msg('s5msg','bad',`<b>Giao dịch bị hoàn tác (revert).</b> Hàm mint gọi isVerified(Ông An) và nhận false: ${esc(isVerified('an').r.join('; '))}. Vì toàn bộ giao dịch là nguyên tử, cả phần chào bán cũng không được đúc.<br>Cách xử lý: đặt tỷ lệ giữ lại bằng 0. Khi đó Ông An vẫn hưởng lợi ích kinh tế qua vốn góp trong SPV và tiền bán token, nhưng không nắm token.`);return;}
+  const txs=[`ERC721.transfer(SPV -> Vault, ${S.nft.id})`,`Vault.lock(${S.nft.id})`];
+  if(f.keepN)txs.push(`TP18.mint(Ông An, ${f.keepN})`);txs.push(`TP18.mint(Kho phát hành SPV, ${f.offerN})`);if(f.resN)txs.push(`TP18.mint(Quỹ dự phòng, ${f.resN})`);
+  const b=addBlock(5,'Khóa NFT, đúc TP18',txs,['V1','V2','V3']);S.frac=f;S.bal={an:f.keepN,spv:f.offerN,res:f.resN};FI.forEach(id=>$(id).disabled=true);renderFrac();
+  msg('s5msg','ok',`Khối #${b.h}: NFT bị khóa trong kho, ${vn(f.N)} token TP18 được đúc, giá ${vnd(f.price)} đ/token.<br>Kiểm tra bất biến: ${vn(f.keepN)} + ${vn(f.offerN)} + ${vn(f.resN)} = ${vn(f.keepN+f.offerN+f.resN)} = N ✓${f.keepN/f.N>capPct()?`<br>Ông An giữ ${pct(f.keepN/f.N)}, vượt hạn mức ${pct(capPct())} nhưng vẫn hợp lệ: theo ERC-3643, hàm mint chỉ kiểm tra danh tính người nhận, không áp mô-đun hạn mức.`:''}`);refreshAll();};
+$('fracReset').onclick=()=>{if(!S.frac)return;if(!confirm('Làm lại từ Bước 5? Các lệnh và khối sau đó sẽ bị xóa khỏi mô phỏng (trên chuỗi thật không xóa được khối).'))return;resetFrom(5);msg('s5msg','','Đã đặt lại.');};
+
+/* ========== BƯỚC 6 ========== */
+const pendQty=id=>S.mempool.filter(t=>t.to===id).reduce((s,t)=>s+t.qty,0);
+const pendCash=id=>S.mempool.filter(t=>t.to===id).reduce((s,t)=>s+t.amt,0);
+const pendAll=()=>S.mempool.reduce((s,t)=>s+t.qty,0);
+const remaining=()=>S.frac?S.bal.spv-pendAll():0;
+function checkBuy(id,qty,atBlock){const f=S.frac,C=[];let stop=false;const add=(ok,t)=>{if(stop){C.push([null,t]);return;}C.push([ok,t]);if(!ok)stop=true;};
+  add(!S.paused,'Token không ở trạng thái tạm dừng');
+  const v=isVerified(id);add(v.ok,v.ok?'isVerified: danh tính, KYC, quốc gia, ví hợp lệ':'isVerified = false: '+v.r.join('; '));
+  add(Number.isInteger(qty)&&qty>=lot(),`Lô tối thiểu ${vn(lot())} token`+(qty<lot()?` (lệnh chỉ ${vn(qty)})`:''));
+  const after=(S.bal[id]||0)+(atBlock?0:pendQty(id))+qty;add(after<=capPct()*f.N,`Hạn mức ${pct(capPct())} tổng cung = ${vn(Math.floor(capPct()*f.N))} token`+(after>capPct()*f.N?` (sau lệnh sẽ nắm ${vn(after)})`:''));
+  const rem=atBlock?S.bal.spv:remaining();add(qty<=rem,`Còn ${vn(rem)} token chào bán`);
+  const amt=qty*f.price,cash=S.cash[id]-(atBlock?0:pendCash(id));add(amt<=cash,`DvP: đủ VND-token (cần ${vnd(amt)} đ, có ${vnd(cash)} đ)`);
+  return {ok:C.every(c=>c[0]===true),C};}
+function renderOffer(){if(!S.frac){$('offerStats').innerHTML='';return;}const f=S.frac;
+  $('offerStats').innerHTML=[[vnd(f.price),'Giá (đ/token)'],[vn(f.offerN),'Token chào bán'],[vn(S.sold),'Đã bán (đã ghi khối)'],[vn(pendAll()),'Đang chờ ghi khối'],[vn(remaining()),'Còn lại'],[vn(lot())+' / '+pct(capPct()),'Lô tối thiểu / hạn mức']].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');}
+function renderOrders(){const f=S.frac;$('orderTable').innerHTML=INV.filter(x=>x.id!=='an').map(x=>`<tr><td>${esc(x.name)}<div class="note mono">${x.addr}</div></td><td class="num mono">${vnd(S.cash[x.id])}</td>
+  <td class="num"><input type="number" min="0" step="1" value="${x.order}" data-ord="${x.id}" aria-label="Số token ${esc(x.name)} mua"></td><td class="num mono" id="amt-${x.id}">${f?vnd(x.order*f.price):'–'}</td>
+  <td><button class="btn sm" data-send="${x.id}" ${f&&!S.saleDone?'':'disabled'}>Ký và gửi</button></td></tr>`).join('');
+  document.querySelectorAll('[data-ord]').forEach(i=>i.oninput=()=>{const x=inv(i.dataset.ord);x.order=Math.max(0,Math.floor(+i.value||0));if(S.frac)$('amt-'+x.id).textContent=vnd(x.order*S.frac.price);});
+  document.querySelectorAll('[data-send]').forEach(b=>b.onclick=()=>sendOrder(b.dataset.send));}
+function sendOrder(id){if(!S.frac||S.saleDone)return;const x=inv(id),qty=x.order;if(!qty)return;S.seq++;
+  const sig=sha256(`${x.addr}|buy|${qty}|${S.frac.price}|${S.seq}`);const r=checkBuy(id,qty,false);
+  const t={no:S.seq,to:id,qty,amt:qty*S.frac.price,sig,ok:r.ok,C:r.C};S.txLog.unshift(t);if(r.ok)S.mempool.push(t);refreshAll();}
+function renderTx(){if(!S.txLog.length){$('txList').innerHTML='<span class="note">Chưa có lệnh.</span>';return;}
+  $('txList').innerHTML=S.txLog.map(t=>`<div class="txc ${t.ok?'ok':'bad'}"><div class="hd"><b>Lệnh #${t.no} · ${esc(nameOf(t.to))} mua ${vn(t.qty)} TP18</b>${t.ok?(t.done?'<span class="pill ok">Đã ghi khối #'+t.done+'</span>':t.dropped?'<span class="pill bad">Hoàn tác khi thực thi</span>':'<span class="pill warn">Trong hàng chờ</span>'):'<span class="pill bad">Bị từ chối</span>'}</div>
+  <div class="note mono">Chữ ký (giả lập): ${t.sig.slice(0,24)}… · thanh toán ${vnd(t.amt)} đ VND-token</div>
+  <ul class="checks">${t.C.map(([ok,s])=>`<li class="${ok===null?'s':ok?'p':'f'}"><span class="m">${ok===null?'–':ok?'✓':'✗'}</span><span>${esc(s)}${ok===null?' (không kiểm tra do điều kiện trước đã thất bại)':''}</span></li>`).join('')}</ul></div>`).join('');}
+$('sendAll').onclick=()=>{if(!S.frac||S.saleDone)return;INV.filter(x=>x.id!=='an'&&x.order>0&&!S.mempool.some(t=>t.to===x.id)).forEach(x=>sendOrder(x.id));};
+$('clearOrders').onclick=()=>{S.mempool=[];S.txLog=S.txLog.filter(t=>t.done);refreshAll();};
+
+/* ========== BƯỚC 7 ========== */
+const VALS=[{k:'V1',n:'Tổ chức cung cấp dịch vụ tài sản mã hóa',on:true},{k:'V2',n:'Ngân hàng giám sát',on:true},{k:'V3',n:'Công ty kiểm toán độc lập',on:true}];
+function renderVals(sig){$('vals').innerHTML=VALS.map(v=>`<div class="val ${v.on?'':'off'} ${sig&&sig.includes(v.k)?'signed':''}"><b>${v.k} · ${esc(v.n)}</b><label><input type="checkbox" data-val="${v.k}" ${v.on?'checked':''}> Đang hoạt động</label>${sig&&sig.includes(v.k)?'<span class="chip ok">Đã ký khối</span>':''}</div>`).join('');
+  document.querySelectorAll('[data-val]').forEach(c=>c.onchange=()=>{VALS.find(v=>v.k===c.dataset.val).on=c.checked;renderVals();});}
+const quorum=()=>VALS.filter(v=>v.on).map(v=>v.k);
+function renderMempool(){$('mempool').innerHTML=S.mempool.length?S.mempool.map(t=>`<span>#${t.no} DvP: Kho SPV → ${esc(nameOf(t.to))} ${vn(t.qty)} TP18 ⇄ ${vnd(t.amt)} đ VND-token</span>`).join(''):'<span>(trống)</span>';}
+let sealing=false;
+$('sealBlock').onclick=async()=>{if(sealing||!S.mempool.length){if(!S.mempool.length)msg('s7msg','warn','Hàng chờ trống. Gửi lệnh ở Bước 6 trước.');return;}
+  const q=quorum();if(q.length<2){msg('s7msg','bad',`Chỉ ${q.length}/3 nút ký, chưa đạt ngưỡng 2/3. <b>Khối không được tạo</b>, giao dịch ở lại hàng chờ.<br>Chuỗi liên minh kiểu BFT ưu tiên tính nhất quán: thà dừng còn hơn ghi một khối mà đa số nút chưa xác nhận.`);renderVals([]);return;}
+  sealing=true;const sig=[];for(const k of q){await wait(380);sig.push(k);renderVals(sig);}
+  const ok=[],drop=[];for(const t of S.mempool){const r=checkBuy(t.to,t.qty,true);if(r.ok){S.bal[t.to]=(S.bal[t.to]||0)+t.qty;S.bal.spv-=t.qty;S.cash[t.to]-=t.amt;S.cash.spv+=t.amt;S.sold+=t.qty;S.raised+=t.amt;ok.push(t);}else{t.dropped=true;t.C=r.C;drop.push(t);}}
+  const txs=ok.map(t=>`DvP#${t.no}: TP18 SPV->${t.to} ${t.qty} | VNDT ${t.to}->SPV ${t.amt} | sig ${t.sig.slice(0,16)}`);
+  let b=null;if(txs.length){b=addBlock(7,'Bán sơ cấp',txs,sig);ok.forEach(t=>t.done=b.h);S.saleDone=true;}
+  S.mempool=[];sealing=false;
+  msg('s7msg',txs.length?'ok':'bad',(txs.length?`Khối #${b.h} được ${sig.length}/3 nút ký (${sig.join(', ')}). ${ok.length} giao dịch DvP được thực hiện nguyên tử. Gốc Merkle <span class="mono">${b.root.slice(0,12)}…</span>, hash <span class="mono">${b.hash.slice(0,12)}…</span>.`:'Không có giao dịch nào còn hợp lệ khi thực thi.')+
+    (drop.length?`<br>${drop.length} giao dịch bị hoàn tác khi thực thi vì trạng thái đã thay đổi sau khi gửi (ví dụ: KYC bị thu hồi, ví bị đóng băng). Chuỗi kiểm tra lại tại thời điểm ghi khối, không dựa vào kết quả lúc gửi.`:'')+(S.saleDone?'<br>Đợt chào bán sơ cấp đã đóng. Sang Bước 8.':''));
+  refreshAll();};
+function holders(){const H=[];['an','spv','res'].concat(INV.filter(x=>x.id!=='an').map(x=>x.id)).forEach(id=>{if((S.bal[id]||0)>0)H.push(id);});return H;}
+function renderCap(){if(!S.frac){$('capTable').innerHTML='';$('saleStats').innerHTML='';return;}const f=S.frac;
+  $('capTable').innerHTML=holders().map(id=>`<tr><td>${esc(nameOf(id))}</td><td class="num mono">${vn(S.bal[id])}</td><td class="num mono">${pct(S.bal[id]/f.N)}</td><td class="num mono">${vnd(S.bal[id]*f.price)}</td></tr>`).join('')+
+  `<tr><th>Tổng</th><th class="num">${vn(holders().reduce((s,id)=>s+S.bal[id],0))}</th><th class="num">100%</th><th class="num">${vnd(f.N*f.price)}</th></tr>`;
+  const nInv=holders().filter(id=>!['an','spv','res'].includes(id)).length;
+  $('saleStats').innerHTML=[[vn(S.sold),'Token đã bán'],[pct(S.sold/f.offerN),'Tỷ lệ chào bán thành công'],[vnd(S.raised),'SPV thu về (đ)'],[vn(nInv),'Số nhà đầu tư']].map(([b,s])=>`<div class="stat"><b>${b}</b><span>${s}</span></div>`).join('');}
+
+/* ========== BƯỚC 8 ========== */
+function distCalc(){const f=S.frac;if(!f)return null;const noi=Math.max(0,+$('dRent').value||0)*1e6*(1-Math.min(100,Math.max(0,+$('dCost').value||0))/100);return {noi,per:noi/f.N};}
+function renderDist(){const d=distCalc();if(!d||!S.saleDone){$('distTable').innerHTML='';$('distNote').textContent='';return;}
+  $('distNote').textContent=`Thu nhập ròng ${vnd(d.noi)} đ ÷ ${vn(S.frac.N)} token = ${vn(Math.round(d.per))} đ/token`;
+  $('distTable').innerHTML=holders().map(id=>`<tr><td>${esc(nameOf(id))}${id==='spv'||id==='res'?' <span class="note">(token chưa bán, phần này ở lại SPV)</span>':''}</td><td class="num mono">${vn(S.bal[id])}</td><td class="num mono">${vnd(S.bal[id]*d.per)}</td></tr>`).join('');}
+['dRent','dCost'].forEach(id=>$(id).addEventListener('input',renderDist));
+function needQuorum(out){const q=quorum();if(q.length<2){msg(out,'bad',`Chỉ ${q.length}/3 nút xác thực hoạt động (bật lại ở Bước 7). Không thể ghi khối.`);return null;}return q;}
+$('distBtn').onclick=()=>{if(!S.saleDone)return;if(S.paused){msg('s8msg','bad','Tài sản đang bị kê biên: SPV tạm ngừng phân phối thu nhập cho đến khi có quyết định của cơ quan có thẩm quyền.');return;}
+  const q=needQuorum('s8msg');if(!q)return;const d=distCalc();S.dist++;
+  const txs=holders().filter(id=>id!=='spv'&&id!=='res').map(id=>{const a=Math.round(S.bal[id]*d.per);S.cash[id]+=a;S.cash.spv-=a;return `dist#${S.dist}: VNDT SPV->${id} ${a}`;});
+  const b=addBlock(8,`Phân phối kỳ ${S.dist}`,txs,q);renderChain('chain8');
+  msg('s8msg','ok',`Khối #${b.h}: phân phối kỳ ${S.dist}, ${vn(Math.round(d.per))} đ/token cho ${txs.length} người nắm giữ. ${esc(inv('hv').name)} nhận ${vnd((S.bal.hv||0)*d.per)} đ.`);refreshAll();};
+function fillSel(){const H=holders().filter(id=>!['spv','res'].includes(id));const pf=$('tFrom').value,pt=$('tTo').value;
+  $('tFrom').innerHTML=H.map(id=>`<option value="${id}">${esc(nameOf(id))} (${vn(S.bal[id])})</option>`).join('');
+  $('tTo').innerHTML=INV.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('');
+  if(H.includes(pf))$('tFrom').value=pf;else if(H.includes('kim'))$('tFrom').value='kim';
+  if(pt)$('tTo').value=pt;else $('tTo').value='chau';}
+$('tBtn').onclick=()=>{if(!S.saleDone)return;const a=$('tFrom').value,b=$('tTo').value,qty=Math.floor(+$('tQty').value||0),f=S.frac;
+  const C=[];let stop=false;const add=(ok,t)=>{if(stop){C.push([null,t]);return;}C.push([ok,t]);if(!ok)stop=true;};
+  add(a!==b,'Bên chuyển khác bên nhận');add(!S.paused,'Token không ở trạng thái tạm dừng');
+  add(!inv(a).frozen,'Ví bên chuyển không bị đóng băng');add(qty>0&&qty<=(S.bal[a]||0),`Bên chuyển đủ số dư (có ${vn(S.bal[a]||0)})`);
+  const v=isVerified(b);add(v.ok,v.ok?'isVerified(bên nhận) = true':'isVerified(bên nhận) = false: '+v.r.join('; '));
+  add(qty>=lot(),`Lô tối thiểu ${vn(lot())} token`);
+  const after=(S.bal[b]||0)+qty;add(after<=capPct()*f.N||b==='an',`Hạn mức ${pct(capPct())} của bên nhận (sau chuyển: ${vn(after)})`);
+  const ok=C.every(c=>c[0]===true);let extra='';
+  if(ok){const q=needQuorum('tOut');if(!q)return;S.bal[a]-=qty;S.bal[b]=(S.bal[b]||0)+qty;const bk=addBlock(8,'Chuyển nhượng thứ cấp',[`TP18.transfer(${a}->${b}, ${qty})`],q);extra=` Ghi tại khối #${bk.h}.`;renderChain('chain8');}
+  $('tOut').innerHTML=`<div class="txc ${ok?'ok':'bad'}"><div class="hd"><b>${esc(nameOf(a))} → ${esc(nameOf(b))}: ${vn(qty)} TP18</b><span class="pill ${ok?'ok':'bad'}">${ok?'Thành công':'Bị từ chối'}</span></div><ul class="checks">${C.map(([o,s])=>`<li class="${o===null?'s':o?'p':'f'}"><span class="m">${o===null?'–':o?'✓':'✗'}</span><span>${esc(s)}</span></li>`).join('')}</ul>${ok?`<span class="note">${extra.trim()}</span>`:''}</div>`;refreshAll();};
+$('evSeize').onclick=()=>{if(!S.saleDone||S.paused)return;const q=needQuorum('s8msg');if(!q)return;S.paused=true;
+  const b=addBlock(8,'Oracle: kê biên → tạm dừng',[`oracle(CSDL đất đai): thửa ${BASE.thua} tờ ${BASE.to} = KÊ BIÊN, quyết định số …/2026/QĐ (giả định)`,'Agent.pause(TP18)'],q);renderChain('chain8');
+  msg('s8msg','bad',`Khối #${b.h}: oracle từ cơ sở dữ liệu đất đai báo tài sản bị kê biên; tác nhân được ủy quyền gọi <span class="mono">pause()</span>. Mọi chuyển nhượng TP18 bị chặn.<br><b>Điểm cần thảo luận:</b> nếu không có oracle, chuỗi vẫn hiển thị token "bình thường" và nhà đầu tư vẫn mua bán một quyền lợi đang bị cơ quan nhà nước phong tỏa. Giá trị pháp lý nằm ở sổ địa chính, không nằm ở blockchain.`);refreshAll();};
+$('evLift').onclick=()=>{if(!S.paused)return;const q=needQuorum('s8msg');if(!q)return;S.paused=false;const b=addBlock(8,'Oracle: gỡ kê biên',[`oracle(CSDL đất đai): thửa ${BASE.thua} tờ ${BASE.to} = BÌNH THƯỜNG`,'Agent.unpause(TP18)'],q);renderChain('chain8');
+  msg('s8msg','ok',`Khối #${b.h}: tài sản được gỡ kê biên, token hoạt động lại.`);refreshAll();};
+
+/* ---------- Làm lại theo bước ---------- */
+function resetFrom(k){
+  if(k<=2){S.spv=false;S.sealed=false;S.root=null;S.docs=[];S.docPost=null;VI.forEach(id=>$(id).disabled=false);$('spvTl').innerHTML='';$('mtree').innerHTML='';$('sealBtn').disabled=true;$('spvBtn').disabled=false;msg('s2msg','','');}
+  if(k<=3){S.nft=null;msg('s3msg','','');}
+  if(k<=5){S.frac=null;S.bal={};resetCash();S.mempool=[];S.txLog=[];S.sold=0;S.raised=0;S.saleDone=false;S.paused=false;S.dist=0;FI.forEach(id=>$(id).disabled=false);msg('s5msg','','');msg('s7msg','','');msg('s8msg','','');$('tOut').innerHTML='';}
+  truncateChain(k<=3?3:k);refreshAll();}
+
+/* ---------- Khóa bước chưa đủ điều kiện ---------- */
+function gate(){const cond={2:S.regOk,3:S.sealed,5:!!S.nft,6:!!S.frac,7:S.mempool.length>0||S.saleDone,8:S.saleDone};
+  for(const [n,c] of Object.entries(cond))$('s'+n).classList.toggle('locked-step',!c);
+  $('spvBtn').disabled=!S.regOk||S.spv;$('mintBtn').disabled=!S.sealed;$('fracBtn').disabled=!S.nft;$('sendAll').disabled=!S.frac||S.saleDone;
+  ['distBtn','tBtn','evSeize','evLift'].forEach(id=>$(id).disabled=!S.saleDone);
+  $('tokState').className='pill '+(S.paused?'bad':'ok');$('tokState').textContent=S.paused?'Token đang tạm dừng':'Token đang hoạt động';}
+function refreshAll(){renderMeta();legalNote();renderIds();renderFrac();renderOffer();renderOrders();renderTx();renderMempool();renderCap();renderDist();fillSel();
+  ['chain3','chain7','chain8'].forEach(renderChain);gate();}
+
+/* ---------- Điều hướng ---------- */
+let cur=1;const NS=9;
+function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hidden=i!==cur;
+  document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
+  $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===NS;
+  if(!window.__embedded){try{history.replaceState(null,'','#buoc'+cur)}catch(e){}}
+  if(cur===7)renderVals();window.scrollTo({top:0});}
+document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('prevStep').onclick=()=>go(cur-1);$('nextStep').onclick=()=>go(cur+1);
+
+/* ========== BƯỚC 9: Bài tập ========== */
+const PRAC=[
+  ['p1','Bước 1: Ghi 8 ký tự đầu của mã băm tài liệu với sổ hợp lệ. Khi sửa diện tích 120 → 121, bao nhiêu ký tự thay đổi? Với tình huống "Sổ giả", vì sao mã QR vẫn khớp nội dung in mà quy trình vẫn dừng?'],
+  ['p2','Bước 2: Ghi giá trị theo PP so sánh – chi phí, PP thu nhập và giá trị chốt. Khi tỷ suất vốn hóa tăng từ 4,8% lên 6%, giá trị theo PP thu nhập giảm bao nhiêu %?'],
+  ['p3','Bước 2: Chi phí chuyển tài sản vào SPV bằng bao nhiêu? Chi phí này ảnh hưởng thế nào đến quyết định token hóa một tài sản giá trị nhỏ?'],
+  ['p4','Bước 4–5: Ở chế độ NQ 05/2025, điều gì xảy ra khi đúc phần token giữ lại cho Ông An? Đề xuất cách cấu trúc lại.'],
+  ['p5','Bước 6–7: Liệt kê các lệnh bị từ chối và lý do. Tỷ lệ chào bán thành công là bao nhiêu? Khi chỉ còn 1 nút xác thực, điều gì xảy ra?'],
+  ['p6','Bước 8: Mỗi token nhận bao nhiêu trong kỳ phân phối? Sau sự kiện kê biên, lệnh chuyển của bạn có thực hiện được không? Rút ra quan hệ giữa sổ cái blockchain và sổ địa chính.']];
+const QZ=[
+  {q:'Trong mô phỏng, mã băm tài liệu của Giấy chứng nhận được đưa lên chuỗi nhằm:',o:['Lưu toàn bộ ảnh Giấy chứng nhận trên chuỗi','Chứng minh tính toàn vẹn: sửa bất kỳ trường nào thì mã băm khác, trong khi dữ liệu cá nhân vẫn ở ngoài chuỗi','Mã hóa để không ai đọc được Giấy chứng nhận','Thay thế bản gốc Giấy chứng nhận về mặt pháp lý'],a:1,e:'Hàm băm là một chiều và nhạy với mọi thay đổi. Chuỗi chỉ cần mã băm để kiểm chứng; ảnh và thông tin cá nhân lưu ngoài chuỗi.'},
+  {q:'Kẻ gian tự in một Giấy chứng nhận giả kèm mã QR do chính họ tạo. Kiểm tra nào phát hiện được?',o:['Quét mã QR và so với nội dung in','Kiểm tra độ tin cậy OCR','Tra số phát hành trong cơ sở dữ liệu đất đai của cơ quan đăng ký','Kiểm tra chữ ký số của người mua token'],a:2,e:'Mã QR tự tạo vẫn khớp với nội dung tự in. Chỉ đối chiếu với nguồn gốc độc lập (cơ sở dữ liệu đất đai) mới phát hiện được.'},
+  {q:'Tài sản đang thế chấp ngân hàng. Vì sao quy trình phải dừng?',o:['Vì blockchain không ghi được tài sản có nợ','Vì người mua token sẽ đứng sau chủ nợ có bảo đảm; quyền lợi token có thể bị xử lý để thu hồi nợ','Vì NQ 05/2025 cấm tài sản có thế chấp','Vì OCR không đọc được phần ghi chú'],a:1,e:'Giao dịch bảo đảm đã đăng ký có thứ tự ưu tiên. Token hóa tài sản đang thế chấp chuyển rủi ro chưa được công bố cho nhà đầu tư.'},
+  {q:'Trong cấu trúc SPV của mô phỏng, token TP18 đại diện cho:',o:['Quyền sử dụng đất, thay cho Giấy chứng nhận','Quyền lợi kinh tế gắn với SPV, chủ thể đứng tên trên Giấy chứng nhận','Một loại tiền điện tử dùng để thanh toán','Chứng chỉ quỹ đầu tư bất động sản niêm yết'],a:1,e:'Quyền sử dụng đất chỉ chuyển khi đăng ký biến động. Token đại diện quyền lợi từ SPV, còn SPV là người sử dụng đất trên sổ địa chính.'},
+  {q:'Vì sao tài sản được đúc thành NFT (ERC-721) trước khi phân mảnh?',o:['Vì NFT có giá cao hơn','Vì NFT đại diện duy nhất một tài sản; khóa NFT vào kho bảo đảm tổng cung token phân mảnh luôn gắn với đúng một tài sản','Vì ERC-20 không chia nhỏ được','Vì pháp luật yêu cầu'],a:1,e:'Bất biến: NFT trong kho ⇔ N token đang lưu hành. Muốn rút NFT phải thu hồi đủ N token.'},
+  {q:'Giá trị thẩm định 25,9 tỷ đồng, tổng cung 10.000 token. Giá mỗi token là:',o:['259.000 đ','2.590.000 đ','25.900.000 đ','2.590 đ'],a:1,e:'25.900.000.000 ÷ 10.000 = 2.590.000 đ.'},
+  {q:'Điểm khác biệt cốt lõi của ERC-3643 so với ERC-20 là:',o:['Token có số thập phân','Mọi chuyển giao kiểm tra danh tính người nhận (isVerified) và luật tuân thủ (canTransfer) trước khi thực hiện','Token không thể chuyển nhượng','Token chạy không cần blockchain'],a:1,e:'ERC-3643 là chuẩn token có cấp phép, liên kết ví với danh tính trên chuỗi và các mô-đun tuân thủ.'},
+  {q:'Theo Nghị quyết 05/2025/NQ-CP, tài sản mã hóa chỉ được chào bán, phát hành cho:',o:['Mọi cá nhân có tài khoản ngân hàng','Nhà đầu tư chứng khoán chuyên nghiệp trong nước','Nhà đầu tư nước ngoài','Ngân hàng thương mại'],a:2,e:'Điều 6 của Nghị quyết quy định đối tượng chào bán, phát hành là nhà đầu tư nước ngoài; giao dịch qua tổ chức được Bộ Tài chính cấp phép.'},
+  {q:'Theo Nghị quyết 05/2025/NQ-CP, tài sản cơ sở của tài sản mã hóa:',o:['Phải là chứng khoán niêm yết','Phải là tài sản thực, không phải chứng khoán hay tiền pháp định','Có thể là tiền pháp định','Không cần có tài sản cơ sở'],a:1,e:'Điều 5 yêu cầu phát hành dựa trên tài sản cơ sở là tài sản thực, loại trừ chứng khoán và tiền pháp định.'},
+  {q:'DvP trong giao dịch mua token nghĩa là:',o:['Người mua trả tiền trước, nhận token sau 2 ngày','Token và tiền chuyển trong cùng một giao dịch nguyên tử: cả hai cùng xảy ra hoặc không bên nào xảy ra','Người bán giao token trước','Ngân hàng bảo lãnh thanh toán'],a:1,e:'Giao hàng đồng thời thanh toán loại bỏ rủi ro một bên đã giao mà bên kia chưa trả (rủi ro thanh toán gốc).'},
+  {q:'Chuỗi liên minh có 3 nút xác thực, ngưỡng 2/3. Chỉ 1 nút hoạt động thì:',o:['Khối vẫn được ghi nhưng chậm hơn','Nút đó tự đào bằng PoW','Không tạo được khối; giao dịch ở lại hàng chờ','Khối được ghi và các nút khác ký sau'],a:2,e:'Đồng thuận kiểu BFT ưu tiên tính nhất quán: không đủ chữ ký thì không có khối.'},
+  {q:'Thu nhập ròng tháng 102 triệu đồng, 10.000 token. Bạn giữ 30 token, bạn nhận:',o:['30.600 đ','306.000 đ','3.060.000 đ','10.200 đ'],a:1,e:'102.000.000 ÷ 10.000 = 10.200 đ/token; × 30 = 306.000 đ.'},
+  {q:'Tòa án kê biên tài sản nhưng không có oracle nối với cơ sở dữ liệu đất đai. Rủi ro chính là:',o:['Token bị mất do lỗi mật mã','Lệch pha giữa chuỗi và sổ địa chính: token vẫn được mua bán bình thường dù quyền lợi cơ sở đã bị phong tỏa','Mã băm tài liệu thay đổi','Nút xác thực bị tấn công 51%'],a:1,e:'Blockchain chỉ biết những gì được ghi lên nó. Nguồn chân lý pháp lý về đất đai vẫn là sổ địa chính.'}];
+const SKEY='token-hoa-tai-san-baitap';
+function saveQ(){try{const d={n:$('stName').value,i:$('stId').value,c:$('stClass').value,p:{},q:{}};PRAC.forEach(([k])=>d.p[k]=$(k).value);QZ.forEach((_,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`);if(s)d.q[i]=+s.value;});localStorage.setItem(SKEY,JSON.stringify(d));}catch(e){}}
+function buildQuiz(){
+  $('pracList').innerHTML=PRAC.map(([k,t],i)=>`<label class="pi"><span><b>${i+1}.</b> ${esc(t)}</span><textarea id="${k}" rows="2"></textarea></label>`).join('');
+  $('quiz').innerHTML=QZ.map((x,i)=>`<div class="q" id="qq${i}"><div class="lab">Câu ${i+1}</div><p class="qt">${esc(x.q)}</p>${x.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}">${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}<div class="fb" hidden></div></div>`).join('');
+  let d=null;try{d=JSON.parse(localStorage.getItem(SKEY)||'null');}catch(e){}
+  if(d){$('stName').value=d.n||'';$('stId').value=d.i||'';$('stClass').value=d.c||'';PRAC.forEach(([k])=>{if(d.p&&d.p[k])$(k).value=d.p[k];});Object.entries(d.q||{}).forEach(([i,v])=>{const r=document.querySelector(`input[name=q${i}][value="${v}"]`);if(r)r.checked=true;});}
+  document.querySelectorAll('#s9 input,#s9 textarea').forEach(el=>el.addEventListener('input',saveQ));}
+$('grade').onclick=()=>{let ok=0,blank=0;QZ.forEach((x,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`),box=$('qq'+i),fb=box.querySelector('.fb');box.classList.remove('right','wrong');
+  if(!s){blank++;fb.hidden=false;fb.textContent='Chưa chọn đáp án.';box.classList.add('wrong');return;}
+  const r=+s.value===x.a;if(r)ok++;box.classList.add(r?'right':'wrong');fb.hidden=false;fb.innerHTML=(r?'<b>Đúng.</b> ':`<b>Chưa đúng.</b> Đáp án: ${String.fromCharCode(65+x.a)}. `)+esc(x.e);});
+  const pt=ok/QZ.length*10;$('scoreOut').textContent=`${ok}/${QZ.length} câu · ${pt.toLocaleString('vi-VN',{maximumFractionDigits:1})} điểm`;
+  $('scoreTime').textContent=`Chấm lúc ${new Date().toLocaleString('vi-VN')}${blank?` · ${blank} câu bỏ trống`:''}`;saveQ();};
+$('printBtn').onclick=()=>window.print();
+$('clearQuiz').onclick=()=>{if(!confirm('Xóa toàn bộ bài làm trên trình duyệt này?'))return;try{localStorage.removeItem(SKEY);}catch(e){}buildQuiz();$('scoreOut').textContent='–';$('scoreTime').textContent='';};
+buildQuiz();
+
+/* ---------- Khởi động ---------- */
+renderDeed();valuation();renderVals();refreshAll();
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+(function(){const rx=/buoc([1-9])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
+if(window.__embedded){const fit=()=>{try{window.frameElement.style.height=Math.ceil(document.body.getBoundingClientRect().height)+'px';}catch(e){}};
+  try{new ResizeObserver(fit).observe(document.body);}catch(e){setInterval(fit,500);}fit();}
+</script>
+</body>
+</html>
