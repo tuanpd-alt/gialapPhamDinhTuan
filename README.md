@@ -36,6 +36,12 @@ Mô phỏng token hóa một bất động sản (sổ đỏ) qua 8 bước: qu�
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/token-hoa-tai-san.html (thêm `#buoc9` để vào thẳng phần bài tập)
 
+# NFT văn bằng
+
+Mô phỏng số hóa và phát hành NFT cho bằng đại học qua 8 bước: quét văn bằng và đối chiếu sổ gốc (4 tình huống: hợp lệ, bị sửa hạng, bằng giả, đã thu hồi), chuẩn hóa dữ liệu theo mô hình Verifiable Credentials và băm có salt (kèm thử tấn công dò tìm), nhà trường ký số ECDSA P-256 thật, sinh viên tạo ví và ký chuỗi thử thách, đúc NFT không chuyển nhượng (ERC-721 + ERC-5192) thẳng vào ví sinh viên, lưu trữ bốn lớp (trường, kho theo địa chỉ nội dung, CSDL quốc gia về văn bằng, blockchain), ghi khối trên chuỗi liên minh giáo dục, kiểm tra tính độc nhất, cổng xác minh cho nhà tuyển dụng và thu hồi văn bằng. Có phiếu bài tập 12 câu tự chấm và in được. Căn cứ: Thông tư 10/2026/TT-BGDĐT.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/nft-van-bang.html (thêm `#buoc9` để vào thẳng phần bài tập)
+
 # ERP Lab HTTTKT
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.

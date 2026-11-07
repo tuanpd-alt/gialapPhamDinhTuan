@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NFT văn bằng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:16px}
+
+/* ===== Trang Token hóa tài sản ===== */
+:root{--deed:#f7e1e1;--deed-ink:#8a1c1c;--deed-line:#d9a3a3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}}
+:root[data-theme="dark"]{--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.checks{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li .m{flex:none;width:18px;font-weight:700}
+.checks li.p .m{color:var(--ok)}.checks li.f .m{color:var(--bad)}.checks li.s .m{color:var(--muted)}
+.log{font:12.5px var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:220px;overflow:auto;display:grid;gap:2px}
+pre.json{font:12px/1.5 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px;margin:0;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-all}
+
+/* Giấy chứng nhận */
+.scanwrap{position:relative;border-radius:12px;overflow:hidden}
+.deed{background:var(--deed);border:2px solid var(--deed-line);border-radius:12px;padding:14px 16px;color:var(--ink);display:grid;gap:8px;font-size:13px}
+.deed .hd{text-align:center;color:var(--deed-ink);line-height:1.35}
+.deed .hd b{display:block;font-size:12px;letter-spacing:.04em}
+.deed .hd .t{font:700 15px var(--f-display);margin-top:4px;text-wrap:balance}
+.deed .body{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:start}
+.deed dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px}
+.deed dt{color:var(--muted);font-size:12px}
+.deed dd{margin:0;font-weight:500}
+.deed dd.tamper{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(189,52,52,.16) 3px 6px);border-radius:3px}
+.deed .qr{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--muted);text-align:center}
+.deed .qr svg{width:104px;height:104px;background:#fff;border-radius:4px;padding:4px}
+.deed .ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--deed-ink);border-top:1px dashed var(--deed-line);padding-top:6px}
+.laser{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 14px 4px rgba(34,211,238,.55);top:0;opacity:0;pointer-events:none}
+.scanwrap.scanning .laser{opacity:1;animation:sweep 1.6s ease-in-out infinite alternate}
+.scanwrap.scanning::after{content:"";position:absolute;inset:0;background:rgba(34,211,238,.06);pointer-events:none}
+@keyframes sweep{from{top:0}to{top:calc(100% - 3px)}}
+@media (prefers-reduced-motion:reduce){.scanwrap.scanning .laser{animation:none;top:50%}}
+.ocr{display:grid;gap:4px}
+.ocr .r{display:grid;grid-template-columns:150px minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px}
+.ocr .r input{padding:5px 8px;font-size:13px}
+.ocr .r .cf{font:12px var(--f-mono);text-align:right;color:var(--muted)}
+.ocr .r .cf.lo{color:var(--bad);font-weight:600}
+.ocr .r.diff input{border-color:var(--bad);background:var(--bad-bg)}
+@media (max-width:560px){.ocr .r{grid-template-columns:minmax(0,1fr) 58px}.ocr .r>span:first-child{grid-column:1/-1}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+
+/* Dòng thời gian SPV */
+.tl{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;opacity:.45;transition:opacity .3s}
+.tl li.on{opacity:1}
+.tl li .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font:600 13px var(--f-mono)}
+.tl li.on .n{background:var(--ok);color:#fff}
+.tl li b{display:block}
+.tl li .hash{margin-top:4px;padding:4px 8px;font-size:12px}
+
+/* Cây Merkle */
+.mtree{display:grid;gap:6px;overflow-x:auto}
+.mtree .lv{display:flex;gap:6px;justify-content:center}
+.mtree .nd{flex:0 0 auto;border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:11.5px var(--f-mono);background:var(--surface);text-align:center;min-width:86px}
+.mtree .nd small{display:block;font-family:var(--f-body);color:var(--muted);font-size:10.5px;max-width:110px;white-space:normal}
+.mtree .nd.root{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+
+/* Phân bổ */
+.alloc{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--sunk);font:600 12px var(--f-body);color:#fff}
+.alloc span{display:grid;place-items:center;white-space:nowrap;overflow:hidden;transition:width .3s}
+.a1{background:#1d5cf0}.a2{background:#11805a}.a3{background:#c8770a}.a4{background:#7c3aed}
+.vault{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.vault .box{border:2px dashed var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;font-size:13px;min-width:180px}
+.vault .box.locked{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.vault .ar{color:var(--muted);font-size:20px}
+
+/* Chuỗi khối */
+.chainv{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 0}
+.blk{flex:0 0 auto;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface);min-width:150px;max-width:190px;display:grid;gap:2px}
+.blk b{font-family:var(--f-mono);font-size:13px}
+.blk .h{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.blk.new{border-color:var(--ok);background:var(--ok-bg)}
+.chainv .ar{flex:0 0 22px;align-self:center;text-align:center;color:var(--muted)}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.val{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.val.off{opacity:.55;border-style:dashed}
+.val.signed{border-color:var(--ok)}
+.val label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.txc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.txc.ok{border-color:var(--ok)}.txc.bad{border-color:var(--bad)}
+.txc .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.txlist{display:grid;gap:8px}
+.gate{display:none}
+.locked-step .gate{display:block}
+td input[type=number]{width:96px;padding:5px 8px}
+td input[type=checkbox]{width:16px;height:16px}
+.pill{display:inline-block;font:600 11.5px var(--f-body);padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--zero-bg);color:var(--zero-ink)}
+
+
+/* Văn bằng */
+:root{--dip:#fbf6e6;--dip-ink:#7a4b06;--dip-line:#d6b46a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--dip:#2b2414;--dip-ink:#f0c66b;--dip-line:#6b5626}}
+:root[data-theme="dark"]{--dip:#2b2414;--dip-ink:#f0c66b;--dip-line:#6b5626}
+.dipl{background:var(--dip);border:6px double var(--dip-line);border-radius:12px;padding:16px 18px;display:grid;gap:8px;font-size:13px}
+.dipl .hd{text-align:center;color:var(--dip-ink);line-height:1.35;font-size:12px}
+.dipl .hd b{display:block;letter-spacing:.04em}
+.dipl .sch{text-align:center;font:700 14px var(--f-display);color:var(--dip-ink);text-transform:uppercase;margin-top:4px}
+.dipl .cap{text-align:center;color:var(--muted);font-size:12px}
+.dipl .t{text-align:center;font:700 22px var(--f-display);color:var(--bad);letter-spacing:.06em}
+.dipl .body{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:start}
+.dipl dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px}
+.dipl dt{color:var(--muted);font-size:12px}.dipl dd{margin:0;font-weight:600}
+.dipl dd.tamper{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(189,52,52,.16) 3px 6px);border-radius:3px}
+.dipl .qr{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--muted);text-align:center}
+.dipl .qr svg{width:104px;height:104px;background:#fff;border-radius:4px;padding:4px}
+.dipl .sign{display:grid;justify-items:end;text-align:right;font-size:12px;gap:2px}
+.dipl .sign i{color:var(--muted)}
+.dipl .ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--dip-ink);border-top:1px dashed var(--dip-line);padding-top:6px}
+@media (max-width:560px){.dipl .body{grid-template-columns:minmax(0,1fr)}.dipl dl{grid-template-columns:minmax(0,1fr)}.dipl dt{margin-top:4px}.dipl .qr{justify-items:start}}
+/* Bài tập */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.q p.qt{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}
+.q label input{margin-top:4px}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.q.right .fb{background:var(--ok-bg)}.q.wrong .fb{background:var(--bad-bg)}
+.q .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.score{font:700 26px var(--f-mono)}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.prac{display:grid;gap:10px}
+.prac .pi{display:grid;gap:5px;font-size:14px}
+@media print{
+  header.top,nav.steps,.navbtns,.foot,.noprint{display:none!important}
+  .step{display:block!important}.step[hidden]{display:none!important}
+  body{background:#fff;color:#000}.q,.panel{break-inside:avoid;border-color:#999}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">🎓</div>
+  <div class="ttl"><h1>NFT văn bằng</h1><div class="sub">Quét bằng · chuẩn hóa và bảo vệ dữ liệu · ký số · ví sinh viên · đúc NFT · lưu trữ · ghi khối · kiểm tra độc nhất</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <a class="btnlink" href="./khoa-va-chu-ky.html">Khóa và chữ ký</a>
+  <a class="btnlink" href="./token-hoa-tai-san.html">Token hóa tài sản</a>
+  <a class="btnlink" href="./doanh-nghiep.html">Sổ cái DN</a>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<nav class="steps wrap" role="tablist" aria-label="Các bước">
+  <button role="tab" data-go="1" aria-selected="true"><span class="n">1</span>Quét văn bằng</button>
+  <button role="tab" data-go="2" aria-selected="false"><span class="n">2</span>Chuẩn hóa &amp; bảo vệ dữ liệu</button>
+  <button role="tab" data-go="3" aria-selected="false"><span class="n">3</span>Ký số nhà trường</button>
+  <button role="tab" data-go="4" aria-selected="false"><span class="n">4</span>Ví sinh viên</button>
+  <button role="tab" data-go="5" aria-selected="false"><span class="n">5</span>Đúc NFT &amp; chuyển giao</button>
+  <button role="tab" data-go="6" aria-selected="false"><span class="n">6</span>Lưu trữ hệ thống</button>
+  <button role="tab" data-go="7" aria-selected="false"><span class="n">7</span>Ghi lên blockchain</button>
+  <button role="tab" data-go="8" aria-selected="false"><span class="n">8</span>Kiểm tra độc nhất</button>
+  <button role="tab" data-go="9" aria-selected="false"><span class="n">9</span>Bài tập</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ========== BƯỚC 1 ========== -->
+<section class="step" id="s1">
+  <div class="explain">
+    <h2>Bước 1. Quét văn bằng và đối chiếu sổ gốc</h2>
+    <p>Mô phỏng tình huống nhà trường <b>số hóa văn bằng giấy đã cấp</b> rồi phát hành NFT tương ứng. Thông tư 10/2026/TT-BGDĐT (hiệu lực 15/4/2026) bổ sung văn bằng, chứng chỉ số, có giá trị pháp lý như bản giấy, và giao Bộ GD&amp;ĐT xây dựng cơ sở dữ liệu quốc gia về văn bằng, chứng chỉ; thông tin trích xuất từ cơ sở dữ liệu này có giá trị pháp lý.</p>
+    <p>Bằng giả là vấn đề có thật: nhà tuyển dụng thường chỉ có bản giấy và phải gửi công văn xác minh. Bước quét chỉ có ý nghĩa khi được đối chiếu với <b>sổ gốc cấp văn bằng</b>, không dựa vào hình thức của tờ bằng.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn <b>"Bằng hợp lệ"</b> và bấm <b>"Quét văn bằng"</b>. Ghi 8 ký tự đầu của mã băm.</li>
+      <li>Thử ba tình huống còn lại. Kiểm tra nào thất bại ở mỗi tình huống?</li>
+      <li>Ở tình huống "Bằng giả", vì sao mã QR trên bằng vẫn khớp với nội dung in?</li>
+    </ol>
+    <p class="src">Trường, người học, số hiệu văn bằng đều là giả định. Căn cứ: Thông tư 10/2026/TT-BGDĐT (Điều 2, 11, 19, 21); Thông tư 27/2019/TT-BGDĐT về nội dung chính ghi trên văn bằng giáo dục đại học.</p>
+  </div>
+  <div class="panel">
+    <div class="row"><span class="note">Tình huống:</span>
+      <div class="seg" id="sceneSeg">
+        <button data-sc="real" aria-pressed="true">Bằng hợp lệ</button>
+        <button data-sc="tamper" aria-pressed="false">Bằng bị sửa hạng</button>
+        <button data-sc="fake" aria-pressed="false">Bằng giả</button>
+        <button data-sc="revoked" aria-pressed="false">Bằng đã bị thu hồi</button>
+      </div></div>
+    <div class="scanwrap" id="scanWrap"><div id="dip"></div><div class="laser"></div></div>
+    <div class="row">
+      <button class="btn primary" id="scanBtn">Quét văn bằng</button>
+      <label class="btn sm" style="display:inline-flex;gap:6px;align-items:center">Băm ảnh thật (tùy chọn)<input type="file" id="imgFile" accept="image/*,application/pdf" hidden></label>
+      <span class="note" id="imgHashNote">Ảnh chỉ được băm trong trình duyệt, không gửi đi đâu.</span>
+    </div>
+    <div id="ocrBox" hidden><h4>Kết quả nhận dạng (có thể sửa)</h4><div class="ocr" id="ocrRows"></div></div>
+    <div id="hashBox" hidden><h4>Mã băm nội dung văn bằng (SHA-256)</h4><div class="hash" id="docHash"></div><div class="note" id="docHashNote"></div></div>
+    <div id="regBox" hidden><h4>Đối chiếu sổ gốc và cơ sở dữ liệu văn bằng (giả lập)</h4><ul class="checks" id="regChecks"></ul></div>
+    <div id="s1msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 2 ========== -->
+<section class="step" id="s2" hidden>
+  <div class="explain">
+    <h2>Bước 2. Chuẩn hóa dữ liệu và bảo vệ thông tin cá nhân</h2>
+    <p>Văn bằng chứa họ tên, ngày sinh, kết quả học tập. Đây là dữ liệu cá nhân và một khi ghi lên chuỗi thì không xóa được. Vì vậy chỉ <b>mã băm</b> được ghi lên chuỗi; dữ liệu gốc nằm trong hệ thống của nhà trường và trong tệp văn bằng số do sinh viên giữ.</p>
+    <p>Mã băm thông thường vẫn bị <b>tấn công dò tìm</b>: kẻ gian biết tên, ngành, trường có thể thử lần lượt mọi ngày sinh và hạng tốt nghiệp, băm từng tổ hợp và so với mã trên chuỗi. Cách phòng là thêm một <b>chuỗi ngẫu nhiên (salt) 128 bit</b> riêng cho từng văn bằng trước khi băm. Salt chỉ sinh viên và nhà trường biết.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>"Chuẩn hóa lô văn bằng"</b>. Quan sát phần nào lên chuỗi, phần nào ở ngoài chuỗi.</li>
+      <li>Bấm <b>"Tấn công dò tìm"</b> cho mã băm không salt và có salt. Ghi số lần thử và kết quả.</li>
+    </ol>
+    <p class="src">Mô hình dữ liệu theo W3C Verifiable Credentials Data Model (chủ thể, đơn vị cấp, bằng chứng). Nguyên tắc tối thiểu hóa dữ liệu cá nhân trên chuỗi: chỉ lưu mã băm.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần hoàn thành Bước 1 với kết quả đối chiếu hợp lệ trước.</div>
+    <div class="row"><button class="btn primary" id="normBtn">Chuẩn hóa lô văn bằng</button></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Số hiệu</th><th>Người học</th><th>Ngành</th><th>Nguồn</th><th>Salt (128 bit)</th><th>Mã băm có salt</th></tr></thead>
+      <tbody id="batchTable"></tbody>
+    </table></div>
+    <div class="grid2f">
+      <div><h4>Ngoài chuỗi (hệ thống nhà trường, tệp của sinh viên)</h4><pre class="json" id="offJson">–</pre></div>
+      <div><h4>Trên chuỗi (công khai với các nút)</h4><pre class="json" id="onJson">–</pre></div>
+    </div>
+    <h4>Thử tấn công dò tìm</h4>
+    <p class="note">Kẻ gian biết họ tên, ngành, trường, số hiệu của Nguyễn Thị Mai Anh, chưa biết ngày sinh và hạng tốt nghiệp. Họ thử mọi ngày sinh từ 01/01/2000 đến 31/12/2006 và 5 hạng tốt nghiệp.</p>
+    <div class="row"><button class="btn" id="atkPlain">Tấn công mã băm không salt</button><button class="btn" id="atkSalt">Tấn công mã băm có salt</button></div>
+    <div id="atkOut"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 3 ========== -->
+<section class="step" id="s3" hidden>
+  <div class="explain">
+    <h2>Bước 3. Nhà trường ký số lên văn bằng</h2>
+    <p>Mã băm chứng minh dữ liệu không bị sửa, nhưng chưa chứng minh <b>ai</b> phát hành. Nhà trường ký mã băm bằng khóa riêng; ai có khóa công khai của trường đều kiểm tra được. Khóa công khai được đăng ký trong <b>sổ đăng ký đơn vị cấp tin cậy</b> (giả lập, do Bộ GD&amp;ĐT quản lý).</p>
+    <p>Trang này dùng chữ ký ECDSA trên đường cong P-256 thật của trình duyệt (Web Crypto API).</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>"Tạo cặp khóa của trường"</b>, rồi <b>"Ký lô văn bằng"</b>.</li>
+      <li>Sửa một ký tự trong ô "Thông điệp kiểm tra" rồi bấm <b>"Kiểm tra chữ ký"</b>. Kết quả?</li>
+      <li>Bấm <b>"Ký bằng khóa của kẻ gian"</b>. Vì sao chữ ký đúng về toán học vẫn bị loại?</li>
+    </ol>
+    <p class="src">Nguồn: NIST FIPS 186-5 (ECDSA); W3C Web Cryptography API.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần chuẩn hóa lô văn bằng ở Bước 2 trước.</div>
+    <div class="row"><button class="btn primary" id="keyBtn">Tạo cặp khóa của trường</button><button class="btn" id="signBtn" disabled>Ký lô văn bằng</button></div>
+    <div class="grid2f">
+      <div><h4>Khóa công khai của trường</h4><div class="hash" id="schoolPub">–</div></div>
+      <div><h4>Sổ đăng ký đơn vị cấp tin cậy</h4><div class="hash" id="trustReg">–</div></div>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>Số hiệu</th><th>Mã băm có salt</th><th>Chữ ký của trường</th></tr></thead>
+      <tbody id="sigTable"></tbody>
+    </table></div>
+    <h4>Thử kiểm tra chữ ký (văn bằng của Mai Anh)</h4>
+    <label class="f">Thông điệp kiểm tra<input type="text" id="vMsg" class="mono"></label>
+    <div class="row"><button class="btn" id="vBtn" disabled>Kiểm tra chữ ký</button><button class="btn" id="evilBtn" disabled>Ký bằng khóa của kẻ gian</button></div>
+    <div id="s3msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 4 ========== -->
+<section class="step" id="s4" hidden>
+  <div class="explain">
+    <h2>Bước 4. Sinh viên tạo ví và chứng minh quyền kiểm soát ví</h2>
+    <p>NFT văn bằng được chuyển vào ví của sinh viên. Trước khi gắn ví với mã số sinh viên, nhà trường phải chắc chắn hai điều:</p>
+    <ol>
+      <li><b>Đúng người:</b> sinh viên đăng nhập hệ thống của trường và xác thực danh tính (ví dụ qua VNeID, giả lập).</li>
+      <li><b>Đúng ví:</b> trường gửi một chuỗi thử thách ngẫu nhiên; sinh viên ký bằng khóa riêng của ví. Chữ ký hợp lệ với địa chỉ ví chứng minh sinh viên thật sự nắm khóa.</li>
+    </ol>
+    <p>MIT áp dụng cách tương tự trong thí điểm văn bằng số năm 2017 với 111 học viên: ứng dụng Blockcerts Wallet tạo cặp khóa trên điện thoại và gửi khóa công khai cho trường để ghi vào văn bằng (MIT News, 17/10/2017).</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm lần lượt <b>"Xác thực danh tính"</b>, <b>"Tạo ví"</b>, <b>"Ký thử thách"</b>.</li>
+      <li>Bấm <b>"Gửi địa chỉ ví sai"</b>. Vì sao bị từ chối?</li>
+    </ol>
+    <p class="src">Nguồn: MIT News (2017), "MIT debuts secure digital diploma using bitcoin blockchain technology".</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần ký lô văn bằng ở Bước 3 trước.</div>
+    <div class="row"><button class="btn" id="idBtn">Xác thực danh tính</button><span class="pill" id="idState">Chưa xác thực</span></div>
+    <div class="row"><button class="btn" id="walletBtn" disabled>Tạo ví của sinh viên</button></div>
+    <div class="grid2f">
+      <div><h4>Địa chỉ ví</h4><div class="hash" id="wAddr">–</div></div>
+      <div><h4>Chuỗi thử thách của trường</h4><div class="hash" id="chal">–</div></div>
+    </div>
+    <div class="row"><button class="btn primary" id="bindBtn" disabled>Ký thử thách và gắn ví</button><button class="btn" id="badBind" disabled>Gửi địa chỉ ví sai</button></div>
+    <div id="s4msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 5 ========== -->
+<section class="step" id="s5" hidden>
+  <div class="explain">
+    <h2>Bước 5. Đúc NFT văn bằng và chuyển cho sinh viên</h2>
+    <p>Mỗi văn bằng là một NFT theo ERC-721, bổ sung đặc tính <b>không chuyển nhượng</b> (<i>soulbound</i>, chuẩn ERC-5192): sau khi đúc, token bị khóa vĩnh viễn trong ví người học. Văn bằng gắn với một con người, nên không được bán hay cho mượn (Weyl, Ohlhaver &amp; Buterin, 2022).</p>
+    <h3>Hợp đồng chỉ đúc khi</h3>
+    <ol>
+      <li>Người gọi có vai trò <b>đơn vị cấp</b> (ví của trường).</li>
+      <li>Chữ ký của trường trên mã băm hợp lệ.</li>
+      <li><b>Số hiệu văn bằng chưa từng được dùng</b>: mã token được suy ra từ số hiệu, nên trùng số hiệu là trùng mã token.</li>
+      <li>Cặp (mã số sinh viên, bậc, ngành) chưa có văn bằng.</li>
+      <li>Ví nhận đã được gắn với người học ở Bước 4.</li>
+    </ol>
+    <p class="src">Nguồn: ERC-721 (2018); ERC-5192 Minimal Soulbound NFTs (2022); Weyl, Ohlhaver &amp; Buterin (2022), <i>Decentralized Society: Finding Web3's Soul</i>, SSRN.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần gắn ví sinh viên ở Bước 4 trước.</div>
+    <h4>Metadata NFT văn bằng của Mai Anh</h4>
+    <pre class="json" id="nftMeta">–</pre>
+    <div class="row"><button class="btn primary" id="mintBtn">Tạo giao dịch đúc cho cả lô</button></div>
+    <div class="txlist" id="mintList"></div>
+    <div id="s5msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 6 ========== -->
+<section class="step" id="s6" hidden>
+  <div class="explain">
+    <h2>Bước 6. Lưu trữ trong hệ thống</h2>
+    <p>Một hệ thống văn bằng số có bốn lớp lưu trữ, mỗi lớp giữ một vai trò:</p>
+    <ul>
+      <li><b>Hệ thống quản lý văn bằng của trường:</b> sổ gốc số, tệp văn bằng có chữ ký, salt; được mã hóa.</li>
+      <li><b>Kho lưu trữ theo địa chỉ nội dung</b> (kiểu IPFS): tệp văn bằng đã mã hóa, định danh bằng mã băm của chính nội dung (CID), có nhiều bản sao.</li>
+      <li><b>Cơ sở dữ liệu quốc gia về văn bằng, chứng chỉ:</b> nguồn có giá trị pháp lý theo Thông tư 10/2026/TT-BGDĐT; tra cứu được qua VNeID.</li>
+      <li><b>Blockchain:</b> mã token, mã băm, chữ ký, trạng thái. Không có dữ liệu cá nhân.</li>
+    </ul>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>"Lưu trữ và đồng bộ"</b>.</li>
+      <li>Bấm <b>"Hỏng một nút lưu trữ"</b>, rồi <b>"Tải lại văn bằng"</b>. Văn bằng có còn lấy được và có còn nguyên vẹn không?</li>
+      <li>Bấm <b>"Nút lưu trữ trả về tệp bị sửa"</b>. Hệ thống phát hiện bằng cách nào?</li>
+    </ol>
+    <p class="src">Nguồn: Thông tư 10/2026/TT-BGDĐT, Điều 19 và 21; Benet (2014), <i>IPFS – Content Addressed, Versioned, P2P File System</i>, arXiv:1407.3561.</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần tạo giao dịch đúc ở Bước 5 trước.</div>
+    <div class="row"><button class="btn primary" id="storeBtn">Lưu trữ và đồng bộ</button></div>
+    <div class="scroll"><table>
+      <thead><tr><th>Lớp lưu trữ</th><th>Nội dung</th><th>Định danh</th><th>Trạng thái</th></tr></thead>
+      <tbody id="storeTable"></tbody>
+    </table></div>
+    <h4>Các nút lưu trữ tệp văn bằng của Mai Anh</h4>
+    <div class="vals" id="nodes"></div>
+    <div class="row"><button class="btn" id="killNode" disabled>Hỏng một nút lưu trữ</button><button class="btn" id="badNode" disabled>Nút lưu trữ trả về tệp bị sửa</button><button class="btn" id="fetchBtn" disabled>Tải lại văn bằng</button><button class="btn sm" id="healNodes" disabled>Khôi phục các nút</button></div>
+    <div id="s6msg"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 7 ========== -->
+<section class="step" id="s7" hidden>
+  <div class="explain">
+    <h2>Bước 7. Ghi lên blockchain liên minh giáo dục</h2>
+    <p>Chuỗi do các tổ chức có trách nhiệm vận hành: nhà trường, nút cơ sở dữ liệu văn bằng của Bộ GD&amp;ĐT, và một tổ chức kiểm định chất lượng. Khối hợp lệ khi có tối thiểu 2/3 chữ ký.</p>
+    <p>Khi khối được ghi, mỗi NFT nằm trong ví người học và phát sự kiện <span class="mono">Locked(tokenId)</span>: từ đây mọi lệnh chuyển đều bị từ chối.</p>
+    <p>Cách làm khác là ghi theo lô như Blockcerts: chỉ đưa <b>gốc Merkle</b> của cả lô lên một chuỗi công khai (MIT dùng Bitcoin). Chi phí thấp, nhưng không có token để thể hiện quyền nắm giữ và trạng thái.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Tắt hai nút xác thực rồi bấm <b>"Gom khối và ký"</b>. Kết quả?</li>
+      <li>Bật lại và ghi khối. Ghi số khối, gốc Merkle và mã token của Mai Anh.</li>
+    </ol>
+    <p class="src">Nguồn: Castro &amp; Liskov (1999); MIT News (2017).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần lưu trữ ở Bước 6 trước.</div>
+    <h4>Hàng chờ giao dịch</h4>
+    <div class="log" id="mempool"></div>
+    <h4>Nút xác thực</h4>
+    <div class="vals" id="vals"></div>
+    <div class="row"><button class="btn primary" id="sealBlock">Gom khối và ký</button></div>
+    <div id="s7msg"></div>
+    <h4>Chuỗi khối</h4>
+    <div class="chainv" id="chain7"></div>
+    <h4>Sổ NFT văn bằng trên hợp đồng của trường</h4>
+    <div class="scroll"><table>
+      <thead><tr><th>Mã token</th><th>Số hiệu</th><th>Ví nắm giữ</th><th>Khóa (soulbound)</th><th>Trạng thái</th></tr></thead>
+      <tbody id="tokTable"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 8 ========== -->
+<section class="step" id="s8" hidden>
+  <div class="explain">
+    <h2>Bước 8. Kiểm tra tính độc nhất và xác thực văn bằng</h2>
+    <p><b>Tính độc nhất</b> không có nghĩa là không ai sao chép được hình ảnh hay metadata; bất kỳ ai cũng sao chép được. Độc nhất nghĩa là: trên <b>hợp đồng của đơn vị cấp tin cậy</b>, mỗi số hiệu chỉ có một token, token đó chỉ nằm ở một ví và không thể rời ví đó.</p>
+    <h3>Cổng xác minh kiểm tra 7 điều kiện</h3>
+    <ol>
+      <li>Mã token tồn tại.</li>
+      <li>Hợp đồng thuộc đơn vị cấp có trong sổ đăng ký tin cậy.</li>
+      <li>Băm (dữ liệu xuất trình + salt) bằng mã băm trên chuỗi.</li>
+      <li>Chữ ký của trường hợp lệ.</li>
+      <li>Văn bằng còn hiệu lực, chưa bị thu hồi.</li>
+      <li>Người xuất trình ký được thử thách bằng khóa của ví nắm giữ.</li>
+      <li>Khớp cơ sở dữ liệu quốc gia về văn bằng.</li>
+    </ol>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chạy đủ bốn phép thử tính độc nhất.</li>
+      <li>Chạy năm tình huống xác minh. Ghi điều kiện thất bại ở mỗi tình huống.</li>
+      <li>Thu hồi văn bằng của Trần Quốc Bảo rồi xác minh lại.</li>
+    </ol>
+    <p class="src">Nguồn: ERC-5192 (2022); Thông tư 10/2026/TT-BGDĐT về thu hồi, hủy bỏ văn bằng số (Điều 14–18) và cập nhật cơ sở dữ liệu (Điều 19).</p>
+  </div>
+  <div class="panel">
+    <div class="callout warn gate">Cần ghi khối ở Bước 7 trước.</div>
+    <h4>A. Phép thử tính độc nhất</h4>
+    <div class="row">
+      <button class="btn" data-u="1">Đúc lại cùng số hiệu</button>
+      <button class="btn" data-u="2">Cấp bằng thứ hai cùng ngành</button>
+      <button class="btn" data-u="3">Chuyển (bán) NFT sang ví khác</button>
+      <button class="btn" data-u="4">Quét toàn bộ chuỗi theo số hiệu</button>
+    </div>
+    <div class="txlist" id="uOut"></div>
+    <h4>B. Cổng xác minh của nhà tuyển dụng</h4>
+    <label class="f">Tình huống xuất trình<select id="vCase">
+      <option value="ok">Mai Anh xuất trình văn bằng thật của mình</option>
+      <option value="edit">Mai Anh sửa hạng "Giỏi" thành "Xuất sắc" trước khi xuất trình</option>
+      <option value="copy">NFT nhái: sao chép nguyên metadata lên hợp đồng khác</option>
+      <option value="thief">Người khác cầm tệp văn bằng và salt của Mai Anh</option>
+      <option value="bao">Trần Quốc Bảo xuất trình văn bằng của mình</option>
+    </select></label>
+    <div class="row"><button class="btn primary" id="verifyBtn">Xác minh</button></div>
+    <div id="vOut"></div>
+    <h4>C. Thu hồi văn bằng</h4>
+    <p class="note">Giả định: hội đồng phát hiện Trần Quốc Bảo gian lận hồ sơ, hiệu trưởng ra quyết định thu hồi.</p>
+    <div class="row"><button class="btn" id="revokeBtn">Thu hồi văn bằng của Trần Quốc Bảo</button></div>
+    <div id="s8msg"></div>
+    <h4>Chuỗi khối</h4>
+    <div class="chainv" id="chain8"></div>
+  </div>
+</section>
+
+<!-- ========== BƯỚC 9 ========== -->
+<section class="step" id="s9" hidden>
+  <div class="explain">
+    <h2>Bước 9. Bài tập</h2>
+    <p><b>Phần I</b> ghi kết quả thực hành từ Bước 1–8. <b>Phần II</b> gồm 12 câu trắc nghiệm, chấm tự động và có giải thích.</p>
+    <p>Làm xong, bấm <b>"Nộp và chấm"</b>, rồi <b>"In / lưu PDF"</b> để nộp cho giảng viên.</p>
+    <h3>Gợi ý cho giảng viên</h3>
+    <ul>
+      <li>Thời lượng: khoảng 60 phút (35 phút thực hành, 25 phút thảo luận).</li>
+      <li>Chia nhóm 3: phòng đào tạo, sinh viên, nhà tuyển dụng.</li>
+      <li>Câu thảo luận mở: khi đã có cơ sở dữ liệu quốc gia về văn bằng, chứng chỉ và VNeID, NFT văn bằng còn đem lại giá trị gì tăng thêm? Trong trường hợp nào thì không?</li>
+    </ul>
+    <p class="src">Bài làm chỉ lưu trên trình duyệt của học viên, không gửi đi đâu.</p>
+  </div>
+  <div class="panel">
+    <div class="who">
+      <label class="f">Họ và tên<input type="text" id="stName" autocomplete="name"></label>
+      <label class="f">MSSV<input type="text" id="stId"></label>
+      <label class="f">Lớp / nhóm<input type="text" id="stClass"></label>
+    </div>
+    <h4>Phần I. Kết quả thực hành</h4>
+    <div class="prac" id="pracList"></div>
+    <h4>Phần II. Trắc nghiệm</h4>
+    <div class="quiz" id="quiz"></div>
+    <div class="row noprint">
+      <button class="btn primary" id="grade">Nộp và chấm</button>
+      <button class="btn" id="printBtn">In / lưu PDF</button>
+      <button class="btn" id="clearQuiz">Làm lại</button>
+    </div>
+    <div class="row"><span>Điểm:</span><span class="score" id="scoreOut">–</span><span class="note" id="scoreTime"></span></div>
+  </div>
+</section>
+
+<div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
+</main>
+<footer class="wrap foot">Mô phỏng chạy hoàn toàn trong trình duyệt, dùng SHA-256 và chữ ký ECDSA P-256 thật (Web Crypto API). Sổ gốc, cơ sở dữ liệu văn bằng, VNeID, kho lưu trữ và chuỗi liên minh là giả lập. Tên trường, người học và số hiệu văn bằng đều giả định. Tài liệu: Thông tư 10/2026/TT-BGDĐT; Thông tư 27/2019/TT-BGDĐT; ERC-721 (2018); ERC-5192 (2022); W3C Verifiable Credentials; MIT News (2017); Weyl, Ohlhaver &amp; Buterin (2022).</footer>
+<script>
+/* ---------- SHA-256 (FIPS 180-4) ---------- */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const ENC=new TextEncoder();const W=new Uint32Array(64);
+function sha256(str){const m=ENC.encode(str),l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+for(let t=0;t<64;t++){const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));const mj=(a&b)^(a&c)^(b&c);const t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;}
+return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const vn=n=>Number(n).toLocaleString('vi-VN');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait=ms=>sleep(RM?0:ms);
+function msg(id,cls,html){$(id).innerHTML=html?`<div class="callout ${cls}">${html}</div>`:'';}
+const hex=buf=>[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+const unhex=h=>new Uint8Array((h.match(/../g)||[]).map(x=>parseInt(x,16)));
+const rand=n=>{const a=new Uint8Array(n);crypto.getRandomValues(a);return hex(a);};
+const checksHtml=C=>`<ul class="checks">${C.map(([ok,s])=>`<li class="${ok===null?'s':ok?'p':'f'}"><span class="m">${ok===null?'–':ok?'✓':'✗'}</span><span>${s}</span></li>`).join('')}</ul>`;
+function runChain(list){const C=[];let stop=false;for(const [fn,t] of list){if(stop){C.push([null,t+' (không kiểm tra do điều kiện trước đã thất bại)']);continue;}const r=fn();const ok=r===true||(r&&r.ok);C.push([ok,(r&&r.t)||t]);if(!ok)stop=true;}return {ok:C.every(c=>c[0]===true),C};}
+
+/* ---------- Chữ ký số: ECDSA P-256 thật, dự phòng giả lập ---------- */
+const SUB=!!(window.crypto&&crypto.subtle&&window.isSecureContext!==false);
+const FAKE={};
+async function genKey(){if(SUB){try{const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);const pub=hex(await crypto.subtle.exportKey('raw',k.publicKey));return {k,pub};}catch(e){}}
+  const priv=rand(32),pub='04'+sha256('pub|'+priv)+sha256('pub2|'+priv);FAKE[pub]=priv;return {k:null,pub,priv};}
+async function signMsg(key,m){if(key.k)return hex(await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},key.k.privateKey,ENC.encode(m)));return sha256(key.priv+'|'+m)+sha256('s|'+key.priv+m);}
+async function verifyMsg(pubHex,sig,m){if(SUB&&!FAKE[pubHex]){try{const pk=await crypto.subtle.importKey('raw',unhex(pubHex),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);return await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},pk,unhex(sig),ENC.encode(m));}catch(e){return false;}}
+  const p=FAKE[pubHex];return !!p&&sig===sha256(p+'|'+m)+sha256('s|'+p+m);}
+const addrOf=pub=>'0x'+sha256(pub).slice(-40);
+const shortA=a=>a.slice(0,8)+'…'+a.slice(-4);
+
+/* ---------- Dữ liệu (giả định) ---------- */
+const SCHOOL={name:'Trường Đại học Duyên Hải (giả định)',did:'did:edu:vn:dhdh',contract:'0xD4D4…edu1'};
+const FIELDS=[['truong','Tên trường'],['vanbang','Tên văn bằng'],['nganh','Ngành đào tạo'],['ten','Người được cấp'],['ns','Ngày sinh'],['hang','Hạng tốt nghiệp'],['ngaycap','Ngày cấp'],['sohieu','Số hiệu'],['sovao','Số vào sổ cấp văn bằng']];
+const mk=(ten,ns,nganh,hang,mssv,sohieu,sovao,ngaycap,extra)=>({truong:SCHOOL.name,vanbang:'Bằng Cử nhân',nganh,ten,ns,hang,ngaycap:ngaycap||'05/11/2026',sohieu,sovao,mssv,bac:'Đại học',status:'Còn hiệu lực',...(extra||{})});
+const REG={};
+[mk('Nguyễn Thị Mai Anh','12/03/2004','Tài chính – Ngân hàng','Giỏi','62131234','DHDH-26-001234','01234/CN-2026'),
+ mk('Trần Quốc Bảo','25/08/2004','Kế toán','Khá','62131876','DHDH-26-001235','01235/CN-2026'),
+ mk('Lê Hoàng Cường','02/01/2004','Kinh tế','Khá','62130455','DHDH-26-001236','01236/CN-2026'),
+ mk('Phạm Ngọc Diệp','19/11/2004','Quản trị kinh doanh','Xuất sắc','62132290','DHDH-26-001237','01237/CN-2026'),
+ mk('Võ Minh Đức','07/07/2003','Tài chính – Ngân hàng','Khá','62120931','DHDH-25-000877','00877/CN-2025','06/11/2025',{status:'Đã thu hồi theo Quyết định 0412/QĐ-ĐHDH ngày 20/5/2026 (giả định)'})
+].forEach(r=>REG[r.sohieu]=r);
+const MAIN='DHDH-26-001234',BAO='DHDH-26-001235';
+const BATCH=['DHDH-26-001234','DHDH-26-001235','DHDH-26-001236','DHDH-26-001237'];
+const canon=o=>JSON.stringify(FIELDS.map(([k])=>[k,String(o[k]??'').trim()]));
+function scenario(sc){let paper,reg,qrSrc=null;
+  if(sc==='real'){reg=REG[MAIN];paper={...reg};}
+  if(sc==='tamper'){reg=REG[BAO];paper={...reg,hang:'Giỏi'};}
+  if(sc==='fake'){paper=mk('Đặng Văn Giả','01/01/2003','Tài chính – Ngân hàng','Xuất sắc','—','DHDH-26-009999','09999/CN-2026');reg=null;qrSrc=paper;}
+  if(sc==='revoked'){reg=REG['DHDH-25-000877'];paper={...reg};}
+  return {paper,reg,qrHash:sha256(canon(qrSrc||reg))};}
+
+/* ---------- Trạng thái ---------- */
+const S={sc:'real',scanOk:false,ocr:null,first:null,docHash:null,imgHash:null,cred:{},normed:false,school:null,signed:false,
+  idOk:false,wallet:null,chal:null,bound:false,pending:[],stored:false,nodes:[],onchain:false,tokens:{},chain:[],revoked:{},walletsOther:{}};
+
+/* ---------- Chuỗi khối ---------- */
+function merkle(list){let c=list.map(s=>sha256(s));if(!c.length)return sha256('');while(c.length>1){if(c.length%2)c.push(c[c.length-1]);const n=[];for(let i=0;i<c.length;i+=2)n.push(sha256(c[i]+c[i+1]));c=n;}return c[0];}
+function addBlock(label,txs,signers){const prev=S.chain.length?S.chain[S.chain.length-1].hash:'0'.repeat(64);const h=S.chain.length;const root=merkle(txs);
+  const hash=sha256(`h=${h}|${prev}|${root}|t=${1794100000+h*5}|${signers.join(',')}`);const b={h,label,txs,root,prev,hash,signers};S.chain.push(b);return b;}
+addBlock('Khối khởi tạo',['genesis|edu-consortium','registerIssuer(did:edu:vn:dhdh)'],['V1','V2','V3']);
+function renderChain(el){const C=S.chain;$(el).innerHTML=C.map((b,i)=>`${i?'<span class="ar">→</span>':''}<div class="blk ${i===C.length-1&&i>0?'new':''}"><b>#${b.h}</b><span>${esc(b.label)}</span><span class="h">${b.txs.length} giao dịch · ${b.signers.length} chữ ký</span><span class="h">hash ${b.hash.slice(0,12)}…</span><span class="h">prev ${b.prev.slice(0,8)}…</span></div>`).join('');$(el).scrollLeft=$(el).scrollWidth;}
+const VALS=[{k:'V1',n:'Trường Đại học Duyên Hải',on:true},{k:'V2',n:'Bộ GD&ĐT (nút CSDL văn bằng)',on:true},{k:'V3',n:'Tổ chức kiểm định chất lượng',on:true}];
+const quorum=()=>VALS.filter(v=>v.on).map(v=>v.k);
+function renderVals(sig){$('vals').innerHTML=VALS.map(v=>`<div class="val ${v.on?'':'off'} ${sig&&sig.includes(v.k)?'signed':''}"><b>${v.k} · ${esc(v.n)}</b><label><input type="checkbox" data-val="${v.k}" ${v.on?'checked':''}> Đang hoạt động</label>${sig&&sig.includes(v.k)?'<span class="chip ok">Đã ký khối</span>':''}</div>`).join('');
+  document.querySelectorAll('[data-val]').forEach(c=>c.onchange=()=>{VALS.find(v=>v.k===c.dataset.val).on=c.checked;renderVals();});}
+
+/* ---------- Mã QR giả lập ---------- */
+function qrSvg(seed){const n=25,cells=[];let bits='';for(let i=0;bits.length<n*n;i++)bits+=sha256(seed+':'+i).split('').map(c=>parseInt(c,16).toString(2).padStart(4,'0')).join('');
+  const fin=(x,y)=>{for(const[ox,oy]of[[0,0],[n-7,0],[0,n-7]]){const dx=x-ox,dy=y-oy;if(dx>=0&&dx<7&&dy>=0&&dy<7)return(dx===0||dx===6||dy===0||dy===6||(dx>=2&&dx<=4&&dy>=2&&dy<=4))?1:0;if(dx>=-1&&dx<=7&&dy>=-1&&dy<=7)return 0;}return -1;};
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const f=fin(x,y);if(f===-1?bits[y*n+x]==='1':f===1)cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);}
+  return `<svg viewBox="0 0 ${n} ${n}" aria-label="Mã QR giả lập" shape-rendering="crispEdges"><g fill="#111">${cells.join('')}</g></svg>`;}
+
+/* ========== BƯỚC 1 ========== */
+let scanning=false;
+function renderDip(){const {paper,qrHash}=scenario(S.sc);const tm=S.sc==='tamper';
+  $('dip').innerHTML=`<div class="dipl"><div class="hd"><b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><span>Độc lập – Tự do – Hạnh phúc</span></div>
+  <div class="sch">${esc(paper.truong)}</div><div class="cap">cấp</div><div class="t">${esc(paper.vanbang).toUpperCase()}</div>
+  <div class="body"><dl>${['nganh','ten','ns','hang','ngaycap'].map(k=>`<dt>${FIELDS.find(f=>f[0]===k)[1]}</dt><dd class="${tm&&k==='hang'?'tamper':''}">${esc(paper[k])}</dd>`).join('')}</dl>
+  <div class="qr">${qrSvg(qrHash)}<span>Tra cứu văn bằng</span></div></div>
+  <div class="sign"><span>Khánh Hòa, ngày ${esc(paper.ngaycap)}</span><b>HIỆU TRƯỞNG</b><i>(đã ký, đóng dấu – giả định)</i></div>
+  <div class="ft"><span>Số hiệu: <b class="mono">${esc(paper.sohieu)}</b></span><span>Số vào sổ cấp văn bằng: <b class="mono">${esc(paper.sovao)}</b></span></div>
+  <div class="note" style="text-align:center">Mẫu minh họa trong lớp học, không có giá trị pháp lý</div></div>`;}
+document.querySelectorAll('#sceneSeg button').forEach(b=>b.onclick=()=>{if(scanning)return;if(S.normed&&!confirm('Đổi tình huống sẽ làm lại các bước sau. Tiếp tục?'))return;
+  S.sc=b.dataset.sc;document.querySelectorAll('#sceneSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  S.scanOk=false;S.first=null;['ocrBox','hashBox','regBox'].forEach(i=>$(i).hidden=true);msg('s1msg','','');resetAll();renderDip();});
+$('scanBtn').onclick=async()=>{if(scanning)return;scanning=true;if(S.normed)resetAll();const {paper}=scenario(S.sc);S.ocr={...paper};S.first=null;
+  ['ocrBox','hashBox','regBox'].forEach(i=>$(i).hidden=true);msg('s1msg','','');$('scanWrap').classList.add('scanning');$('scanBtn').disabled=true;
+  await wait(1500);$('scanWrap').classList.remove('scanning');$('ocrBox').hidden=false;$('ocrRows').innerHTML='';
+  for(const [k,l] of FIELDS){const cf=S.sc==='tamper'&&k==='hang'?90.6:(97+((parseInt(sha256(k+S.sc).slice(0,4),16)%280)/100));
+    const r=document.createElement('div');r.className='r';r.dataset.k=k;
+    r.innerHTML=`<span>${l}</span><input type="text" value="${esc(S.ocr[k])}" aria-label="${l}"><span class="cf ${cf<95?'lo':''}">${cf.toLocaleString('vi-VN',{maximumFractionDigits:1})}%</span>`;
+    $('ocrRows').appendChild(r);r.querySelector('input').oninput=e=>{if(S.normed)resetAll();S.ocr[k]=e.target.value;runChecks();};await wait(110);}
+  runChecks();$('scanBtn').disabled=false;scanning=false;};
+function runChecks(){const {reg,qrHash}=scenario(S.sc);const h=sha256(canon(S.ocr));S.docHash=h;if(!S.first)S.first=h;
+  $('hashBox').hidden=false;$('regBox').hidden=false;$('docHash').textContent=h;
+  const diff=[...h].filter((c,i)=>c!==S.first[i]).length;
+  $('docHashNote').textContent=diff?`So với kết quả quét ban đầu: ${diff}/64 ký tự khác.`:'Kết quả của lần quét ban đầu. Thử sửa một ký tự trong bảng nhận dạng.';
+  const C=[];C.push([!!reg,`Số hiệu ${esc(S.ocr.sohieu)} ${reg?'có':'không có'} trong sổ gốc cấp văn bằng của trường`]);
+  C.push([qrHash===h,qrHash===h?'Nội dung giải mã từ mã QR khớp với nội dung in':'Mã băm nội dung mã QR khác nội dung in: có trường bị sửa, hoặc mã QR không do nhà trường tạo']);
+  if(reg){const bad=FIELDS.filter(([k])=>String(S.ocr[k]).trim()!==String(reg[k]).trim()).map(([k,l])=>`${l} (bằng: "${esc(S.ocr[k])}", sổ gốc: "${esc(reg[k])}")`);
+    C.push([!bad.length,bad.length?'Lệch so với sổ gốc: '+bad.join('; '):'Toàn bộ 9 trường khớp sổ gốc']);
+    C.push([reg.status==='Còn hiệu lực','Trạng thái trên cơ sở dữ liệu văn bằng: '+esc(reg.status)]);
+    document.querySelectorAll('#ocrRows .r').forEach(r=>r.classList.toggle('diff',String(S.ocr[r.dataset.k]).trim()!==String(reg[r.dataset.k]).trim()));}
+  else{C.push([null,'Không thể so từng trường vì không có bản ghi gốc']);C.push([null,'Không tra được trạng thái']);}
+  $('regChecks').innerHTML=checksHtml(C).replace(/^<ul class="checks">|<\/ul>$/g,'');
+  S.scanOk=C.every(c=>c[0]===true);
+  const tail=S.scanOk?`<b>Đạt.</b> Văn bằng khớp sổ gốc và còn hiệu lực. Văn bằng của Nguyễn Thị Mai Anh được đưa vào lô phát hành NFT.`:
+   S.sc==='fake'?'<b>Dừng quy trình.</b> Số hiệu không có trong sổ gốc. Mã QR do người làm giả tự tạo nên vẫn "khớp" với nội dung in; chỉ đối chiếu với sổ gốc mới phát hiện được.':
+   S.sc==='revoked'?'<b>Dừng quy trình.</b> Văn bằng thật nhưng đã bị thu hồi. Tờ bằng giấy vẫn trông hợp lệ; chỉ cơ sở dữ liệu mới cho biết trạng thái hiện tại.':
+   S.sc==='tamper'?'<b>Dừng quy trình.</b> Hạng tốt nghiệp trên bằng là "Giỏi" nhưng sổ gốc ghi "Khá". Mã QR vẫn mang mã băm của bản gốc nên lệch với nội dung in.':
+   '<b>Dừng quy trình.</b> Dữ liệu nhận dạng không khớp sổ gốc. Chỉ dùng dữ liệu khớp sổ gốc để phát hành NFT.';
+  const fz=S.sc==='tamper'?'<div class="callout warn" style="margin-bottom:8px">Mô-đun pháp y ảnh (giả lập) cảnh báo vùng "Hạng tốt nghiệp" có phông chữ và mật độ điểm ảnh bất thường, độ tin cậy 90,6%. Cảnh báo này chưa đủ để kết luận.</div>':'';
+  $('s1msg').innerHTML=fz+`<div class="callout ${S.scanOk?'ok':'bad'}">${tail}</div>`;gate();}
+$('imgFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{S.imgHash=hex(await crypto.subtle.digest('SHA-256',await f.arrayBuffer()));
+  $('imgHashNote').innerHTML=`Mã băm tệp "${esc(f.name)}" (${vn(f.size)} byte): <span class="mono">${S.imgHash.slice(0,24)}…</span>. Tệp không rời khỏi máy của bạn.`;}catch(err){$('imgHashNote').textContent='Không băm được tệp này trong trình duyệt hiện tại.';}};
+
+/* ========== BƯỚC 2 ========== */
+$('normBtn').onclick=()=>{if(!S.scanOk||S.normed)return;S.cred={};
+  BATCH.forEach(sh=>{const r=sh===MAIN?{...REG[sh],...S.ocr}:REG[sh];const salt=rand(16);S.cred[sh]={rec:r,salt,hash:sha256(salt+'|'+canon(r)),plain:sha256(canon(r))};});
+  S.normed=true;renderBatch();renderPrivacy();gate();};
+function renderBatch(){$('batchTable').innerHTML=BATCH.map(sh=>{const c=S.cred[sh];const r=REG[sh];return `<tr><td class="mono">${sh}</td><td>${esc(r.ten)}</td><td>${esc(r.nganh)}</td><td>${sh===MAIN?'<span class="pill ok">Bạn vừa quét</span>':'<span class="pill">Đã quét trước (giả lập)</span>'}</td><td class="mono">${c?c.salt.slice(0,12)+'…':'–'}</td><td class="mono">${c?c.hash.slice(0,12)+'…':'–'}</td></tr>`;}).join('');}
+function credObj(sh){const c=S.cred[sh];const r=c.rec;return {'@context':['https://www.w3.org/ns/credentials/v2'],type:['VerifiableCredential','VanBangDaiHoc'],
+  issuer:SCHOOL.did,validFrom:'2026-11-05',credentialSubject:{ten:r.ten,ngay_sinh:r.ns,mssv:r.mssv,van_bang:r.vanbang,bac:r.bac,nganh:r.nganh,hang_tot_nghiep:r.hang,so_hieu:r.sohieu,so_vao_so:r.sovao},salt:c.salt};}
+function onchainObj(sh){const c=S.cred[sh],t=S.tokens[sh];return {tokenId:tokenIdOf(sh),issuer:SCHOOL.did,credentialHash:c.hash,schoolSignature:c.sig?c.sig.slice(0,32)+'…':'(chưa ký)',storageCID:c.cid?'cid:'+c.cid.slice(0,46):'(chưa lưu trữ)',status:t?t.status:'(chưa đúc)'};}
+function renderPrivacy(){if(!S.normed){$('offJson').textContent='–';$('onJson').textContent='–';return;}$('offJson').textContent=JSON.stringify(credObj(MAIN),null,2);$('onJson').textContent=JSON.stringify(onchainObj(MAIN),null,2);}
+function dates(){const out=[];const d=new Date(Date.UTC(2000,0,1)),end=Date.UTC(2006,11,31);while(d.getTime()<=end){out.push(`${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${d.getUTCFullYear()}`);d.setUTCDate(d.getUTCDate()+1);}return out;}
+const HANG=['Xuất sắc','Giỏi','Khá','Trung bình','Không xếp hạng'];
+async function attack(salted){if(!S.normed)return;const c=S.cred[MAIN],base={...c.rec};const target=salted?c.hash:c.plain;const D=dates();let n=0;const t0=performance.now();let found=null;
+  $('atkOut').innerHTML='<div class="callout">Đang thử…</div>';await sleep(30);
+  outer:for(const d of D)for(const hg of HANG){n++;const h=sha256(canon({...base,ns:d,hang:hg}));if(h===target){found={d,hg};break outer;}}
+  const ms=Math.round(performance.now()-t0);
+  msg('atkOut',found?'bad':'ok',found?`<b>Tìm ra sau ${vn(n)} lần thử (${vn(ms)} ms):</b> ngày sinh ${found.d}, hạng ${found.hg}. Mã băm không salt làm lộ dữ liệu cá nhân dù chuỗi "chỉ lưu mã băm".`:
+    `<b>Không tìm ra</b> sau ${vn(n)} lần thử (${vn(ms)} ms). Mã băm trên chuỗi phụ thuộc vào salt 128 bit; muốn dò phải thử thêm khoảng 2<sup>128</sup> ≈ 3,4 × 10<sup>38</sup> giá trị salt cho mỗi tổ hợp.`);}
+$('atkPlain').onclick=()=>attack(false);$('atkSalt').onclick=()=>attack(true);
+
+/* ========== BƯỚC 3 ========== */
+$('keyBtn').onclick=async()=>{if(!S.normed||S.school)return;S.school=await genKey();$('schoolPub').textContent=S.school.pub;
+  $('trustReg').innerHTML=`${esc(SCHOOL.did)}<br>Hợp đồng: ${SCHOOL.contract}<br>Khóa công khai: ${S.school.pub.slice(0,20)}…<br>Đăng ký bởi: Bộ GD&amp;ĐT (giả lập)`;
+  $('keyBtn').disabled=true;$('signBtn').disabled=false;msg('s3msg',SUB?'ok':'warn',SUB?'Đã tạo cặp khóa ECDSA P-256. Khóa riêng nằm trong bộ nhớ trình duyệt, không hiển thị và không xuất ra ngoài.':'Trình duyệt không hỗ trợ Web Crypto ở chế độ này; dùng chữ ký giả lập dựa trên SHA-256.');};
+$('signBtn').onclick=async()=>{if(!S.school||S.signed)return;for(const sh of BATCH){S.cred[sh].sig=await signMsg(S.school,S.cred[sh].hash);}S.signed=true;$('signBtn').disabled=true;
+  $('vMsg').value=S.cred[MAIN].hash;$('vBtn').disabled=false;$('evilBtn').disabled=false;renderSig();renderPrivacy();
+  msg('s3msg','ok','Đã ký 4 văn bằng. Chữ ký ECDSA có thành phần ngẫu nhiên, nên ký lại cùng mã băm sẽ ra chữ ký khác nhưng vẫn hợp lệ.');gate();};
+function renderSig(){$('sigTable').innerHTML=BATCH.map(sh=>{const c=S.cred[sh];return `<tr><td class="mono">${sh}</td><td class="mono">${c?c.hash.slice(0,16)+'…':'–'}</td><td class="mono">${c&&c.sig?c.sig.slice(0,24)+'…':'–'}</td></tr>`;}).join('');}
+$('vBtn').onclick=async()=>{const m=$('vMsg').value.trim();const ok=await verifyMsg(S.school.pub,S.cred[MAIN].sig,m);
+  msg('s3msg',ok?'ok':'bad',ok?'<b>Chữ ký hợp lệ.</b> Thông điệp đúng là mã băm mà trường đã ký, bằng khóa riêng tương ứng với khóa công khai trong sổ đăng ký.':'<b>Chữ ký không hợp lệ</b> với thông điệp này. Chỉ cần đổi một ký tự, phép kiểm tra thất bại.');};
+$('evilBtn').onclick=async()=>{const ev=await genKey();const sig=await signMsg(ev,S.cred[MAIN].hash);const self=await verifyMsg(ev.pub,sig,S.cred[MAIN].hash);const vsSchool=await verifyMsg(S.school.pub,sig,S.cred[MAIN].hash);
+  msg('s3msg','bad',`Kẻ gian tạo cặp khóa riêng và ký đúng mã băm văn bằng của Mai Anh.<br>Kiểm tra với khóa của chính kẻ gian: <b>${self?'hợp lệ':'không hợp lệ'}</b>. Kiểm tra với khóa của trường trong sổ đăng ký: <b>${vsSchool?'hợp lệ':'không hợp lệ'}</b>.<br>Chữ ký đúng về toán học chưa đủ; nó phải được tạo bởi khóa đã đăng ký của đơn vị cấp. Vì vậy sổ đăng ký đơn vị cấp tin cậy là một thành phần không thể thiếu.`);};
+
+/* ========== BƯỚC 4 ========== */
+$('idBtn').onclick=()=>{if(!S.signed)return;S.idOk=true;$('idState').className='pill ok';$('idState').textContent='Đã xác thực: Nguyễn Thị Mai Anh · MSSV 62131234 (giả lập VNeID mức 2)';$('walletBtn').disabled=false;$('idBtn').disabled=true;};
+$('walletBtn').onclick=async()=>{if(!S.idOk||S.wallet)return;S.wallet=await genKey();S.wallet.addr=addrOf(S.wallet.pub);S.chal='DHDH-gan-vi|MSSV=62131234|nonce='+rand(8)+'|han=2026-11-07T23:59';
+  $('wAddr').textContent=S.wallet.addr;$('chal').textContent=S.chal;$('walletBtn').disabled=true;$('bindBtn').disabled=false;$('badBind').disabled=false;
+  msg('s4msg','','Ví được tạo trên thiết bị của sinh viên. Địa chỉ ví là 20 byte cuối của mã băm khóa công khai. Khóa riêng không bao giờ gửi cho trường.');};
+$('bindBtn').onclick=async()=>{if(!S.wallet||S.bound)return;const sig=await signMsg(S.wallet,S.chal);const ok=await verifyMsg(S.wallet.pub,sig,S.chal)&&addrOf(S.wallet.pub)===S.wallet.addr;
+  if(ok){S.bound=true;$('bindBtn').disabled=true;$('badBind').disabled=true;BATCH.filter(sh=>sh!==MAIN).forEach(sh=>S.walletsOther[sh]='0x'+sha256('wallet|'+sh).slice(-40));}
+  msg('s4msg',ok?'ok':'bad',ok?`<b>Gắn ví thành công.</b> Chữ ký trên chuỗi thử thách: <span class="mono">${sig.slice(0,24)}…</span>. Khóa công khai suy ra đúng địa chỉ <span class="mono">${shortA(S.wallet.addr)}</span>. Ba sinh viên còn lại trong lô đã gắn ví trước (giả lập).`:'Không gắn được ví.');gate();};
+$('badBind').onclick=async()=>{if(!S.wallet)return;const other=await genKey();const sig=await signMsg(S.wallet,S.chal);const ok=await verifyMsg(other.pub,sig,S.chal);
+  msg('s4msg','bad',`Sinh viên khai địa chỉ <span class="mono">${shortA(addrOf(other.pub))}</span> (ví của người khác, hoặc gõ nhầm) nhưng ký thử thách bằng khóa của ví mình. Kiểm tra chữ ký với khóa của địa chỉ đã khai: <b>${ok?'hợp lệ':'không hợp lệ'}</b>.<br>Trường từ chối gắn ví: nếu chấp nhận, NFT sẽ vào một ví mà sinh viên không kiểm soát và không bao giờ lấy ra được, vì token không chuyển nhượng.`);};
+
+/* ========== BƯỚC 5 ========== */
+const tokenIdOf=sh=>'0x'+sha256(SCHOOL.did+'|'+sh).slice(0,16);
+const ownerOf=sh=>sh===MAIN?(S.wallet?S.wallet.addr:'–'):(S.walletsOther[sh]||'–');
+function metaOf(sh){const c=S.cred[sh],r=c.rec;return {name:`${r.vanbang} – ${r.nganh}`,description:'Văn bằng giáo dục đại học số hóa (mô phỏng)',standard:'ERC-721 + ERC-5192 (soulbound)',
+  issuer:SCHOOL.did,issuer_name:SCHOOL.name,attributes:{bac:r.bac,nganh:r.nganh,nam_cap:r.ngaycap.slice(-4),so_hieu:r.sohieu},
+  credentialHash:c.hash,schoolSignature:c.sig,owner:ownerOf(sh),note:'Không chứa họ tên, ngày sinh, hạng tốt nghiệp; các dữ liệu này nằm trong tệp văn bằng số do sinh viên giữ'};}
+function renderMeta5(){$('nftMeta').textContent=S.bound?JSON.stringify(metaOf(MAIN),null,2):'(Chưa có: hoàn thành Bước 4)';}
+async function mintChecks(sh,opts={}){const c=S.cred[sh],r=c.rec,tid=tokenIdOf(sh);const minted=Object.values(S.tokens).concat(S.pending);
+  const sigOk=await verifyMsg(S.school.pub,c.sig,c.hash);
+  return runChain([
+    [()=>({ok:!opts.notIssuer,t:opts.notIssuer?'onlyIssuer: người gọi không có vai trò đơn vị cấp':'onlyIssuer: người gọi là ví của trường'}),'Vai trò đơn vị cấp'],
+    [()=>({ok:sigOk,t:sigOk?'Chữ ký của trường trên mã băm hợp lệ':'Chữ ký không hợp lệ'}),'Chữ ký của trường'],
+    [()=>{const dup=minted.some(t=>t.tid===(opts.tid||tid));return {ok:!dup,t:dup?`Số hiệu ${r.sohieu} đã có token ${opts.tid||tid}: giao dịch bị hoàn tác (revert)`:`Số hiệu ${r.sohieu} chưa từng được dùng`};},'Số hiệu chưa được dùng'],
+    [()=>{const k=r.mssv+'|'+r.bac+'|'+r.nganh;const dup=minted.some(t=>t.key===k&&t.status!=='Đã thu hồi');return {ok:!dup,t:dup?`MSSV ${r.mssv} đã có văn bằng ${r.bac} ngành ${r.nganh}: giao dịch bị hoàn tác`:`MSSV ${r.mssv} chưa có văn bằng ${r.bac} ngành ${r.nganh}`};},'Cặp (MSSV, bậc, ngành) chưa có văn bằng'],
+    [()=>{const o=ownerOf(sh);return {ok:o!=='–',t:o!=='–'?`Ví nhận ${shortA(o)} đã được gắn với người học`:'Ví nhận chưa được gắn'};},'Ví nhận đã được gắn']]);}
+$('mintBtn').onclick=async()=>{if(!S.bound||S.pending.length||S.onchain)return;const out=[];
+  for(const sh of BATCH){const r=await mintChecks(sh);const r0=S.cred[sh].rec;const t={sh,tid:tokenIdOf(sh),key:r0.mssv+'|'+r0.bac+'|'+r0.nganh,owner:ownerOf(sh),status:'Còn hiệu lực',ok:r.ok,C:r.C};if(r.ok)S.pending.push(t);out.push(t);}
+  $('mintList').innerHTML=out.map(t=>`<div class="txc ${t.ok?'ok':'bad'}"><div class="hd"><b>mint(${t.tid}) → ${shortA(t.owner)}</b><span class="pill ${t.ok?'warn':'bad'}">${t.ok?'Hợp lệ, chờ ghi khối':'Bị từ chối'}</span></div><div class="note">${esc(REG[t.sh].ten)} · ${t.sh}</div>${checksHtml(t.C)}</div>`).join('');
+  msg('s5msg','ok',`${S.pending.length} giao dịch đúc hợp lệ. Mỗi giao dịch gồm hai thao tác nguyên tử: <span class="mono">_mint(ví sinh viên, tokenId)</span> và <span class="mono">emit Locked(tokenId)</span>. NFT được đúc thẳng vào ví người học, nên "chuyển giao" diễn ra cùng lúc với "đúc". Bước tiếp: lưu trữ.`);$('mintBtn').disabled=true;gate();};
+
+/* ========== BƯỚC 6 ========== */
+const NODES0=[{k:'N1',n:'Máy chủ trường (Khánh Hòa)'},{k:'N2',n:'Trung tâm dữ liệu dự phòng (Hà Nội)'},{k:'N3',n:'Nút lưu trữ của Bộ GD&ĐT'}];
+function fileOf(){const c=S.cred[MAIN];return 'VANBANG-SO|'+JSON.stringify(credObj(MAIN))+'|sig='+c.sig+'|enc=AES-256-GCM(giả lập)';}
+$('storeBtn').onclick=()=>{if(!S.pending.length||S.stored)return;BATCH.forEach(sh=>{S.cred[sh].cid=sha256('VANBANG-SO|'+JSON.stringify(credObj(sh))+'|sig='+S.cred[sh].sig+'|enc=AES-256-GCM(giả lập)');});
+  S.nodes=NODES0.map(n=>({...n,state:'ok'}));S.stored=true;$('storeBtn').disabled=true;['killNode','badNode','fetchBtn','healNodes'].forEach(i=>$(i).disabled=false);
+  S.pending.forEach(t=>t.cid=S.cred[t.sh].cid);renderStore();renderNodes();renderPrivacy();
+  msg('s6msg','ok',`Tệp văn bằng số của Mai Anh có CID <span class="mono">${S.cred[MAIN].cid.slice(0,20)}…</span>, được nhân bản ở 3 nút. CID được ghi vào giao dịch đúc, nên chuỗi "trỏ" tới đúng nội dung này.`);gate();};
+function renderStore(){if(!S.stored){$('storeTable').innerHTML='';return;}const c=S.cred[MAIN];const R=[
+  ['Hệ thống quản lý văn bằng của trường','Sổ gốc số, tệp văn bằng có chữ ký, salt; mã hóa','Số vào sổ '+REG[MAIN].sovao,'ok','Đã lưu'],
+  ['Kho lưu trữ theo địa chỉ nội dung','Tệp văn bằng số đã mã hóa (3 bản sao)','cid:'+c.cid.slice(0,16)+'…','ok','Đã lưu'],
+  ['CSDL quốc gia về văn bằng, chứng chỉ','Thông tin cấp văn bằng, trạng thái; tra cứu qua VNeID','Số hiệu '+MAIN,'ok','Đã đồng bộ'],
+  ['Blockchain liên minh','Mã token, mã băm, chữ ký, CID, trạng thái','tokenId '+tokenIdOf(MAIN),S.onchain?'ok':'warn',S.onchain?'Đã ghi khối':'Chờ ghi khối (Bước 7)']];
+  $('storeTable').innerHTML=R.map(r=>`<tr><td>${r[0]}</td><td style="white-space:normal">${r[1]}</td><td class="mono">${r[2]}</td><td><span class="pill ${r[3]}">${r[4]}</span></td></tr>`).join('');}
+function renderNodes(){$('nodes').innerHTML=S.nodes.map(n=>`<div class="val ${n.state==='down'?'off':''}"><b>${n.k} · ${esc(n.n)}</b><span class="pill ${n.state==='ok'?'ok':'bad'}">${n.state==='ok'?'Giữ bản sao nguyên vẹn':n.state==='down'?'Mất kết nối':'Trả về tệp bị sửa'}</span></div>`).join('');}
+$('killNode').onclick=()=>{const n=S.nodes.find(x=>x.state==='ok');if(n)n.state='down';renderNodes();};
+$('badNode').onclick=()=>{const n=S.nodes.find(x=>x.state==='ok');if(n)n.state='bad';renderNodes();};
+$('healNodes').onclick=()=>{S.nodes.forEach(n=>n.state='ok');renderNodes();msg('s6msg','','');};
+$('fetchBtn').onclick=()=>{const want=S.cred[MAIN].cid;const L=[];let got=null;
+  for(const n of S.nodes){if(n.state==='down'){L.push([false,`${n.k}: không phản hồi, chuyển sang nút khác`]);continue;}
+    const f=n.state==='bad'?fileOf().replace('"hang_tot_nghiep":"Giỏi"','"hang_tot_nghiep":"Xuất sắc"'):fileOf();const h=sha256(f);
+    if(h===want){L.push([true,`${n.k}: băm tệp nhận được = CID yêu cầu, chấp nhận`]);got=n.k;break;}else L.push([false,`${n.k}: băm tệp nhận được ${h.slice(0,12)}… ≠ CID, loại bỏ tệp`]);}
+  msg('s6msg',got?'ok':'bad',checksHtml(L)+(got?`Tải được văn bằng nguyên vẹn từ ${got}. Định danh theo nội dung nghĩa là người tải tự kiểm tra được tính toàn vẹn, không cần tin nút lưu trữ.`:'Không còn nút nào giữ bản nguyên vẹn. Cần ít nhất một bản sao đúng; đây là lý do phải nhân bản ở nhiều nơi độc lập.'));};
+
+/* ========== BƯỚC 7 ========== */
+function renderMempool(){$('mempool').innerHTML=S.pending.length&&!S.onchain?S.pending.map(t=>`<span>mint ${t.tid} → ${shortA(t.owner)} | hash ${S.cred[t.sh].hash.slice(0,10)}… | cid ${t.cid?t.cid.slice(0,10)+'…':'?'}</span>`).join(''):'<span>(trống)</span>';}
+let sealing=false;
+$('sealBlock').onclick=async()=>{if(sealing||S.onchain||!S.stored){if(!S.stored)msg('s7msg','warn','Cần lưu trữ ở Bước 6 trước.');return;}
+  const q=quorum();if(q.length<2){msg('s7msg','bad',`Chỉ ${q.length}/3 nút ký, chưa đạt 2/3. Khối không được tạo; các giao dịch đúc ở lại hàng chờ. Không bên nào, kể cả nhà trường, tự ghi được văn bằng lên chuỗi.`);renderVals([]);return;}
+  sealing=true;const sig=[];for(const k of q){await wait(380);sig.push(k);renderVals(sig);}
+  const txs=S.pending.map(t=>`mint(${t.tid},to=${t.owner},hash=${S.cred[t.sh].hash},cid=${t.cid});Locked(${t.tid})`);
+  const b=addBlock('Đúc lô văn bằng 11/2026',txs,sig);S.pending.forEach(t=>{t.block=b.h;S.tokens[t.sh]=t;});S.onchain=true;sealing=false;
+  msg('s7msg','ok',`Khối #${b.h} được ${sig.length}/3 nút ký. ${txs.length} NFT văn bằng đã vào ví người học và bị khóa. Gốc Merkle <span class="mono">${b.root.slice(0,12)}…</span>. Mã token của Mai Anh: <span class="mono">${tokenIdOf(MAIN)}</span>.`);refreshAll();};
+function renderTok(){$('tokTable').innerHTML=Object.values(S.tokens).map(t=>`<tr><td class="mono">${t.tid}</td><td class="mono">${t.sh}</td><td class="mono">${shortA(t.owner)}</td><td>🔒 locked = true</td><td><span class="pill ${t.status==='Còn hiệu lực'?'ok':'bad'}">${esc(t.status)}</span></td></tr>`).join('')||'<tr><td colspan="5" class="note">Chưa có token.</td></tr>';}
+
+/* ========== BƯỚC 8 ========== */
+function card(title,ok,C,note){return `<div class="txc ${ok?'ok':'bad'}"><div class="hd"><b>${title}</b><span class="pill ${ok?'ok':'bad'}">${ok?'Thành công':'Bị từ chối'}</span></div>${checksHtml(C)}${note?`<div class="note">${note}</div>`:''}</div>`;}
+document.querySelectorAll('[data-u]').forEach(b=>b.onclick=async()=>{if(!S.onchain)return;const u=b.dataset.u;let html='';
+  if(u==='1'){const r=await mintChecks(MAIN);html=card(`mint(${tokenIdOf(MAIN)}) lần hai`,r.ok,r.C,'Mã token là hàm băm của (đơn vị cấp, số hiệu). Cùng số hiệu thì cùng mã token, và ERC-721 không cho tồn tại hai token cùng mã.');}
+  if(u==='2'){const r0=S.cred[MAIN].rec;const fakeSh='DHDH-26-007777';S.cred[fakeSh]={...S.cred[MAIN],rec:{...r0,sohieu:fakeSh}};const r=await mintChecks(fakeSh);delete S.cred[fakeSh];
+    html=card(`mint(${tokenIdOf(fakeSh)}): bằng thứ hai, số hiệu mới ${fakeSh}`,r.ok,r.C,'Số hiệu mới vượt qua kiểm tra trùng mã token, nhưng bị chặn bởi kiểm tra (MSSV, bậc, ngành). Hai lớp kiểm tra bảo vệ hai nghĩa khác nhau của "độc nhất".');}
+  if(u==='3'){const r=runChain([[()=>({ok:true,t:`Người gọi là chủ ví ${shortA(S.wallet.addr)}`}),'Người gọi là chủ ví'],[()=>({ok:false,t:`locked(${tokenIdOf(MAIN)}) = true: ERC-5192 yêu cầu mọi hàm chuyển phải hoàn tác`}),'Token không bị khóa']]);
+    html=card(`transferFrom(${shortA(S.wallet.addr)} → 0x9f3c…d5a, ${tokenIdOf(MAIN)})`,false,r.C,'Không thể bán, cho, cho mượn văn bằng. Nếu sinh viên mất ví, nhà trường thu hồi token cũ và cấp token thay thế theo quy trình, không có "chuyển nhượng".');}
+  if(u==='4'){const own=Object.values(S.tokens).filter(t=>t.sh===MAIN);
+    const C=[[own.length===1,`Hợp đồng của trường (${SCHOOL.contract}): ${own.length} token mang số hiệu ${MAIN}`],[true,`Token đó nằm ở đúng 1 ví: ${shortA(S.wallet.addr)}`],[null,'Hợp đồng 0xBAD0…c0py trên một chuỗi công khai: 1 token sao chép metadata (xem tình huống "NFT nhái")']];
+    html=card(`Quét số hiệu ${MAIN}`,own.length===1,C,'Bản sao trên hợp đồng khác luôn có thể tồn tại. Tính độc nhất được xác lập theo đơn vị cấp tin cậy, không theo hình ảnh hay metadata.');}
+  $('uOut').innerHTML=html;});
+$('verifyBtn').onclick=async()=>{if(!S.onchain)return;const cs=$('vCase').value;const sh=cs==='bao'?BAO:MAIN;const c=S.cred[sh];const tok=S.tokens[sh];
+  let pres=credObj(sh);let contract=SCHOOL.contract;let holderKey=sh===MAIN?S.wallet:null;
+  if(cs==='edit')pres={...pres,credentialSubject:{...pres.credentialSubject,hang_tot_nghiep:'Xuất sắc'}};
+  if(cs==='copy')contract='0xBAD0…c0py';
+  const chal='verify|'+rand(8);let holderOk;
+  if(cs==='thief'){const k=await genKey();const s=await signMsg(k,chal);holderOk=await verifyMsg(S.wallet.pub,s,chal);}
+  else if(sh===MAIN){const s=await signMsg(holderKey,chal);holderOk=await verifyMsg(S.wallet.pub,s,chal);}else holderOk=true;
+  const recH=sha256(pres.salt+'|'+canon({truong:SCHOOL.name,vanbang:pres.credentialSubject.van_bang,nganh:pres.credentialSubject.nganh,ten:pres.credentialSubject.ten,ns:pres.credentialSubject.ngay_sinh,hang:pres.credentialSubject.hang_tot_nghiep,ngaycap:c.rec.ngaycap,sohieu:pres.credentialSubject.so_hieu,sovao:pres.credentialSubject.so_vao_so}));
+  const sigOk=await verifyMsg(S.school.pub,c.sig,c.hash);const st=tok.status;
+  const r=runChain([
+    [()=>({ok:!!tok,t:`Token ${tok.tid} tồn tại`}),'Token tồn tại'],
+    [()=>({ok:contract===SCHOOL.contract,t:contract===SCHOOL.contract?`Hợp đồng ${contract} thuộc ${SCHOOL.did}, có trong sổ đăng ký tin cậy`:`Hợp đồng ${contract} không có trong sổ đăng ký đơn vị cấp tin cậy`}),'Hợp đồng thuộc đơn vị cấp tin cậy'],
+    [()=>({ok:recH===c.hash,t:recH===c.hash?'Băm (dữ liệu xuất trình + salt) = credentialHash trên chuỗi':`Băm dữ liệu xuất trình ${recH.slice(0,12)}… ≠ credentialHash ${c.hash.slice(0,12)}…`}),'Mã băm dữ liệu xuất trình khớp'],
+    [()=>({ok:sigOk,t:'Chữ ký của trường hợp lệ với khóa công khai đã đăng ký'}),'Chữ ký của trường'],
+    [()=>({ok:st==='Còn hiệu lực',t:'Trạng thái trên chuỗi: '+st}),'Văn bằng còn hiệu lực'],
+    [()=>({ok:holderOk,t:holderOk?'Người xuất trình ký được thử thách bằng khóa của ví nắm giữ':'Người xuất trình không ký được thử thách bằng khóa của ví nắm giữ'}),'Người xuất trình nắm khóa ví'],
+    [()=>({ok:!S.revoked[sh],t:S.revoked[sh]?'CSDL quốc gia: văn bằng đã bị thu hồi':'CSDL quốc gia về văn bằng: khớp, còn hiệu lực'}),'Khớp CSDL quốc gia về văn bằng']]);
+  const name=pres.credentialSubject.ten;
+  $('vOut').innerHTML=card(`Xác minh văn bằng ${sh} (${esc(name)})`,r.ok,r.C,r.ok?`Kết luận: văn bằng thật, do ${esc(SCHOOL.name)} cấp, còn hiệu lực, người xuất trình là chủ văn bằng. Hạng tốt nghiệp: ${esc(pres.credentialSubject.hang_tot_nghiep)}.`:'Kết luận: không xác nhận được văn bằng.');};
+$('revokeBtn').onclick=()=>{if(!S.onchain||S.revoked[BAO])return;const q=quorum();if(q.length<2){msg('s8msg','bad','Không đủ 2/3 nút xác thực (bật lại ở Bước 7).');return;}
+  S.revoked[BAO]=true;S.tokens[BAO].status='Đã thu hồi';const b=addBlock('Thu hồi văn bằng',[`setStatus(${tokenIdOf(BAO)}, REVOKED, ref=QĐ 1601/QĐ-ĐHDH ngày 07/11/2026 (giả định))`],q);
+  msg('s8msg','bad',`Khối #${b.h}: trạng thái token ${tokenIdOf(BAO)} chuyển sang "Đã thu hồi" và cơ sở dữ liệu quốc gia được cập nhật. Token <b>không bị xóa</b>: lịch sử cấp và thu hồi đều còn trên chuỗi để kiểm chứng. Chọn tình huống "Trần Quốc Bảo xuất trình" và xác minh lại.`);$('revokeBtn').disabled=true;refreshAll();};
+
+/* ---------- Làm lại, khóa bước ---------- */
+function resetAll(){Object.assign(S,{cred:{},normed:false,school:null,signed:false,idOk:false,wallet:null,chal:null,bound:false,pending:[],stored:false,nodes:[],onchain:false,tokens:{},revoked:{},walletsOther:{}});
+  S.chain=S.chain.slice(0,1);
+  ['schoolPub','trustReg','wAddr','chal'].forEach(i=>$(i).textContent='–');$('idState').className='pill';$('idState').textContent='Chưa xác thực';
+  ['keyBtn','idBtn','mintBtn','storeBtn','revokeBtn'].forEach(i=>$(i).disabled=false);['signBtn','vBtn','evilBtn','walletBtn','bindBtn','badBind','killNode','badNode','fetchBtn','healNodes'].forEach(i=>$(i).disabled=true);
+  ['s3msg','s4msg','s5msg','s6msg','s7msg','s8msg','atkOut'].forEach(i=>msg(i,'',''));['mintList','uOut','vOut','nodes'].forEach(i=>$(i).innerHTML='');$('vMsg').value='';refreshAll();}
+function gate(){const cond={2:S.scanOk,3:S.normed,4:S.signed,5:S.bound,6:S.pending.length>0,7:S.stored,8:S.onchain};
+  for(const [n,c] of Object.entries(cond))$('s'+n).classList.toggle('locked-step',!c);
+  $('normBtn').disabled=!S.scanOk||S.normed;$('atkPlain').disabled=$('atkSalt').disabled=!S.normed;if(!S.school)$('keyBtn').disabled=!S.normed;
+  if(!S.idOk)$('idBtn').disabled=!S.signed;if(!S.pending.length)$('mintBtn').disabled=!S.bound;if(!S.stored)$('storeBtn').disabled=!S.pending.length;
+  $('sealBlock').disabled=S.onchain;document.querySelectorAll('[data-u]').forEach(b=>b.disabled=!S.onchain);$('verifyBtn').disabled=!S.onchain;if(!S.revoked[BAO])$('revokeBtn').disabled=!S.onchain;}
+function refreshAll(){renderBatch();renderPrivacy();renderSig();renderMeta5();renderStore();renderMempool();renderTok();['chain7','chain8'].forEach(renderChain);gate();}
+
+/* ---------- Điều hướng ---------- */
+let cur=1;const NS=9;
+function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hidden=i!==cur;
+  document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
+  $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===NS;if(!window.__embedded){try{history.replaceState(null,'','#buoc'+cur)}catch(e){}}
+  if(cur===7)renderVals();window.scrollTo({top:0});}
+document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('prevStep').onclick=()=>go(cur-1);$('nextStep').onclick=()=>go(cur+1);
+
+/* ========== BƯỚC 9: Bài tập ========== */
+const PRAC=[
+  ['p1','Bước 1: Ghi 8 ký tự đầu của mã băm văn bằng hợp lệ. Với mỗi tình huống "bị sửa hạng", "bằng giả", "đã bị thu hồi", kiểm tra nào thất bại?'],
+  ['p2','Bước 2: Tấn công dò tìm mã băm không salt cần bao nhiêu lần thử và tìm ra gì? Với salt thì sao? Giải thích vì sao "chỉ lưu mã băm" chưa đủ để bảo vệ dữ liệu cá nhân.'],
+  ['p3','Bước 3: Khi kẻ gian ký bằng khóa của mình, kiểm tra với khóa nào thì hợp lệ, với khóa nào thì không? Vai trò của sổ đăng ký đơn vị cấp tin cậy là gì?'],
+  ['p4','Bước 4–5: Vì sao phải ký chuỗi thử thách trước khi gắn ví? Ghi địa chỉ ví và mã token của Mai Anh.'],
+  ['p5','Bước 6–7: Khi một nút lưu trữ trả về tệp bị sửa, hệ thống phát hiện bằng cách nào? Khi chỉ còn 1 nút xác thực, điều gì xảy ra?'],
+  ['p6','Bước 8: Ghi kết quả bốn phép thử tính độc nhất và năm tình huống xác minh (điều kiện thất bại). Sau khi thu hồi, token của Trần Quốc Bảo có bị xóa không?']];
+const QZ=[
+  {q:'Mục tiêu của bước đối chiếu sổ gốc khi quét văn bằng là:',o:['Kiểm tra chất lượng ảnh quét','Bảo đảm NFT chỉ được phát hành từ dữ liệu trùng khớp sổ gốc và văn bằng còn hiệu lực','Nén dung lượng ảnh','Mã hóa ảnh văn bằng'],a:1,e:'Mật mã học không sửa được dữ liệu đầu vào sai. Nếu phát hành từ một tờ bằng bị sửa, NFT sẽ "chứng nhận" một thông tin sai.'},
+  {q:'Một tờ bằng giả kèm mã QR do người làm giả tự tạo. Kiểm tra nào phát hiện được?',o:['Quét mã QR và so với nội dung in','Tra số hiệu trong sổ gốc hoặc cơ sở dữ liệu văn bằng','Đo độ tin cậy OCR','Kiểm tra màu giấy'],a:1,e:'Mã QR tự tạo luôn khớp nội dung tự in. Chỉ nguồn độc lập do đơn vị cấp quản lý mới phát hiện được.'},
+  {q:'Theo Thông tư 10/2026/TT-BGDĐT, thông tin trích xuất từ cơ sở dữ liệu về văn bằng, chứng chỉ:',o:['Chỉ có giá trị tham khảo','Có giá trị pháp lý','Chỉ có giá trị khi kèm bản sao công chứng','Chỉ dùng trong nội bộ trường'],a:1,e:'Khoản 6 Điều 2 Thông tư 10/2026/TT-BGDĐT quy định thông tin trích xuất từ cơ sở dữ liệu có giá trị pháp lý.'},
+  {q:'Vì sao không ghi họ tên, ngày sinh lên blockchain?',o:['Vì blockchain không lưu được tiếng Việt','Vì dữ liệu trên chuỗi không xóa được và mọi nút đều đọc được; chỉ cần mã băm để kiểm chứng','Vì phí giao dịch cao','Vì chuẩn ERC-721 cấm'],a:1,e:'Nguyên tắc tối thiểu hóa dữ liệu: chuỗi lưu bằng chứng (mã băm, chữ ký), còn dữ liệu cá nhân ở ngoài chuỗi.'},
+  {q:'Salt 128 bit được thêm vào trước khi băm nhằm:',o:['Tăng tốc độ băm','Chống tấn công dò tìm: không thể thử mọi tổ hợp ngày sinh, hạng để tìm lại dữ liệu từ mã băm','Mã hóa văn bằng','Thay cho chữ ký số'],a:1,e:'Không có salt, không gian ngày sinh × hạng chỉ khoảng 12.800 tổ hợp, thử hết trong vài chục mili giây.'},
+  {q:'Kẻ gian ký đúng mã băm văn bằng bằng khóa riêng của mình. Cổng xác minh:',o:['Chấp nhận vì chữ ký hợp lệ về toán học','Từ chối vì chữ ký không khớp khóa công khai của trường trong sổ đăng ký','Chấp nhận nếu mã băm đúng','Yêu cầu ký lại'],a:1,e:'Chữ ký chỉ có nghĩa khi gắn với một danh tính đáng tin. Sổ đăng ký đơn vị cấp là gốc tin cậy.'},
+  {q:'Sinh viên ký chuỗi thử thách của trường trước khi gắn ví để:',o:['Trả phí giao dịch','Chứng minh mình nắm khóa riêng của địa chỉ ví đã khai','Mã hóa văn bằng','Tạo salt'],a:1,e:'Nếu gắn nhầm ví, NFT soulbound sẽ kẹt vĩnh viễn ở một ví sinh viên không kiểm soát.'},
+  {q:'Đặc tính soulbound (ERC-5192) của NFT văn bằng nghĩa là:',o:['Token có thể bán trên sàn NFT','Token bị khóa trong ví người nhận; mọi hàm chuyển phải hoàn tác','Token tự hủy sau 5 năm','Token chỉ hiển thị trên ví của trường'],a:1,e:'Văn bằng gắn với một con người cụ thể, nên không được chuyển nhượng.'},
+  {q:'Mã token được suy ra từ (đơn vị cấp, số hiệu). Hệ quả là:',o:['Mỗi số hiệu chỉ tương ứng với một token trên hợp đồng của trường','Có thể có nhiều token cùng số hiệu','Mã token thay đổi mỗi lần xác minh','Token không cần số hiệu'],a:0,e:'ERC-721 không cho phép hai token cùng mã. Đúc lại cùng số hiệu sẽ bị hoàn tác.'},
+  {q:'Một nút lưu trữ trả về tệp văn bằng đã bị sửa. Hệ thống phát hiện vì:',o:['Nút đó bị đánh dấu xấu từ trước','Băm tệp nhận được khác CID đã ghi trên chuỗi','Tệp có dung lượng lớn hơn','Người dùng báo cáo'],a:1,e:'Với lưu trữ theo địa chỉ nội dung, định danh chính là mã băm nội dung, nên người tải tự kiểm tra được.'},
+  {q:'Có người sao chép nguyên metadata NFT văn bằng của Mai Anh lên một hợp đồng khác. Điều nào đúng?',o:['Văn bằng của Mai Anh không còn độc nhất','Bản sao bị cổng xác minh loại vì hợp đồng không thuộc đơn vị cấp tin cậy','Blockchain tự xóa bản sao','Mai Anh phải đăng ký lại'],a:1,e:'Độc nhất được xác lập theo đơn vị cấp tin cậy và hợp đồng của họ, không theo việc ngăn sao chép dữ liệu.'},
+  {q:'Khi nhà trường thu hồi văn bằng trên chuỗi:',o:['Token bị xóa khỏi chuỗi','Trạng thái token chuyển sang "Đã thu hồi", lịch sử cấp và thu hồi vẫn được lưu','Token được chuyển về ví của trường để bán lại','Chỉ cần xóa tệp ở kho lưu trữ'],a:1,e:'Blockchain không xóa lịch sử. Thu hồi là một giao dịch mới thay đổi trạng thái, đồng thời cập nhật cơ sở dữ liệu quốc gia.'}];
+const SKEY='nft-van-bang-baitap';
+function saveQ(){try{const d={n:$('stName').value,i:$('stId').value,c:$('stClass').value,p:{},q:{}};PRAC.forEach(([k])=>d.p[k]=$(k).value);QZ.forEach((_,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`);if(s)d.q[i]=+s.value;});localStorage.setItem(SKEY,JSON.stringify(d));}catch(e){}}
+function buildQuiz(){
+  $('pracList').innerHTML=PRAC.map(([k,t],i)=>`<label class="pi"><span><b>${i+1}.</b> ${esc(t)}</span><textarea id="${k}" rows="2"></textarea></label>`).join('');
+  $('quiz').innerHTML=QZ.map((x,i)=>`<div class="q" id="qq${i}"><div class="lab">Câu ${i+1}</div><p class="qt">${esc(x.q)}</p>${x.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}">${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}<div class="fb" hidden></div></div>`).join('');
+  let d=null;try{d=JSON.parse(localStorage.getItem(SKEY)||'null');}catch(e){}
+  if(d){$('stName').value=d.n||'';$('stId').value=d.i||'';$('stClass').value=d.c||'';PRAC.forEach(([k])=>{if(d.p&&d.p[k])$(k).value=d.p[k];});Object.entries(d.q||{}).forEach(([i,v])=>{const r=document.querySelector(`input[name=q${i}][value="${v}"]`);if(r)r.checked=true;});}
+  document.querySelectorAll('#s9 input,#s9 textarea').forEach(el=>el.addEventListener('input',saveQ));}
+$('grade').onclick=()=>{let ok=0,blank=0;QZ.forEach((x,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`),box=$('qq'+i),fb=box.querySelector('.fb');box.classList.remove('right','wrong');
+  if(!s){blank++;fb.hidden=false;fb.textContent='Chưa chọn đáp án.';box.classList.add('wrong');return;}
+  const r=+s.value===x.a;if(r)ok++;box.classList.add(r?'right':'wrong');fb.hidden=false;fb.innerHTML=(r?'<b>Đúng.</b> ':`<b>Chưa đúng.</b> Đáp án: ${String.fromCharCode(65+x.a)}. `)+esc(x.e);});
+  $('scoreOut').textContent=`${ok}/${QZ.length} câu · ${(ok/QZ.length*10).toLocaleString('vi-VN',{maximumFractionDigits:1})} điểm`;
+  $('scoreTime').textContent=`Chấm lúc ${new Date().toLocaleString('vi-VN')}${blank?` · ${blank} câu bỏ trống`:''}`;saveQ();};
+$('printBtn').onclick=()=>window.print();
+$('clearQuiz').onclick=()=>{if(!confirm('Xóa toàn bộ bài làm trên trình duyệt này?'))return;try{localStorage.removeItem(SKEY);}catch(e){}buildQuiz();$('scoreOut').textContent='–';$('scoreTime').textContent='';};
+buildQuiz();
+
+/* ---------- Khởi động ---------- */
+renderDip();renderVals();refreshAll();
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+(function(){const rx=/buoc([1-9])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
+if(window.__embedded){const fit=()=>{try{window.frameElement.style.height=Math.ceil(document.body.getBoundingClientRect().height)+'px';}catch(e){}};
+  try{new ResizeObserver(fit).observe(document.body);}catch(e){setInterval(fit,500);}fit();}
+</script>
+</body>
+</html>
