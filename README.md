@@ -36,6 +36,12 @@ Mô phỏng token hóa một bất động sản (sổ đỏ) qua 8 bước: qu�
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/token-hoa-tai-san.html (thêm `#buoc9` để vào thẳng phần bài tập)
 
+# Bài kiểm tra
+
+Trang làm bài kiểm tra về tài sản số, tiền mã hóa, tiền kỹ thuật số, CBDC và ngân hàng số. Học viên đăng nhập bằng MSSV và mật khẩu của Làng Tiền Số; máy sinh đề riêng theo MSSV (30 câu trắc nghiệm, 6 câu mỗi chủ đề, từ ngân hàng 100 câu; 1 tình huống từ 20; 1 câu nhận định từ 10). Trắc nghiệm 60 điểm, tình huống 20, nhận định 20. Nộp bài xong hiện điểm ngay; tự luận được chấm theo rubric từ khóa. Bài làm được mã hóa bằng khóa công khai của giảng viên và gửi qua trạm trung chuyển; giảng viên mở khu vực "Giảng viên" để phát cấu hình đợt (mã đợt, thời gian, mở/đóng), nhận bài, sửa điểm tự luận, xuất CSV và xem ngân hàng đề. Ngân hàng đề nằm trong kiem-tra-de.js (mã hóa nhẹ).
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/kiem-tra.html
+
 # NFT văn bằng
 
 Mô phỏng số hóa và phát hành NFT cho bằng đại học qua 8 bước: quét văn bằng và đối chiếu sổ gốc (4 tình huống: hợp lệ, bị sửa hạng, bằng giả, đã thu hồi), chuẩn hóa dữ liệu theo mô hình Verifiable Credentials và băm có salt (kèm thử tấn công dò tìm), nhà trường ký số ECDSA P-256 thật, sinh viên tạo ví và ký chuỗi thử thách, đúc NFT không chuyển nhượng (ERC-721 + ERC-5192) thẳng vào ví sinh viên, lưu trữ bốn lớp (trường, kho theo địa chỉ nội dung, CSDL quốc gia về văn bằng, blockchain), ghi khối trên chuỗi liên minh giáo dục, kiểm tra tính độc nhất, cổng xác minh cho nhà tuyển dụng và thu hồi văn bằng. Có phiếu bài tập 12 câu tự chấm và in được. Căn cứ: Thông tư 10/2026/TT-BGDĐT.

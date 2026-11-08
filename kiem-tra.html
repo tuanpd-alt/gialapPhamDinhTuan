@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bài kiểm tra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+/* ===== Bài kiểm tra ===== */
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.pill{display:inline-block;font:600 11.5px var(--f-body);padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--zero-bg);color:var(--zero-ink)}
+.view{display:grid;gap:16px;padding-block:16px 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;gap:10px}
+.card h2{margin:0;font:700 19px var(--f-display);text-wrap:balance}
+.card h3{margin:4px 0 0;font:600 15px var(--f-display)}
+.card p{margin:0}
+.login{max-width:440px;margin:24px auto}
+.login .f input{font-size:15px}
+.meta{display:flex;gap:8px 16px;flex-wrap:wrap;font-size:13.5px;color:var(--muted)}
+.meta b{color:var(--ink)}
+.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;gap:10px 16px;align-items:center;flex-wrap:wrap;padding-block:8px}
+.timer{font:700 20px var(--f-mono);padding:4px 10px;border-radius:8px;background:var(--sunk)}
+.timer.low{background:var(--bad-bg);color:var(--bad)}
+.prog{flex:1;min-width:140px;height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.prog span{display:block;height:100%;background:var(--accent)}
+.qnav{display:flex;flex-wrap:wrap;gap:4px}
+.qnav a{width:28px;height:28px;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);font:600 12px var(--f-mono);color:var(--ink);text-decoration:none;background:var(--surface)}
+.qnav a.done{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.qnav a.ok{background:var(--ok);border-color:var(--ok);color:#fff}.qnav a.no{background:var(--bad);border-color:var(--bad);color:#fff}
+.qz{display:grid;gap:12px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface);scroll-margin-top:70px}
+.q .lab{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.q p.qt{margin:0 0 8px;font-weight:600;line-height:1.45}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14.5px;padding:5px 6px;border-radius:7px;cursor:pointer;line-height:1.4}
+.q label:hover{background:var(--sunk)}
+.q label input{margin-top:4px;flex:none}
+.q label.right{background:var(--ok-bg)}.q label.wrongpick{background:var(--bad-bg)}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px;background:var(--sunk)}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.essay textarea{min-height:260px;font-size:15px;line-height:1.55;resize:vertical}
+.essay .cnt{font-size:12.5px;color:var(--muted);text-align:right}
+.scen{background:var(--sunk);border-radius:10px;padding:12px 14px;line-height:1.55}
+.score{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.score .s{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:2px;background:var(--surface)}
+.score .s b{font:700 26px var(--f-mono)}
+.score .s span{font-size:12.5px;color:var(--muted)}
+.score .s.total{border-color:var(--accent);background:var(--accent-soft)}
+.rub{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.rub li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:start;font-size:14px}
+.rub li .m{font-weight:700}.rub li.p .m{color:var(--ok)}.rub li.h .m{color:var(--zero-ink)}.rub li.f .m{color:var(--bad)}
+.rub li .pt{font:600 13px var(--f-mono);white-space:nowrap}
+.rub li .tip{display:block;color:var(--muted);font-size:13px}
+.hintlist{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 13.5px var(--f-body);padding:7px 12px;border-radius:8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+table.res td,table.res th{font-size:13px;white-space:nowrap}
+table.res td input{width:64px;padding:4px 6px}
+table.res tr.sel td{background:var(--accent-soft)}
+.bank .q{font-size:14px}
+.gvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+@media (max-width:560px){.card{padding:14px}.timer{font-size:17px}}
+@media print{
+  header.top,.bar,.noprint,.foot{display:none!important}
+  body{background:#fff;color:#000}.card,.q{break-inside:avoid;border-color:#999}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">✎</div>
+  <div class="ttl"><h1>Bài kiểm tra</h1><div class="sub">Tài sản số · tiền mã hóa · tiền kỹ thuật số · CBDC · ngân hàng số</div></div>
+  <div class="sp"></div>
+  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
+  <button class="btnlink" id="gvBtn" type="button">Giảng viên</button>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<div class="bar" id="examBar" hidden><div class="wrap">
+  <span class="timer" id="timer">--:--</span>
+  <div class="prog" aria-hidden="true"><span id="progBar" style="width:0"></span></div>
+  <span class="note" id="progTxt">0/32</span>
+  <button class="btn primary sm" id="submitTop">Nộp bài</button>
+</div></div>
+
+<main class="wrap">
+
+<!-- ===== Đăng nhập ===== -->
+<section class="view" id="vLogin">
+  <div class="card login">
+    <h2>Đăng nhập làm bài</h2>
+    <p class="note">Dùng mã số sinh viên và mật khẩu như khi vào Làng Tiền Số. Mỗi học viên nhận một đề riêng gồm 30 câu trắc nghiệm, 1 tình huống và 1 câu nhận định.</p>
+    <label class="f">Mã số sinh viên<input id="lgId" autocomplete="username" spellcheck="false"></label>
+    <label class="f">Mật khẩu<input id="lgPw" type="password" autocomplete="current-password" spellcheck="false"></label>
+    <div class="row"><button class="btn primary" id="lgGo">Đăng nhập</button><span class="note" id="lgMsg" role="status"></span></div>
+  </div>
+</section>
+
+<!-- ===== Thông tin trước khi làm ===== -->
+<section class="view" id="vIntro" hidden>
+  <div class="card">
+    <h2>Thông tin bài kiểm tra</h2>
+    <div class="meta" id="introMeta"></div>
+    <div class="score">
+      <div class="s"><b>30 câu</b><span>Trắc nghiệm · 2 điểm/câu · 60 điểm</span></div>
+      <div class="s"><b>1 câu</b><span>Tình huống · 20 điểm</span></div>
+      <div class="s"><b>1 câu</b><span>Nhận định · 20 điểm</span></div>
+      <div class="s total"><b id="introMin">60'</b><span>Thời gian làm bài</span></div>
+    </div>
+    <ul class="hintlist">
+      <li>Đề được máy chọn ngẫu nhiên từ ngân hàng 100 câu trắc nghiệm, 20 tình huống và 10 câu nhận định; đề của bạn cố định theo mã số sinh viên.</li>
+      <li>Bài làm được lưu tự động trên máy. Hết giờ, máy tự nộp.</li>
+      <li>Phần tự luận được máy chấm theo rubric (căn cứ pháp lý, phân tích, giải pháp, trình bày). Điểm máy chấm mang tính tham khảo; giảng viên có thể điều chỉnh.</li>
+      <li>Máy ghi nhận số lần rời khỏi trang và số lần dán văn bản vào phần tự luận.</li>
+    </ul>
+    <div id="introMsg"></div>
+    <div class="row"><button class="btn primary" id="startBtn">Bắt đầu làm bài</button><button class="btn" id="logoutBtn">Đăng xuất</button></div>
+  </div>
+</section>
+
+<!-- ===== Làm bài ===== -->
+<section class="view" id="vExam" hidden>
+  <div class="card">
+    <h2>Phần I. Trắc nghiệm (60 điểm)</h2>
+    <p class="note">Chọn một phương án đúng nhất cho mỗi câu.</p>
+    <div class="qnav" id="qnav"></div>
+  </div>
+  <div class="qz" id="mcqList"></div>
+  <div class="card essay" id="caseCard"></div>
+  <div class="card essay" id="opCard"></div>
+  <div class="card">
+    <div class="row"><button class="btn primary" id="submitBtn">Nộp bài</button><span class="note" id="saveNote">Bài làm đang được lưu tự động.</span></div>
+  </div>
+</section>
+
+<!-- ===== Kết quả ===== -->
+<section class="view" id="vResult" hidden>
+  <div class="card">
+    <h2>Kết quả bài kiểm tra</h2>
+    <div class="meta" id="resMeta"></div>
+    <div class="score" id="resScore"></div>
+    <div id="sendState"></div>
+    <div class="row noprint"><button class="btn" id="resendBtn" hidden>Gửi lại cho giảng viên</button><button class="btn" id="dlBtn">Tải tệp bài làm</button><button class="btn" id="printRes">In / lưu PDF</button><button class="btn" id="logout2">Đăng xuất</button></div>
+  </div>
+  <div class="card" id="resCase"></div>
+  <div class="card" id="resOp"></div>
+  <div class="card"><h2>Chi tiết phần trắc nghiệm</h2><div class="qnav" id="resNav"></div></div>
+  <div class="qz" id="resMcq"></div>
+</section>
+
+<!-- ===== Giảng viên ===== -->
+<section class="view" id="vTeacher" hidden>
+  <div class="card login" id="gvLogin">
+    <h2>Giảng viên đăng nhập</h2>
+    <p class="note">Dùng mật khẩu giảng viên của Làng Tiền Số. Nếu thầy/cô đã mở khóa giảng viên ở Làng Tiền Số trên máy này, trang tự nhận.</p>
+    <label class="f">Mật khẩu giảng viên<input id="gvPw" type="password" autocomplete="current-password"></label>
+    <div class="row"><button class="btn primary" id="gvGo">Mở khóa</button><button class="btn" id="gvBack">Quay lại</button><span class="note" id="gvMsg"></span></div>
+  </div>
+  <div id="gvPanel" hidden>
+    <div class="card">
+      <div class="row"><h2 style="flex:1">Bảng điều khiển giảng viên</h2><button class="btn sm" id="gvLock">Khóa</button><button class="btn sm" id="gvBack2">Về trang làm bài</button></div>
+      <div class="tabs" role="tablist" id="gvTabs">
+        <button data-t="cfg" aria-selected="true">Đợt kiểm tra</button>
+        <button data-t="sub" aria-selected="false">Bài nộp và điểm</button>
+        <button data-t="bank" aria-selected="false">Ngân hàng đề</button>
+      </div>
+    </div>
+    <div class="card" data-p="cfg">
+      <h3>Cấu hình đợt kiểm tra</h3>
+      <p class="note">Cấu hình được ký bằng khóa giảng viên và phát qua trạm trung chuyển; học viên mở trang sẽ nhận cấu hình mới. Đổi mã đợt thì mọi học viên nhận đề mới.</p>
+      <div class="gvgrid">
+        <label class="f">Mã đợt<input id="cRound" value="KT1"></label>
+        <label class="f">Thời gian (phút)<input id="cMin" type="number" min="10" max="240" value="60"></label>
+        <label class="f">Trạng thái<select id="cOpen"><option value="1">Đang mở</option><option value="0">Đã đóng</option></select></label>
+        <label class="f">Hiện đáp án sau khi nộp<select id="cKey"><option value="1">Có</option><option value="0">Không</option></select></label>
+      </div>
+      <div class="row"><button class="btn primary" id="cPub">Phát cấu hình</button><span class="note" id="cMsg"></span></div>
+    </div>
+    <div class="card" data-p="sub" hidden>
+      <h3>Bài nộp</h3>
+      <div class="row"><label class="f" style="flex:1;min-width:140px">Mã đợt<input id="sRound" value="KT1"></label>
+        <button class="btn primary" id="sFetch">Tải bài nộp từ trạm</button>
+        <label class="btn" style="display:inline-flex;align-items:center">Nhập tệp bài làm<input type="file" id="sFile" accept=".json,application/json" multiple hidden></label>
+        <button class="btn" id="sCsv">Xuất CSV (Excel)</button></div>
+      <div id="sMsg"></div>
+      <div class="scroll"><table class="res">
+        <thead><tr><th>MSSV</th><th>Họ tên</th><th class="num">TN (/60)</th><th class="num">Tình huống máy</th><th class="num">Tình huống GV</th><th class="num">Nhận định máy</th><th class="num">Nhận định GV</th><th class="num">Tổng (/100)</th><th>Nộp lúc</th><th class="num">Phút</th><th class="num">Rời trang</th><th class="num">Dán</th><th class="num">Lần nộp</th><th></th></tr></thead>
+        <tbody id="sTable"><tr><td colspan="14" class="note">Chưa có dữ liệu.</td></tr></tbody>
+      </table></div>
+      <div id="sDetail"></div>
+    </div>
+    <div class="card" data-p="bank" hidden>
+      <h3>Ngân hàng đề</h3>
+      <div class="row"><label class="f" style="min-width:160px">Lọc<select id="bFilter"><option value="mcq">100 câu trắc nghiệm</option><option value="case">20 tình huống</option><option value="op">10 câu nhận định</option></select></label>
+        <label class="f" style="min-width:160px">Xem đề của MSSV<input id="bMssv" placeholder="ví dụ 62131234"></label><button class="btn" id="bShow">Xem đề</button><button class="btn" id="bPrint">In</button></div>
+      <div class="bank qz" id="bankList"></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap foot">Bài kiểm tra chạy trong trình duyệt. Bài làm được mã hóa bằng khóa công khai của giảng viên trước khi gửi qua trạm trung chuyển; chỉ giảng viên giải mã được. Ngân hàng đề cập nhật pháp luật đến 08/11/2026: Luật Công nghiệp công nghệ số 2025, Nghị quyết 05/2025/NQ-CP, Nghị định 284/2026/NĐ-CP, Luật Thuế TNCN (sửa đổi) 2025, Thông tư 32/2026/TT-BTC, Thông tư 165/2026/TT-BTC, Quyết định 1413/QĐ-TTg, Luật Bảo vệ dữ liệu cá nhân 2025, các thông tư của NHNN về ngân hàng số.</footer>
+<script>
+/* ===== Đăng nhập học viên: MSSV + mật khẩu mở "khóa lớp" (PBKDF2-SHA256 + AES-GCM) =====
+   hocvien.json chỉ chứa khóa lớp và khóa ký riêng của từng tài khoản, đã bọc bằng mật khẩu; không chứa mật khẩu.
+   Học viên tự đổi mật khẩu: bản bọc mới được ký bằng khóa ký riêng của tài khoản và giữ lại trên trạm trung chuyển. */
+window.__GATE__=(function(){
+  const sub=crypto.subtle,enc=new TextEncoder(),dec=new TextDecoder();
+  const b64=u=>{u=new Uint8Array(u);let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);};
+  const ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+  const LS='ltso-login',LU='ltso-upd',ITER=150000;
+  const lsSet=(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}},lsDel=k=>{try{localStorage.removeItem(k);}catch(e){}};
+  const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'};
+  const norm=s=>String(s||'').trim().toUpperCase().replace(/\s+/g,'');
+  async function hex(s){return Array.from(new Uint8Array(await sub.digest('SHA-256',enc.encode(s))),x=>x.toString(16).padStart(2,'0')).join('');}
+  const idOf=async m=>(await hex('ltso-sv|'+norm(m))).slice(0,32);
+  const kidOf=async raw=>(await hex('ltso-k|'+b64(raw))).slice(0,12);
+  let resolveReady;const ready=new Promise(r=>{resolveReady=r;});
+  let file=null;
+  async function loadFile(){try{const r=await fetch('./hocvien.json?t='+Date.now(),{cache:'no-store'});if(r.ok)file=await r.json();}catch(e){}return file;}
+  async function wrapKey(mssv,pw,salt,iter){const base=await sub.importKey('raw',enc.encode(norm(mssv)+'|'+pw),'PBKDF2',false,['deriveKey']);
+    return sub.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+  async function seal(aes,str){const iv=crypto.getRandomValues(new Uint8Array(12));return b64(iv)+'.'+b64(await sub.encrypt({name:'AES-GCM',iv},aes,enc.encode(str)));}
+  async function open(aes,s){const p=String(s).split('.');return dec.decode(await sub.decrypt({name:'AES-GCM',iv:ub(p[0])},aes,ub(p[1])));}
+  /* bọc / mở bí mật của tài khoản: {k: khóa lớp, sk: khóa ký riêng} */
+  async function wrapSecret(mssv,pw,raw,skJwk,iter){const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    const k=await wrapKey(mssv,pw,salt,iter||ITER);const pt=enc.encode(JSON.stringify({k:b64(raw),sk:skJwk}));
+    return {s:b64(salt),i:b64(iv),c:b64(await sub.encrypt({name:'AES-GCM',iv},k,pt))};}
+  async function unwrapSecret(mssv,pw,e,iter){const k=await wrapKey(mssv,pw,ub(e.s),iter||ITER);
+    const pt=new Uint8Array(await sub.decrypt({name:'AES-GCM',iv:ub(e.i)},k,ub(e.c)));
+    if(pt.length===32)return {raw:pt,sk:null};const o=JSON.parse(dec.decode(pt));return {raw:ub(o.k),sk:o.sk};}
+  /* ---- bản ghi đổi mật khẩu trên trạm trung chuyển ---- */
+  const qs=new URLSearchParams(location.search);
+  const BROKERS=qs.get('broker')?[qs.get('broker')]:['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+  const PV=+(qs.get('v')||5);
+  const topicOf=id=>'gialapPhamDinhTuan/'+((window.__ADMIN__&&window.__ADMIN__.room)||'x')+'/acct/'+id;
+  const canon=u=>JSON.stringify({id:u.id,b:u.b,q:u.q,e:{s:u.e.s,i:u.e.i,c:u.e.c}});
+  async function verifyUpd(u,id,base){try{if(!u||u.id!==id||!base.p||u.b!==base.c.slice(0,24))return false;const[x,y]=base.p.split('.');
+    const pk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},EC,false,['verify']);
+    return await sub.verify(SG,pk,ub(u.sig),enc.encode(canon(u)));}catch(e){return false;}}
+  function withBroker(url,fn,ms){return new Promise(res=>{if(typeof mqtt==='undefined'){res(null);return;}let done=false,cl;
+    const fin=v=>{if(done)return;done=true;try{cl&&cl.end(true);}catch(e){}res(v);};
+    try{cl=mqtt.connect(url,{protocolVersion:PV,clean:true,reconnectPeriod:0,connectTimeout:ms,clientId:'ga_'+Math.random().toString(36).slice(2,10)});}catch(e){fin(null);return;}
+    cl.on('error',()=>fin(null));setTimeout(()=>fin(null),ms+1500);cl.on('connect',()=>fn(cl,fin));});}
+  /* đọc bản đổi mật khẩu mới nhất, hợp lệ; trả {upd, reached} */
+  async function fetchUpdate(id,base,wait){wait=wait||2600;
+    const got=await Promise.all(BROKERS.map(u=>withBroker(u,(cl,fin)=>{const t=topicOf(id);let best=null;
+      cl.on('message',(tp,buf)=>{if(tp!==t||!buf||!buf.length)return;try{const v=JSON.parse(dec.decode(buf));if(!best||v.q>best.q)best=v;}catch(e){}setTimeout(()=>fin({best}),400);});
+      cl.subscribe(t,{qos:1},err=>{if(err)fin({best:null});else setTimeout(()=>fin({best}),wait);});},Math.max(5000,wait+2500))));
+    let upd=null,reached=false;
+    for(const g of got){if(!g)continue;reached=true;if(g.best&&(!upd||g.best.q>upd.q)&&await verifyUpd(g.best,id,base))upd=g.best;}
+    return {upd,reached};}
+  async function publishUpdate(id,u){
+    const ok=await Promise.all(BROKERS.map(url=>withBroker(url,(cl,fin)=>{cl.publish(topicOf(id),JSON.stringify(u),{qos:1,retain:true},err=>fin(!err));},6000)));
+    return ok.filter(Boolean).length;}
+  /* ---- đăng nhập ---- */
+  async function finish(mssv,raw,kid){const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt','decrypt']);
+    const g={mssv,kid,aes,raw};api.cur=g;resolveReady(g);return g;}
+  async function openAccount(mssv,pw,forChange){
+    if(!norm(mssv)||!pw)throw new Error('Nhập đủ mã số sinh viên và mật khẩu.');
+    const f=await loadFile();if(!f||!f.users)throw new Error('Không tải được danh sách tài khoản. Kiểm tra kết nối mạng rồi thử lại.');
+    const id=await idOf(mssv),base=f.users[id];if(!base)throw new Error('Mã số '+norm(mssv)+' chưa được cấp tài khoản. Hãy hỏi giảng viên.');
+    let {upd,reached}=base.p?await fetchUpdate(id,base):{upd:null,reached:true};
+    let sec=null;try{sec=await unwrapSecret(mssv,pw,upd?upd.e:base,f.iter);}catch(x){}
+    if(!sec&&!upd&&base.p){const r2=await fetchUpdate(id,base,5000);reached=reached||r2.reached;
+      if(r2.upd){upd=r2.upd;try{sec=await unwrapSecret(mssv,pw,upd.e,f.iter);}catch(x){}}}
+    if(!sec){const lead=forChange?'Ô "Mật khẩu hiện tại" chưa đúng.':'Sai mật khẩu.';
+      const err=new Error(lead+' '+(upd?'Tài khoản này đã từng tự đổi mật khẩu: hãy nhập mật khẩu tự đặt gần nhất.'
+        :reached?'Hãy nhập mật khẩu đang dùng để đăng nhập (mật khẩu giảng viên cấp có dạng abcd-2345, hoặc mật khẩu bạn tự đặt nếu đã đổi).'
+        :'Cũng có thể chưa kết nối được trạm để kiểm tra mật khẩu bạn đã tự đổi; kiểm tra mạng rồi thử lại.')+' Mật khẩu phân biệt chữ hoa và chữ thường.');
+      err.field='old';throw err;}
+    const kid=await kidOf(sec.raw);if(kid!==f.kid)throw new Error('Tài khoản này thuộc khóa lớp cũ. Hãy hỏi giảng viên cấp lại.');
+    return {f,id,base,upd,sec,kid};}
+  async function login(mssv,pw){const a=await openAccount(mssv,pw);
+    lsSet(LS,JSON.stringify({m:norm(mssv),k:b64(a.sec.raw),kid:a.kid}));if(a.upd)lsSet(LU,JSON.stringify(a.upd));else lsDel(LU);
+    return finish(norm(mssv),a.sec.raw,a.kid);}
+  async function changePassword(oldPw,newPw){
+    const g=api.cur;if(!g)throw new Error('Hãy đăng nhập trước.');
+    const a=await openAccount(g.mssv,oldPw,true);
+    if(!a.sec.sk||!a.base.p)throw new Error('Tài khoản này được cấp theo định dạng cũ nên chưa tự đổi được mật khẩu. Hãy nhờ giảng viên cấp lại.');
+    const e=await wrapSecret(g.mssv,newPw,a.sec.raw,a.sec.sk,a.f.iter);
+    const u={id:a.id,b:a.base.c.slice(0,24),q:Math.max(Date.now(),a.upd?a.upd.q+1:0),e};
+    const sk=await sub.importKey('jwk',a.sec.sk,EC,false,['sign']);u.sig=b64(await sub.sign(SG,sk,enc.encode(canon(u))));
+    const n=await publishUpdate(a.id,u);if(n)lsSet(LU,JSON.stringify(u));if(!n)throw new Error('Không kết nối được trạm trung chuyển nên chưa lưu được mật khẩu mới. Mật khẩu cũ vẫn dùng được; hãy thử lại sau.');
+    return n;}
+  async function auto(){let s=null;try{s=JSON.parse(localStorage.getItem(LS)||'null');}catch(e){}
+    if(!s||!s.k||!s.m)return null;
+    const f=await loadFile();
+    if(f&&(f.kid!==s.kid||!f.users[await idOf(s.m)])){logout(false);return null;}
+    setTimeout(()=>heal(f).catch(()=>{}),3000);
+    return finish(s.m,ub(s.k),s.kid);}
+  /* tự phục hồi: nếu bản đổi mật khẩu trên trạm bị xóa hoặc ghi đè, máy này phát lại bản hợp lệ nó đang giữ */
+  async function heal(f){let u=null;try{u=JSON.parse(lsGet(LU)||'null');}catch(e){}if(!u||!f||!f.users)return;
+    const base=f.users[u.id];if(!base||!(await verifyUpd(u,u.id,base))){lsDel(LU);return;}
+    const {upd,reached}=await fetchUpdate(u.id,base);if(!reached)return;
+    if(upd&&upd.q>u.q){lsSet(LU,JSON.stringify(upd));return;}
+    if(!upd||upd.q<u.q)await publishUpdate(u.id,u);}
+  function logout(reload){try{localStorage.removeItem(LS);localStorage.removeItem(LU);}catch(e){}if(reload!==false)location.reload();}
+  function checkNew(mssv,pw,pw2){
+    if(pw.length<8)return 'Mật khẩu mới cần ít nhất 8 ký tự.';
+    if(/^\d+$/.test(pw))return 'Mật khẩu không nên chỉ có chữ số.';
+    if(norm(pw).includes(norm(mssv)))return 'Mật khẩu không được chứa mã số sinh viên.';
+    if(/^(.)\1+$/.test(pw)||/^(12345678|password|matkhau|abcd1234|qwerty)/i.test(pw))return 'Mật khẩu này quá dễ đoán.';
+    if(pw!==pw2)return 'Hai lần nhập mật khẩu mới không giống nhau.';
+    return '';}
+  /* ---- công cụ của giảng viên ---- */
+  const AL='abcdefghjkmnpqrstuvwxyz23456789';
+  function genPw(){let s='';while(s.replace('-','').length<8){const b=crypto.getRandomValues(new Uint8Array(1))[0];if(b<248){s+=AL[b%31];if(s.length===4)s+='-';}}return s;}
+  async function makeEntry(mssv,name,pw,raw,iter){
+    const kp=await sub.generateKey(EC,true,['sign','verify']);const skJwk=await sub.exportKey('jwk',kp.privateKey);
+    const e=await wrapSecret(mssv,pw,raw,skJwk,iter);e.p=skJwk.x+'.'+skJwk.y;
+    const aes=await sub.importKey('raw',raw,'AES-GCM',false,['encrypt']);e.l=await seal(aes,JSON.stringify({m:norm(mssv),n:name||''}));
+    return [await idOf(mssv),e];}
+  async function listUsers(f,aes){const out=[];for(const id in (f&&f.users)||{}){try{out.push(JSON.parse(await open(aes,f.users[id].l)));}catch(e){out.push({m:'(không đọc được)',n:''});}}
+    return out.sort((a,b)=>a.m.localeCompare(b.m));}
+  const api={ready,login,auto,logout,changePassword,checkNew,seal,open,loadFile,makeEntry,genPw,listUsers,idOf,kidOf,norm,b64,ub,ITER,cur:null};
+  return api;
+})();
+</script>
+<script>
+window.__ADMIN__={"pub": "Mn34_GOPZppCKUVTvxdVIDhtLm4zZ58os0XW46zfcqs.9eoo_Yv9TRnT_qvKC7zroVzb291sM5IBn9ntgdBupZw", "salt": "csKahcDEFB5SBOSuNuFYPg==", "iv": "5toMVqrbCHG2/am4", "ct": "4dbX4hfzKxlDpIjo9H5FnDKKheP34WNfqhTmSKPj/kjGj7O7/Iscbi5u/e1UutpxxIOoD5ghxQLzNoLmbyrhDznGL43IZh1WipnLqlRi7m8JJf/TkIokGEVldhK0myua48ts3zSmp1dqJ0GQ+pjOS4Nps1S/Ncqe4F/vSjPdI8p8k9ntWGGohubyaxUa9yt/TFQm1qy0gkZ8ulOaao0oTILiIZZFB+4QIrc3sKG0xnApzcSUTNuh+RwzpOD+95btS9uDeUwl2x+9nePjEOJXJ+JsKqNiKiqI0Nn8pWqv", "room": "V9XTGCvO"};
+</script>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script src="./kiem-tra-de.js"></script>
+<script>
+/* ---------- SHA-256 ---------- */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const ENC=new TextEncoder();const W=new Uint32Array(64);
+function sha256(str){const m=ENC.encode(str),l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+for(let t=0;t<64;t++){const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));const mj=(a&b)^(a&c)^(b&c);const t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;}
+return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');}
+
+/* ================= Bài kiểm tra ================= */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const GT=window.__GATE__;let A=window.__ADMIN__;
+const sub=crypto.subtle,enc=new TextEncoder(),dec=new TextDecoder();
+const b64=GT.b64,ub=GT.ub;
+const ls={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},del:k=>{try{localStorage.removeItem(k);}catch(e){}}};
+const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
+const ROOT=()=>'gialapPhamDinhTuan/'+A.room+'/exam';
+const DEF_CFG={round:'KT1',minutes:60,open:true,showKey:true};
+const r25=x=>Math.round(x*4)/4;
+const fmtN=x=>(Math.round(x*100)/100).toLocaleString('vi-VN');
+const fmtT=t=>t?new Date(t).toLocaleString('vi-VN'):'–';
+const TOPIC={A:'Pháp lý tài sản số',B:'Tiền mã hóa & blockchain',C:'Tiền kỹ thuật số & stablecoin',D:'CBDC',E:'Ngân hàng số'};
+const KIND={LT:'Khái niệm',PB:'Phân biệt',TH:'Tình huống'};
+
+/* ---------- Ngân hàng đề ---------- */
+function decodeBank(){const raw=atob(window.__DE__||'');const out=new Uint8Array(raw.length);let ks='',ki=0,blk=0;
+  for(let i=0;i<raw.length;i++){if(ki>=ks.length){ks=sha256('ltso-kt-v1:'+(blk++));ki=0;}out[i]=raw.charCodeAt(i)^parseInt(ks.substr(ki,2),16);ki+=2;}
+  return JSON.parse(dec.decode(out));}
+let B=null,QI={},CI={},OI={};
+try{B=decodeBank();B.mcq.forEach(q=>QI[q.id]=q);B.cases.forEach(c=>CI[c.id]=c);B.ops.forEach(o=>OI[o.id]=o);}catch(e){console.error(e);}
+
+/* ---------- Sinh đề theo MSSV ---------- */
+function rng(hex){let a=parseInt(hex.slice(0,8),16)>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function makeExam(mssv,round){const m=GT.norm(mssv);const r=rng(sha256('kt|'+round+'|'+m));const qs=[];
+  for(const t of 'ABCDE')qs.push(...shuffle(B.mcq.filter(q=>q.t===t),r).slice(0,6));
+  const mcq=shuffle(qs,r).map(q=>({id:q.id,perm:shuffle([0,1,2,3],r)}));
+  const cs=B.cases[Math.floor(r()*B.cases.length)],op=B.ops[Math.floor(r()*B.ops.length)];
+  return {round,mssv:m,mcq,caseId:cs.id,opId:op.id};}
+
+/* ---------- Chấm trắc nghiệm ---------- */
+function gradeMcq(ex,ans){let ok=0;const rows=ex.mcq.map(it=>{const q=QI[it.id];const c=ans[it.id];const right=c===q.a;if(right)ok++;return{id:it.id,c,right};});
+  return {ok,n:ex.mcq.length,pts:ok*2,rows};}
+
+/* ---------- Chấm tự luận theo rubric ---------- */
+const nz=s=>String(s||'').toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/%/g,' phantram ').replace(/[^a-z0-9]+/g,' ').trim();
+const has=(T,k)=>{const kk=nz(k);return kk&&T.includes(' '+kk+' ');};
+const CONNECT=['vi','vi vay','do do','tuy nhien','ngoai ra','boi vi','mat khac','theo do','do vay','nhu vay','thu nhat','thu hai','ket luan','tom lai','dong thoi','ben canh do','trong khi'];
+const MIS=[
+ ['bitcoin la phuong tien thanh toan hop phap','Bitcoin không phải là phương tiện thanh toán hợp pháp tại Việt Nam; chỉ đồng Việt Nam do NHNN phát hành mới là phương tiện thanh toán hợp pháp.'],
+ ['tien ma hoa la phuong tien thanh toan hop phap','Tiền mã hóa không phải là phương tiện thanh toán hợp pháp tại Việt Nam.'],
+ ['tai san ma hoa la phuong tien thanh toan','Tài sản mã hóa không được dùng làm phương tiện thanh toán.'],
+ ['bitcoin la tien te hop phap','Bitcoin không phải tiền tệ hợp pháp tại Việt Nam.'],
+ ['duoc phep thanh toan bang bitcoin','Pháp luật Việt Nam không cho phép thanh toán bằng Bitcoin.'],
+ ['duoc thanh toan bang tien ma hoa','Pháp luật Việt Nam không cho phép thanh toán bằng tiền mã hóa.'],
+ ['usdt la ngoai te','USDT không phải ngoại tệ theo pháp luật quản lý ngoại hối.'],
+ ['stablecoin la ngoai te','Stablecoin không phải ngoại tệ theo pháp luật quản lý ngoại hối.'],
+ ['chao ban cho nha dau tu trong nuoc','Theo NQ 05/2025/NQ-CP, tài sản mã hóa chỉ được chào bán, phát hành cho nhà đầu tư nước ngoài.'],
+ ['0 1 phantram tren loi nhuan','Thuế 0,1% tính trên giá trị từng lần chuyển nhượng, không tính trên lợi nhuận.'],
+ ['cbdc la tien ma hoa','CBDC là nghĩa vụ nợ của ngân hàng trung ương, không phải tiền mã hóa.'],
+ ['ngan hang thuong mai phat hanh cbdc','CBDC do ngân hàng trung ương phát hành; ngân hàng thương mại chỉ phân phối trong mô hình hai tầng.']];
+function scoreEssay(item,text,prompt){
+  const raw=String(text||'');const N=nz(raw);const T=' '+N+' ';const words=N?N.split(' '):[];const w=words.length;
+  const sentences=raw.split(/[.!?;\n]+/).map(s=>s.trim()).filter(s=>s.split(/\s+/).length>=4).length;
+  const uniq=new Set(words).size/(w||1);const notes=[];
+  let factor=w<50?0.25:w<100?0.45:w<150?0.7:w<200?0.85:1;
+  if(w<200)notes.push(`Bài dài ${w} từ (khuyến nghị từ 250 từ): điểm các tiêu chí nội dung được nhân hệ số ${String(factor).replace('.',',')}.`);
+  if(w>=60&&uniq<0.3){factor*=0.7;notes.push('Bài lặp từ nhiều bất thường: điểm nội dung bị nhân hệ số 0,7.');}
+  if(prompt&&w>=20){const P=nz(prompt).split(' ');const grams=new Set();for(let i=0;i+5<=P.length;i++)grams.add(P.slice(i,i+5).join(' '));
+    let c=0,t=0;for(let i=0;i+5<=words.length;i++){t++;if(grams.has(words.slice(i,i+5).join(' ')))c++;}
+    if(t&&c/t>0.4){factor*=0.6;notes.push('Phần lớn bài làm chép lại đề bài: điểm nội dung bị nhân hệ số 0,6.');}}
+  const crit=item.crit.map(cr=>{
+    if(cr.auto==='style'){let conn=0;CONNECT.forEach(k=>{if(T.includes(' '+k+' '))conn++;});
+      const s=(w>=200?1:w>=120?0.6:w>=60?0.3:0)+(sentences>=5?0.5:sentences>=3?0.25:0)+(conn>=3?0.5:conn>=1?0.25:0);
+      return {n:cr.n,p:cr.p,got:r25(Math.min(cr.p,s)),hit:null,need:null,tip:cr.tip,info:`${w} từ · ${sentences} câu · ${conn} từ nối lập luận`};}
+    const hitIdx=cr.g.map((grp,i)=>grp.some(k=>has(T,k))?i:-1).filter(i=>i>=0);
+    const got=r25(cr.p*Math.min(1,hitIdx.length/cr.need)*factor);
+    return {n:cr.n,p:cr.p,got,hit:hitIdx.length,need:cr.need,tip:cr.tip};});
+  let pen=0;const mis=[];
+  MIS.forEach(([pat,msg])=>{const k=' '+pat+' ';let i=T.indexOf(k);while(i>=0){const pre=T.slice(Math.max(0,i-32),i);
+      if(!/ (khong|chua|cam|chang|sai|nham|khong phai) /.test(pre+' ')){mis.push(msg);pen+=2;break;}i=T.indexOf(k,i+1);}});
+  pen=Math.min(4,pen);if(mis.length)notes.push(`Phát hiện nhận định sai về pháp lý hoặc khái niệm: trừ ${pen} điểm.`);
+  const sum=crit.reduce((s,c)=>s+c.got,0);const score=Math.max(0,r25(sum-pen));
+  const band=score>=17?'Rất tốt':score>=14?'Tốt':score>=11?'Khá':score>=8?'Trung bình':'Cần bổ sung nhiều';
+  return {score,max:20,crit,notes,mis,pen,w,band};}
+
+/* ---------- Trạm trung chuyển (MQTT) ---------- */
+function withBroker(url,fn,ms){return new Promise(res=>{if(typeof mqtt==='undefined'){res(null);return;}let done=false,cl;
+  const fin=v=>{if(done)return;done=true;try{cl&&cl.end(true);}catch(e){}res(v);};
+  try{cl=mqtt.connect(url,{protocolVersion:5,clean:true,reconnectPeriod:0,connectTimeout:ms,clientId:'kt_'+Math.random().toString(36).slice(2,10)});}catch(e){fin(null);return;}
+  cl.on('error',()=>fin(null));setTimeout(()=>fin(null),ms+2000);cl.on('connect',()=>fn(cl,fin));});}
+async function publishAll(topic,payload){const r=await Promise.all(BROKERS.map(u=>withBroker(u,(cl,fin)=>cl.publish(topic,payload,{qos:1,retain:true},err=>fin(!err)),7000)));return r.filter(Boolean).length;}
+async function collect(filter,wait){const got=await Promise.all(BROKERS.map(u=>withBroker(u,(cl,fin)=>{const out=[];
+  cl.on('message',(tp,buf)=>{if(buf&&buf.length)out.push([tp,dec.decode(buf)]);});
+  cl.subscribe(filter,{qos:1},err=>{if(err)fin(out);else setTimeout(()=>fin(out),wait);});},wait+4000)));
+  const m=new Map();let reached=0;got.forEach(g=>{if(!g)return;reached++;g.forEach(([t,v])=>m.set(t,v));});return {msgs:[...m.entries()],reached};}
+
+/* ---------- Khóa giảng viên ---------- */
+const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DH={name:'ECDH',namedCurve:'P-256'};
+const pubXY=()=>{const[x,y]=A.pub.split('.');return{x,y};};
+async function refreshAdmin(){try{const r=await fetch('./index.html?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();
+  const m=t.match(/window\.__ADMIN__=(\{[^\n]*?\});/);if(m){const o=JSON.parse(m[1]);if(o&&o.pub&&o.room)A=window.__ADMIN__=o;}}catch(e){}}
+async function verifyCfg(o){try{const{x,y}=pubXY();const pk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},EC,false,['verify']);
+  return await sub.verify(SG,pk,ub(o.sig),enc.encode(JSON.stringify(o.c)));}catch(e){return false;}}
+async function loadCfg(){const {msgs,reached}=await collect(ROOT()+'/cfg',2500);let best=null;
+  for(const[,v] of msgs){try{const o=JSON.parse(v);if(await verifyCfg(o)&&(!best||o.c.ts>best.c.ts))best=o;}catch(e){}}
+  return {cfg:best?{...DEF_CFG,...best.c}:{...DEF_CFG},reached:!!reached,signed:!!best};}
+async function sealForTeacher(obj){const eph=await sub.generateKey(DH,true,['deriveBits']);const{x,y}=pubXY();
+  const tp=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},DH,false,[]);
+  const bits=await sub.deriveBits({name:'ECDH',public:tp},eph.privateKey,256);
+  const kraw=await sub.digest('SHA-256',new Uint8Array([...new Uint8Array(bits),...enc.encode('ltso-kt-v1')]));
+  const key=await sub.importKey('raw',kraw,'AES-GCM',false,['encrypt']);const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await sub.encrypt({name:'AES-GCM',iv},key,enc.encode(JSON.stringify(obj)));
+  return {v:1,room:A.room,e:b64(await sub.exportKey('raw',eph.publicKey)),i:b64(iv),c:b64(ct)};}
+async function openSealed(env,jwk){const tk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x:jwk.x,y:jwk.y,d:jwk.d,ext:true},DH,false,['deriveBits']);
+  const ep=await sub.importKey('raw',ub(env.e),DH,false,[]);const bits=await sub.deriveBits({name:'ECDH',public:ep},tk,256);
+  const kraw=await sub.digest('SHA-256',new Uint8Array([...new Uint8Array(bits),...enc.encode('ltso-kt-v1')]));
+  const key=await sub.importKey('raw',kraw,'AES-GCM',false,['decrypt']);
+  return JSON.parse(dec.decode(await sub.decrypt({name:'AES-GCM',iv:ub(env.i)},key,ub(env.c))));}
+
+/* ---------- Trạng thái học viên ---------- */
+let ME=null,CFG={...DEF_CFG},EX=null,ST=null,tick=null;
+const skey=()=>'kt-'+CFG.round+'-'+ME.mssv;
+const save=()=>{if(ME&&ST)ls.set(skey(),JSON.stringify(ST));};
+function show(v){['vLogin','vIntro','vExam','vResult','vTeacher'].forEach(id=>$(id).hidden=id!==v);$('examBar').hidden=v!=='vExam';window.scrollTo({top:0});}
+async function myName(){try{const f=await GT.loadFile();const id=await GT.idOf(ME.mssv);const e=f&&f.users&&f.users[id];if(!e||!e.l)return'';
+  return JSON.parse(await GT.open(ME.aes,e.l)).n||'';}catch(e){return'';}}
+
+async function afterLogin(g){ME={mssv:g.mssv,aes:g.aes,name:''};show('vIntro');
+  $('introMeta').innerHTML=`<span>MSSV: <b>${esc(ME.mssv)}</b></span><span id="nmSpan"></span><span id="cfgSpan">Đang lấy cấu hình đợt kiểm tra…</span>`;
+  $('startBtn').disabled=true;
+  myName().then(n=>{ME.name=n;if(n)$('nmSpan').innerHTML=`Họ tên: <b>${esc(n)}</b>`;});
+  const {cfg,reached,signed}=await loadCfg();CFG=cfg;
+  $('cfgSpan').innerHTML=`Đợt: <b>${esc(CFG.round)}</b>${signed?'':' <span class="pill warn">cấu hình mặc định</span>'}`;
+  $('introMin').textContent=CFG.minutes+"'";
+  try{ST=JSON.parse(ls.get(skey())||'null');}catch(e){ST=null;}
+  EX=makeExam(ME.mssv,CFG.round);
+  if(ST&&ST.submitted){renderResult();return;}
+  msgIntro('');
+  if(!reached)msgIntro('warn','Chưa kết nối được trạm trung chuyển nên đang dùng cấu hình mặc định. Bạn vẫn làm bài được; khi nộp, nếu chưa gửi được, hãy tải tệp bài làm và nộp cho giảng viên.');
+  if(!CFG.open&&!(ST&&ST.start)){msgIntro('bad','Bài kiểm tra của đợt này đang đóng. Hãy chờ giảng viên mở.');return;}
+  $('startBtn').disabled=false;$('startBtn').textContent=ST&&ST.start?'Tiếp tục làm bài':'Bắt đầu làm bài';}
+function msgIntro(c,h){$('introMsg').innerHTML=h?`<div class="callout ${c}">${h}</div>`:'';}
+
+$('lgGo').onclick=async()=>{const m=$('lgId').value,p=$('lgPw').value;$('lgMsg').textContent='Đang kiểm tra…';$('lgGo').disabled=true;
+  try{const g=await GT.login(m,p);$('lgMsg').textContent='';await afterLogin(g);}catch(e){$('lgMsg').textContent=e.message||'Không đăng nhập được.';}
+  $('lgGo').disabled=false;};
+$('lgPw').onkeydown=e=>{if(e.key==='Enter')$('lgGo').click();};
+$('logoutBtn').onclick=$('logout2').onclick=()=>GT.logout(true);
+
+/* ---------- Làm bài ---------- */
+$('startBtn').onclick=()=>{if(!ST)ST={round:CFG.round,mssv:ME.mssv,start:Date.now(),minutes:CFG.minutes,ans:{},caseText:'',opText:'',blur:0,paste:0,pasteChars:0,submitted:false};
+  save();renderExam();show('vExam');startTimer();};
+function renderExam(){
+  $('mcqList').innerHTML=EX.mcq.map((it,i)=>{const q=QI[it.id];return `<div class="q" id="q${i+1}"><div class="lab"><b>Câu ${i+1}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span></div>
+    <p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label><input type="radio" name="m_${it.id}" value="${oi}" ${ST.ans[it.id]===oi?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}</div>`;}).join('');
+  $('qnav').innerHTML=EX.mcq.map((it,i)=>`<a href="#q${i+1}" id="nv${i+1}">${i+1}</a>`).join('');
+  const cs=CI[EX.caseId],op=OI[EX.opId];
+  $('caseCard').innerHTML=`<h2>Phần II. Tình huống (20 điểm)</h2><h3>${esc(cs.title)}</h3><div class="scen">${esc(cs.q)}</div>
+    <p class="note">Gợi ý trình bày: quyết định hoặc kết luận, căn cứ pháp lý cụ thể (số hiệu văn bản), phân tích rủi ro, giải pháp. Nên viết từ 250 đến 600 từ.</p>
+    <textarea id="caseTxt" spellcheck="false" aria-label="Bài làm tình huống">${esc(ST.caseText)}</textarea><div class="cnt" id="caseCnt"></div>`;
+  $('opCard').innerHTML=`<h2>Phần III. Nhận định (20 điểm)</h2><h3>${esc(op.title)}</h3><div class="scen">${esc(op.q)}</div>
+    <p class="note">Gợi ý trình bày: bối cảnh đơn vị, quan điểm của anh/chị, cơ hội, rủi ro, đề xuất và lộ trình, liên hệ pháp lý hoặc chuyên môn. Nên viết từ 250 đến 500 từ.</p>
+    <textarea id="opTxt" spellcheck="false" aria-label="Bài làm nhận định">${esc(ST.opText)}</textarea><div class="cnt" id="opCnt"></div>`;
+  document.querySelectorAll('#mcqList input[type=radio]').forEach(r=>r.onchange=()=>{ST.ans[r.name.slice(2)]=+r.value;save();progress();});
+  [['caseTxt','caseText','caseCnt'],['opTxt','opText','opCnt']].forEach(([id,k,cn])=>{const t=$(id);
+    t.oninput=()=>{ST[k]=t.value;save();cnt(t,cn);progress();};
+    t.onpaste=e=>{const d=(e.clipboardData&&e.clipboardData.getData('text'))||'';ST.paste++;ST.pasteChars+=d.length;save();};cnt(t,cn);});
+  progress();}
+function cnt(t,cn){const w=(t.value.trim().match(/\S+/g)||[]).length;$(cn).textContent=w+' từ';}
+function progress(){let d=0;EX.mcq.forEach((it,i)=>{const on=ST.ans[it.id]!==undefined;if(on)d++;const a=$('nv'+(i+1));if(a)a.classList.toggle('done',on);});
+  const e=(ST.caseText.trim().length>30?1:0)+(ST.opText.trim().length>30?1:0);const tot=d+e;
+  $('progBar').style.width=(tot/32*100)+'%';$('progTxt').textContent=`${d}/30 câu · ${e}/2 tự luận`;}
+function startTimer(){clearInterval(tick);const end=ST.start+ST.minutes*60000;
+  const f=()=>{const left=Math.max(0,end-Date.now());const m=Math.floor(left/60000),s=Math.floor(left%60000/1000);
+    $('timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');$('timer').classList.toggle('low',left<5*60000);
+    if(left<=0){clearInterval(tick);submit(true);}};f();tick=setInterval(f,1000);}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&ST&&ST.start&&!ST.submitted&&!$('vExam').hidden){ST.blur++;save();}});
+$('submitBtn').onclick=$('submitTop').onclick=()=>{const miss=EX.mcq.filter(it=>ST.ans[it.id]===undefined).length;
+  const em=(ST.caseText.trim()?0:1)+(ST.opText.trim()?0:1);
+  const warn=(miss?`Còn ${miss} câu trắc nghiệm chưa chọn. `:'')+(em?`Còn ${em} câu tự luận để trống. `:'');
+  if(!confirm((warn||'Bạn đã làm đủ các câu. ')+'Nộp bài? Sau khi nộp không sửa được.'))return;submit(false);};
+
+/* ---------- Nộp bài ---------- */
+function computeAll(ex,st){const m=gradeMcq(ex,st.ans);const cs=CI[ex.caseId],op=OI[ex.opId];
+  const c=scoreEssay(cs,st.caseText,cs.q),o=scoreEssay(op,st.opText,op.q);
+  return {mcq:m,cs:c,op:o,total:r25(m.pts+c.score+o.score)};}
+async function submit(auto){if(!ST||ST.submitted)return;clearInterval(tick);
+  ST.end=Date.now();ST.auto=!!auto;ST.submitted=true;ST.nonce=Math.random().toString(36).slice(2,10);
+  const R=computeAll(EX,ST);ST.result={mcq:R.mcq.pts,ok:R.mcq.ok,cs:R.cs.score,op:R.op.score,total:R.total};save();
+  renderResult();await send();}
+function payload(){return {kind:'ltso-kt',v:1,round:ST.round,mssv:ST.mssv,name:ME.name||'',start:ST.start,end:ST.end,minutes:ST.minutes,auto:ST.auto,
+  ans:ST.ans,caseId:EX.caseId,caseText:ST.caseText,opId:EX.opId,opText:ST.opText,blur:ST.blur,paste:ST.paste,pasteChars:ST.pasteChars,
+  result:ST.result,bank:B.v,ua:navigator.userAgent.slice(0,120),nonce:ST.nonce};}
+async function send(){$('sendState').innerHTML='<div class="callout">Đang mã hóa và gửi bài cho giảng viên…</div>';$('resendBtn').hidden=true;
+  try{const env=await sealForTeacher(payload());ST.env=env;save();
+    const id=await GT.idOf(ST.mssv);const n=await publishAll(ROOT()+'/sub/'+ST.round+'/'+id+'/'+ST.nonce,JSON.stringify(env));
+    if(n){ST.sent=Date.now();save();$('sendState').innerHTML=`<div class="callout ok">Đã gửi bài cho giảng viên lúc ${fmtT(ST.sent)} (${n}/2 trạm xác nhận). Bài đã được mã hóa; chỉ giảng viên đọc được.</div>`;}
+    else{$('sendState').innerHTML='<div class="callout warn">Chưa gửi được qua trạm trung chuyển (mạng hoặc trạm bị chặn). Hãy bấm "Gửi lại", hoặc "Tải tệp bài làm" và nộp tệp cho giảng viên.</div>';$('resendBtn').hidden=false;}}
+  catch(e){$('sendState').innerHTML='<div class="callout bad">Không mã hóa được bài làm trên trình duyệt này. Hãy tải tệp bài làm và nộp cho giảng viên.</div>';$('resendBtn').hidden=false;}}
+$('resendBtn').onclick=send;
+$('dlBtn').onclick=async()=>{let env=ST.env;if(!env){try{env=await sealForTeacher(payload());ST.env=env;save();}catch(e){return;}}
+  const blob=new Blob([JSON.stringify(env)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`bai-kiem-tra-${ST.round}-${ST.mssv}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
+$('printRes').onclick=()=>window.print();
+
+/* ---------- Hiển thị kết quả ---------- */
+function rubricHtml(r,item,title,showHint){const icon=c=>c.got>=c.p-0.01?['p','✓']:c.got>0?['h','△']:['f','✗'];
+  return `<h2>${title}: ${fmtN(r.score)}/20 <span class="pill ${r.score>=14?'ok':r.score>=8?'warn':'bad'}">${r.band}</span></h2><h3>${esc(item.title)}</h3>
+  <ul class="rub">${r.crit.map(c=>{const[k,m]=icon(c);return `<li class="${k}"><span class="m">${m}</span><span>${esc(c.n)}${c.hit!=null?` <span class="note">(${c.hit>=c.need?'đạt':'mới nêu '+c.hit+'/'+c.need+' nhóm ý'})</span>`:` <span class="note">(${c.info})</span>`}${c.got<c.p-0.01?`<span class="tip">${esc(c.tip)}</span>`:''}</span><span class="pt">${fmtN(c.got)}/${c.p}</span></li>`;}).join('')}</ul>
+  ${r.mis.length?`<div class="callout bad">${r.mis.map(esc).join('<br>')}</div>`:''}
+  ${r.notes.length?`<div class="callout warn">${r.notes.map(esc).join('<br>')}</div>`:''}
+  ${showHint?`<details><summary>Gợi ý đáp án</summary><ul class="hintlist">${item.hint.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></details>`:''}`;}
+function mcqReview(ex,st,showKey,box,nav){const g=gradeMcq(ex,st.ans);
+  $(nav).innerHTML=ex.mcq.map((it,i)=>`<a href="#${box}${i+1}" class="${g.rows[i].right?'ok':'no'}">${i+1}</a>`).join('');
+  $(box).innerHTML=ex.mcq.map((it,i)=>{const q=QI[it.id],c=st.ans[it.id],right=c===q.a;
+    return `<div class="q ${right?'right':'wrong'}" id="${box}${i+1}"><div class="lab"><b>Câu ${i+1}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill ${right?'ok':'bad'}">${right?'Đúng · 2 điểm':c===undefined?'Bỏ trống':'Sai'}</span></div>
+    <p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label class="${showKey&&oi===q.a?'right':''} ${oi===c&&!right?'wrongpick':''}"><input type="radio" disabled ${oi===c?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}
+    ${showKey?`<div class="fb">${esc(q.e)}</div>`:''}</div>`;}).join('');}
+function renderResult(){show('vResult');const R=computeAll(EX,ST);const showKey=CFG.showKey!==false;
+  $('resMeta').innerHTML=`<span>MSSV: <b>${esc(ST.mssv)}</b></span>${ME.name?`<span>Họ tên: <b>${esc(ME.name)}</b></span>`:''}<span>Đợt: <b>${esc(ST.round)}</b></span><span>Bắt đầu: <b>${fmtT(ST.start)}</b></span><span>Nộp: <b>${fmtT(ST.end)}</b>${ST.auto?' (tự nộp khi hết giờ)':''}</span>`;
+  $('resScore').innerHTML=`<div class="s"><b>${fmtN(R.mcq.pts)}/60</b><span>Trắc nghiệm: ${R.mcq.ok}/30 câu đúng</span></div>
+    <div class="s"><b>${fmtN(R.cs.score)}/20</b><span>Tình huống (máy chấm)</span></div><div class="s"><b>${fmtN(R.op.score)}/20</b><span>Nhận định (máy chấm)</span></div>
+    <div class="s total"><b>${fmtN(R.total)}/100</b><span>Tổng điểm · thang 10: ${fmtN(R.total/10)}</span></div>`;
+  $('resCase').innerHTML=rubricHtml(R.cs,CI[EX.caseId],'Phần II. Tình huống',showKey)+`<details><summary>Bài làm của bạn</summary><div class="scen" style="white-space:pre-wrap">${esc(ST.caseText)||'<i>(để trống)</i>'}</div></details>`;
+  $('resOp').innerHTML=rubricHtml(R.op,OI[EX.opId],'Phần III. Nhận định',showKey)+`<details><summary>Bài làm của bạn</summary><div class="scen" style="white-space:pre-wrap">${esc(ST.opText)||'<i>(để trống)</i>'}</div></details>`;
+  mcqReview(EX,ST,showKey,'resMcq','resNav');
+  if(ST.sent)$('sendState').innerHTML=`<div class="callout ok">Đã gửi bài cho giảng viên lúc ${fmtT(ST.sent)}.</div>`;
+  else if(!$('sendState').innerHTML){$('sendState').innerHTML='<div class="callout warn">Bài chưa được gửi cho giảng viên.</div>';$('resendBtn').hidden=false;}}
+
+/* ================= Giảng viên ================= */
+let GV=null,SUBS=new Map(),SEL=null;
+const gvKey=()=>'gl-admin-'+A.room;
+async function gvAuto(){try{const j=JSON.parse(ls.get(gvKey())||'null');if(j&&j.d&&(j.x+'.'+j.y)===A.pub){GV=j;return true;}}catch(e){}return false;}
+async function gvUnlock(pw){const base=await sub.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+  const aes=await sub.deriveKey({name:'PBKDF2',salt:ub(A.salt),iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+  const pt=await sub.decrypt({name:'AES-GCM',iv:ub(A.iv)},aes,ub(A.ct));const j=JSON.parse(dec.decode(pt));ls.set(gvKey(),JSON.stringify(j));GV=j;}
+let backTo='vLogin';
+$('gvBtn').onclick=async()=>{backTo=['vLogin','vIntro','vResult'].find(id=>!$(id).hidden)||'vLogin';if(!$('vExam').hidden){alert('Đang làm bài, không mở được khu vực giảng viên.');return;}
+  show('vTeacher');if(await gvAuto())openPanel();else{$('gvLogin').hidden=false;$('gvPanel').hidden=true;}};
+$('gvBack').onclick=$('gvBack2').onclick=()=>show(backTo);
+$('gvGo').onclick=async()=>{$('gvMsg').textContent='Đang mở khóa…';try{await gvUnlock($('gvPw').value);$('gvMsg').textContent='';openPanel();}catch(e){$('gvMsg').textContent='Sai mật khẩu giảng viên.';}};
+$('gvPw').onkeydown=e=>{if(e.key==='Enter')$('gvGo').click();};
+$('gvLock').onclick=()=>{ls.del(gvKey());GV=null;$('gvPanel').hidden=true;$('gvLogin').hidden=false;};
+document.querySelectorAll('#gvTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#gvTabs button').forEach(x=>x.setAttribute('aria-selected',String(x===b)));
+  document.querySelectorAll('#gvPanel [data-p]').forEach(p=>p.hidden=p.dataset.p!==b.dataset.t);if(b.dataset.t==='bank')renderBank();});
+async function openPanel(){$('gvLogin').hidden=true;$('gvPanel').hidden=false;$('cMsg').textContent='Đang đọc cấu hình hiện tại…';
+  const{cfg,reached,signed}=await loadCfg();$('cRound').value=cfg.round;$('cMin').value=cfg.minutes;$('cOpen').value=cfg.open?'1':'0';$('cKey').value=cfg.showKey!==false?'1':'0';$('sRound').value=cfg.round;
+  $('cMsg').textContent=!reached?'Chưa kết nối được trạm; đang hiện cấu hình mặc định.':signed?'Đang hiện cấu hình đã phát gần nhất.':'Chưa có cấu hình nào được phát; đang dùng mặc định.';}
+$('cPub').onclick=async()=>{const c={round:$('cRound').value.trim().replace(/[^\w-]/g,'')||'KT1',minutes:Math.max(10,Math.min(240,+$('cMin').value||60)),open:$('cOpen').value==='1',showKey:$('cKey').value==='1',ts:Date.now()};
+  const sk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x:GV.x,y:GV.y,d:GV.d,ext:true},EC,false,['sign']);
+  const sig=b64(await sub.sign(SG,sk,enc.encode(JSON.stringify(c))));const n=await publishAll(ROOT()+'/cfg',JSON.stringify({c,sig}));
+  $('cMsg').textContent=n?`Đã phát cấu hình đợt ${c.round} (${c.minutes} phút, ${c.open?'đang mở':'đã đóng'}) tới ${n}/2 trạm.`:'Không kết nối được trạm trung chuyển. Thử lại sau.';$('sRound').value=c.round;};
+
+/* ---- bài nộp ---- */
+const ovKey=()=>'kt-gv-'+$('sRound').value.trim();
+const getOv=()=>{try{return JSON.parse(ls.get(ovKey())||'{}');}catch(e){return{};}};
+function regrade(p){const ex=makeExam(p.mssv,p.round);const st={ans:p.ans||{},caseText:p.caseText||'',opText:p.opText||''};const R=computeAll(ex,st);
+  const valid=ex.caseId===p.caseId&&ex.opId===p.opId;return{ex,st,R,valid};}
+async function addEnv(env,src){try{const p=await openSealed(env,GV);if(p.kind!=='ltso-kt')return false;const g=regrade(p);
+  const k=p.mssv;const cur=SUBS.get(k);const item={p,g,src,all:cur?cur.all.concat([p.nonce]):[p.nonce]};
+  if(cur&&!cur.all.includes(p.nonce)){item.all=[...new Set(cur.all.concat([p.nonce]))];if(cur.p.end<=p.end){item.p=cur.p;item.g=cur.g;}}
+  else if(cur){item.p=cur.p;item.g=cur.g;item.all=cur.all;}
+  SUBS.set(k,item);return true;}catch(e){return false;}}
+$('sFetch').onclick=async()=>{const rd=$('sRound').value.trim();$('sMsg').innerHTML='<div class="callout">Đang tải bài nộp từ trạm (khoảng 8 giây)…</div>';
+  const {msgs,reached}=await collect(ROOT()+'/sub/'+rd+'/#',6000);let ok=0,bad=0;
+  for(const[,v] of msgs){try{const env=JSON.parse(v);(await addEnv(env,'trạm'))?ok++:bad++;}catch(e){bad++;}}
+  $('sMsg').innerHTML=`<div class="callout ${reached?'ok':'warn'}">${reached?`Nhận ${msgs.length} bản nộp (${ok} giải mã được${bad?`, ${bad} lỗi`:''}).`:'Không kết nối được trạm trung chuyển. Có thể nhập tệp bài làm học viên gửi.'}</div>`;renderSubs();};
+$('sFile').onchange=async e=>{let ok=0,bad=0;for(const f of e.target.files){try{(await addEnv(JSON.parse(await f.text()),'tệp'))?ok++:bad++;}catch(x){bad++;}}
+  $('sMsg').innerHTML=`<div class="callout ${bad?'warn':'ok'}">Đã nhập ${ok} tệp${bad?`, ${bad} tệp không đọc được (sai định dạng hoặc không phải bài của lớp này)`:''}.</div>`;e.target.value='';renderSubs();};
+function rowVals(it){const ov=getOv()[it.p.mssv]||{};const cs=ov.cs!=null&&ov.cs!==''?+ov.cs:it.g.R.cs.score,op=ov.op!=null&&ov.op!==''?+ov.op:it.g.R.op.score;
+  return{ov,cs,op,total:r25(it.g.R.mcq.pts+cs+op)};}
+function renderSubs(){const rd=$('sRound').value.trim();const L=[...SUBS.values()].filter(it=>it.p.round===rd).sort((a,b)=>a.p.mssv.localeCompare(b.p.mssv));
+  if(!L.length){$('sTable').innerHTML='<tr><td colspan="14" class="note">Chưa có bài nộp của đợt này.</td></tr>';return;}
+  $('sTable').innerHTML=L.map(it=>{const v=rowVals(it),p=it.p,R=it.g.R;const mins=p.end&&p.start?Math.round((p.end-p.start)/60000):'';
+    return `<tr class="${SEL===p.mssv?'sel':''}"><td class="mono">${esc(p.mssv)}</td><td>${esc(p.name)}</td><td class="num">${fmtN(R.mcq.pts)}</td><td class="num">${fmtN(R.cs.score)}</td>
+    <td class="num"><input type="number" min="0" max="20" step="0.25" data-ov="cs" data-m="${esc(p.mssv)}" value="${v.ov.cs??''}" placeholder="–"></td><td class="num">${fmtN(R.op.score)}</td>
+    <td class="num"><input type="number" min="0" max="20" step="0.25" data-ov="op" data-m="${esc(p.mssv)}" value="${v.ov.op??''}" placeholder="–"></td><td class="num"><b>${fmtN(v.total)}</b></td>
+    <td>${fmtT(p.end)}${p.auto?' <span class="pill warn">hết giờ</span>':''}</td><td class="num">${mins}</td><td class="num">${p.blur||0}</td><td class="num">${p.paste||0}</td>
+    <td class="num">${it.all.length}${it.g.valid?'':' <span class="pill bad">đề không khớp</span>'}</td><td><button class="btn sm" data-view="${esc(p.mssv)}">Xem</button></td></tr>`;}).join('');
+  document.querySelectorAll('[data-ov]').forEach(i=>i.onchange=()=>{const o=getOv();o[i.dataset.m]=o[i.dataset.m]||{};const v=i.value===''?null:Math.max(0,Math.min(20,+i.value));o[i.dataset.m][i.dataset.ov]=v;ls.set(ovKey(),JSON.stringify(o));setTimeout(renderSubs,0);});
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{SEL=b.dataset.view;renderSubs();viewSub(SUBS.get(SEL));});}
+function viewSub(it){const p=it.p,g=it.g;const sid='gvq';
+  $('sDetail').innerHTML=`<div class="card" style="margin-top:12px"><h2>Bài của ${esc(p.mssv)} ${esc(p.name)}</h2>
+    <div class="meta"><span>Bắt đầu <b>${fmtT(p.start)}</b></span><span>Nộp <b>${fmtT(p.end)}</b></span><span>Rời trang <b>${p.blur||0}</b> lần</span><span>Dán <b>${p.paste||0}</b> lần (${p.pasteChars||0} ký tự)</span><span>Trình duyệt: ${esc(p.ua||'')}</span></div>
+    ${g.valid?'':'<div class="callout bad">Mã tình huống hoặc nhận định trong bài khác với đề sinh ra từ MSSV: có thể bài bị chỉnh sửa hoặc ngân hàng đề đã thay đổi.</div>'}
+    <div class="card">${rubricHtml(g.R.cs,CI[p.caseId]||CI[g.ex.caseId],'Tình huống (máy chấm)',true)}<div class="scen" style="white-space:pre-wrap">${esc(p.caseText)||'<i>(để trống)</i>'}</div></div>
+    <div class="card">${rubricHtml(g.R.op,OI[p.opId]||OI[g.ex.opId],'Nhận định (máy chấm)',true)}<div class="scen" style="white-space:pre-wrap">${esc(p.opText)||'<i>(để trống)</i>'}</div></div>
+    <div class="card"><h3>Trắc nghiệm: ${g.R.mcq.ok}/30 câu đúng</h3><div class="qnav" id="${sid}n"></div></div><div class="qz" id="${sid}"></div></div>`;
+  mcqReview(g.ex,g.st,true,sid,sid+'n');$('sDetail').scrollIntoView({behavior:'smooth'});}
+$('sCsv').onclick=()=>{const rd=$('sRound').value.trim();const L=[...SUBS.values()].filter(it=>it.p.round===rd).sort((a,b)=>a.p.mssv.localeCompare(b.p.mssv));
+  const head=['MSSV','Họ tên','Đợt','TN số câu đúng','TN điểm (/60)','Tình huống máy (/20)','Tình huống GV (/20)','Nhận định máy (/20)','Nhận định GV (/20)','Tổng (/100)','Thang 10','Bắt đầu','Nộp','Số phút','Tự nộp khi hết giờ','Rời trang','Số lần dán','Ký tự dán','Số lần nộp','Mã tình huống','Mã nhận định'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=L.map(it=>{const v=rowVals(it),p=it.p,R=it.g.R;return[p.mssv,p.name,p.round,R.mcq.ok,R.mcq.pts,R.cs.score,v.ov.cs??'',R.op.score,v.ov.op??'',v.total,v.total/10,fmtT(p.start),fmtT(p.end),p.end&&p.start?Math.round((p.end-p.start)/60000):'',p.auto?'Có':'',p.blur||0,p.paste||0,p.pasteChars||0,it.all.length,p.caseId,p.opId].map(q).join(',');});
+  const blob=new Blob(['﻿'+[head.map(q).join(',')].concat(rows).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`diem-${rd}.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
+
+/* ---- ngân hàng đề ---- */
+function renderBank(){const f=$('bFilter').value;let h='';
+  if(f==='mcq')h=B.mcq.map(q=>`<div class="q"><div class="lab"><b>${q.id}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span></div><p class="qt">${esc(q.q)}</p>${q.o.map((o,j)=>`<label class="${j===q.a?'right':''}"><input type="radio" disabled ${j===q.a?'checked':''}>${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}<div class="fb">${esc(q.e)}</div></div>`).join('');
+  else{const L=f==='case'?B.cases:B.ops;h=L.map(c=>`<div class="q"><div class="lab"><b>${c.id}</b></div><p class="qt">${esc(c.title)}</p><div class="scen">${esc(c.q)}</div><h3>Gợi ý đáp án</h3><ul class="hintlist">${c.hint.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h3>Rubric chấm</h3><ul class="hintlist">${c.crit.map(r=>`<li><b>${esc(r.n)}</b> (${r.p} điểm)${r.auto?': máy tính theo độ dài, số câu, từ nối lập luận':`: cần ${r.need} trong ${r.g.length} nhóm ý`} – ${esc(r.tip)}</li>`).join('')}</ul></div>`).join('');}
+  $('bankList').innerHTML=h;}
+$('bFilter').onchange=renderBank;$('bPrint').onclick=()=>window.print();
+$('bShow').onclick=()=>{const m=$('bMssv').value.trim();if(!m)return;const ex=makeExam(m,$('cRound').value.trim()||'KT1');const cs=CI[ex.caseId],op=OI[ex.opId];
+  $('bankList').innerHTML=`<div class="callout">Đề của MSSV <b>${esc(GT.norm(m))}</b>, đợt <b>${esc(ex.round)}</b>: tình huống ${cs.id} (${esc(cs.title)}), nhận định ${op.id} (${esc(op.title)}).</div>`+
+  ex.mcq.map((it,i)=>{const q=QI[it.id];return `<div class="q"><div class="lab"><b>Câu ${i+1} · ${q.id}</b><span class="pill">${TOPIC[q.t]}</span></div><p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label class="${oi===q.a?'right':''}"><input type="radio" disabled ${oi===q.a?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}</div>`;}).join('');};
+
+/* ---------- Khởi động ---------- */
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;ls.set('ltso-theme',n);};
+(async()=>{if(!B){$('lgMsg').textContent='Không tải được ngân hàng đề. Hãy tải lại trang.';$('lgGo').disabled=true;return;}
+  await refreshAdmin();
+  try{const g=await GT.auto();if(g)await afterLogin(g);}catch(e){}})();
+</script>
+</body>
+</html>
