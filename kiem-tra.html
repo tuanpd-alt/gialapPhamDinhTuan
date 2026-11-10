@@ -104,6 +104,84 @@ h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
 @media (max-width:560px){.sub{display:none}}
 html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
 html.embedded header.top .wrap{padding-block:2px 0}
+
+/* ===== Trang Đào và đồng thuận ===== */
+.miners{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.mcard{border:1.5px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;background:var(--surface)}
+.mcard .hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mcard .hd b{font-family:var(--f-display);font-size:16px}
+.mcard.win{border-color:var(--ok);background:var(--ok-bg)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:6px}
+.cA{background:#1d5cf0}.cB{background:#11805a}.cC{background:#c8770a}
+.txpick{display:grid;gap:4px;font-size:13px}
+.txpick label{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.txpick label span.l{display:flex;gap:6px;align-items:center}
+.txpick .fee{font-family:var(--f-mono);color:var(--muted);font-size:12px}
+.txpick .miss{color:var(--muted);font-style:italic;font-size:12px}
+.cbline{font-size:13px;background:var(--sunk);border-radius:8px;padding:7px 9px}
+.cbline b{font-family:var(--f-mono)}
+.same{outline:2px solid var(--bad);outline-offset:1px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.slid{display:grid;grid-template-columns:90px minmax(0,1fr) 52px;gap:8px;align-items:center;font-size:13.5px}
+.slid input{width:100%}
+.slid output{font-family:var(--f-mono);text-align:right}
+.race{display:grid;gap:8px}
+.lane{display:grid;grid-template-columns:90px minmax(0,1fr) 92px;gap:8px;align-items:center;font-size:13px}
+.lane .hash{padding:5px 8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lane .t{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.lane.win .hash{background:var(--ok-bg);color:var(--ok);font-weight:600}
+svg.net{width:100%;height:auto;max-height:360px;display:block;background:var(--sunk);border-radius:10px}
+svg.net line{stroke:var(--line);stroke-width:2}
+svg.net line.hot{stroke:var(--accent);stroke-width:3}
+svg.net circle{stroke:var(--surface);stroke-width:2;cursor:pointer}
+svg.net text{font:600 11px var(--f-body);fill:var(--ink);pointer-events:none;text-anchor:middle}
+svg.net text.lbl{font-size:10px;fill:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.checks{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li .m{flex:none;width:18px;font-weight:700}
+.checks li.p .m{color:var(--ok)}.checks li.f .m{color:var(--bad)}.checks li.s .m{color:var(--muted)}
+.log{font:12.5px var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:170px;overflow:auto;display:grid;gap:2px}
+.chainv{display:flex;align-items:center;gap:0;overflow-x:auto;padding:6px 0}
+.blk{flex:0 0 auto;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;background:var(--surface);min-width:116px}
+.blk b{display:block;font-family:var(--f-mono);font-size:13px}
+.blk.a{border-color:#1d5cf0}.blk.c{border-color:#c8770a}
+.blk.stale{opacity:.55;border-style:dashed;text-decoration:line-through}
+.chainv .ar,.forkv .ar{flex:0 0 24px;text-align:center;color:var(--muted)}
+.forkv{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:6px 0;align-items:center;overflow-x:auto}
+.forkv .br{display:flex;align-items:center;gap:0}
+.forkv{min-width:0}
+.matbar{height:14px;background:var(--sunk);border-radius:7px;overflow:hidden;position:relative}
+.matbar span{display:block;height:100%;background:var(--zero-ink);transition:width .3s}
+.matbar.ok span{background:var(--ok)}
+.cascade{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.cascade .tc{border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;min-width:150px;background:var(--surface);transition:background .4s,border-color .4s}
+.cascade .tc b{display:block;font-family:var(--f-mono)}
+.cascade .tc.dead{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.cascade .ar{align-self:center;color:var(--muted)}
+/* Bài tập */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.q p.qt{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}
+.q label input{margin-top:4px}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.q.right .fb{background:var(--ok-bg)}.q.wrong .fb{background:var(--bad-bg)}
+.q .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.score{font:700 26px var(--f-mono)}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.prac{display:grid;gap:10px}
+.prac .pi{display:grid;gap:5px;font-size:14px}
+@media print{
+  header.top,nav.steps,.navbtns,.foot,.noprint{display:none!important}
+  .step{display:block!important}.step[hidden]{display:none!important}
+  body{background:#fff;color:#000}.q,.panel{break-inside:avoid;border-color:#999}
+}
 .foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
 /* ===== Bài kiểm tra ===== */
 .callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
@@ -141,20 +219,11 @@ html.embedded header.top .wrap{padding-block:2px 0}
 .q label.right{background:var(--ok-bg)}.q label.wrongpick{background:var(--bad-bg)}
 .q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px;background:var(--sunk)}
 .q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
-.essay textarea{min-height:260px;font-size:15px;line-height:1.55;resize:vertical}
-.essay .cnt{font-size:12.5px;color:var(--muted);text-align:right}
-.scen{background:var(--sunk);border-radius:10px;padding:12px 14px;line-height:1.55}
 .score{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .score .s{border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:2px;background:var(--surface)}
 .score .s b{font:700 26px var(--f-mono)}
-.score .s span{font-size:12.5px;color:var(--muted)}
+.score .s span{font:12.5px var(--f-body);color:var(--muted)}
 .score .s.total{border-color:var(--accent);background:var(--accent-soft)}
-.rub{display:grid;gap:6px;margin:0;padding:0;list-style:none}
-.rub li{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:start;font-size:14px}
-.rub li .m{font-weight:700}.rub li.p .m{color:var(--ok)}.rub li.h .m{color:var(--zero-ink)}.rub li.f .m{color:var(--bad)}
-.rub li .pt{font:600 13px var(--f-mono);white-space:nowrap}
-.rub li .tip{display:block;color:var(--muted);font-size:13px}
-.hintlist{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
 .tabs{display:flex;gap:6px;flex-wrap:wrap}
 .tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 13.5px var(--f-body);padding:7px 12px;border-radius:8px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
@@ -183,7 +252,7 @@ table.res tr.sel td{background:var(--accent-soft)}
 <div class="bar" id="examBar" hidden><div class="wrap">
   <span class="timer" id="timer">--:--</span>
   <div class="prog" aria-hidden="true"><span id="progBar" style="width:0"></span></div>
-  <span class="note" id="progTxt">0/32</span>
+  <span class="note" id="progTxt">0/40</span>
   <button class="btn primary sm" id="submitTop">Nộp bài</button>
 </div></div>
 
@@ -193,7 +262,7 @@ table.res tr.sel td{background:var(--accent-soft)}
 <section class="view" id="vLogin">
   <div class="card login">
     <h2>Đăng nhập làm bài</h2>
-    <p class="note">Dùng mã số sinh viên và mật khẩu như khi vào Làng Tiền Số. Mỗi học viên nhận một đề riêng gồm 30 câu trắc nghiệm, 1 tình huống và 1 câu nhận định.</p>
+    <p class="note">Dùng mã số sinh viên và mật khẩu như khi vào Làng Tiền Số. Mỗi học viên nhận một đề riêng gồm 40 câu trắc nghiệm (khái niệm, phân biệt, tình huống và case study).</p>
     <label class="f">Mã số sinh viên<input id="lgId" autocomplete="username" spellcheck="false"></label>
     <label class="f">Mật khẩu<input id="lgPw" type="password" autocomplete="current-password" spellcheck="false"></label>
     <div class="row"><button class="btn primary" id="lgGo">Đăng nhập</button><span class="note" id="lgMsg" role="status"></span></div>
@@ -206,16 +275,15 @@ table.res tr.sel td{background:var(--accent-soft)}
     <h2>Thông tin bài kiểm tra</h2>
     <div class="meta" id="introMeta"></div>
     <div class="score">
-      <div class="s"><b>30 câu</b><span>Trắc nghiệm · 2 điểm/câu · 60 điểm</span></div>
-      <div class="s"><b>1 câu</b><span>Tình huống · 20 điểm</span></div>
-      <div class="s"><b>1 câu</b><span>Nhận định · 20 điểm</span></div>
-      <div class="s total"><b id="introMin">60'</b><span>Thời gian làm bài</span></div>
+      <div class="s"><b>40 câu</b><span>Trắc nghiệm · 8 câu mỗi chủ đề</span></div>
+      <div class="s"><b>0,25</b><span>Điểm mỗi câu · thang 10</span></div>
+      <div class="s total"><b id="introMin">40'</b><span>Thời gian làm bài</span></div>
     </div>
     <ul class="hintlist">
-      <li>Đề được máy chọn ngẫu nhiên từ ngân hàng 100 câu trắc nghiệm, 20 tình huống và 10 câu nhận định; đề của bạn cố định theo mã số sinh viên.</li>
+      <li>Đề được máy chọn ngẫu nhiên từ ngân hàng 150 câu, mỗi chủ đề 8 câu (tài sản số và token hóa; tiền mã hóa và blockchain; tiền kỹ thuật số và stablecoin; CBDC; ngân hàng số). Đề của bạn cố định theo mã số sinh viên; thứ tự câu và phương án được xáo trộn.</li>
       <li>Bài làm được lưu tự động trên máy. Hết giờ, máy tự nộp.</li>
-      <li>Phần tự luận được máy chấm theo rubric (căn cứ pháp lý, phân tích, giải pháp, trình bày). Điểm máy chấm mang tính tham khảo; giảng viên có thể điều chỉnh.</li>
-      <li>Máy ghi nhận số lần rời khỏi trang và số lần dán văn bản vào phần tự luận.</li>
+      <li>Nộp bài xong, máy chấm và hiện điểm ngay, kèm giải thích từng câu.</li>
+      <li>Máy ghi nhận số lần rời khỏi trang trong lúc làm bài.</li>
     </ul>
     <div id="introMsg"></div>
     <div class="row"><button class="btn primary" id="startBtn">Bắt đầu làm bài</button><button class="btn" id="logoutBtn">Đăng xuất</button></div>
@@ -225,13 +293,11 @@ table.res tr.sel td{background:var(--accent-soft)}
 <!-- ===== Làm bài ===== -->
 <section class="view" id="vExam" hidden>
   <div class="card">
-    <h2>Phần I. Trắc nghiệm (60 điểm)</h2>
-    <p class="note">Chọn một phương án đúng nhất cho mỗi câu.</p>
+    <h2>Bài kiểm tra trắc nghiệm (40 câu)</h2>
+    <p class="note">Chọn một phương án đúng nhất cho mỗi câu. Mỗi câu 0,25 điểm.</p>
     <div class="qnav" id="qnav"></div>
   </div>
   <div class="qz" id="mcqList"></div>
-  <div class="card essay" id="caseCard"></div>
-  <div class="card essay" id="opCard"></div>
   <div class="card">
     <div class="row"><button class="btn primary" id="submitBtn">Nộp bài</button><span class="note" id="saveNote">Bài làm đang được lưu tự động.</span></div>
   </div>
@@ -246,9 +312,7 @@ table.res tr.sel td{background:var(--accent-soft)}
     <div id="sendState"></div>
     <div class="row noprint"><button class="btn" id="resendBtn" hidden>Gửi lại cho giảng viên</button><button class="btn" id="dlBtn">Tải tệp bài làm</button><button class="btn" id="printRes">In / lưu PDF</button><button class="btn" id="logout2">Đăng xuất</button></div>
   </div>
-  <div class="card" id="resCase"></div>
-  <div class="card" id="resOp"></div>
-  <div class="card"><h2>Chi tiết phần trắc nghiệm</h2><div class="qnav" id="resNav"></div></div>
+  <div class="card"><h2>Chi tiết từng câu</h2><div class="qnav" id="resNav"></div></div>
   <div class="qz" id="resMcq"></div>
 </section>
 
@@ -274,7 +338,7 @@ table.res tr.sel td{background:var(--accent-soft)}
       <p class="note">Cấu hình được ký bằng khóa giảng viên và phát qua trạm trung chuyển; học viên mở trang sẽ nhận cấu hình mới. Đổi mã đợt thì mọi học viên nhận đề mới.</p>
       <div class="gvgrid">
         <label class="f">Mã đợt<input id="cRound" value="KT1"></label>
-        <label class="f">Thời gian (phút)<input id="cMin" type="number" min="10" max="240" value="60"></label>
+        <label class="f">Thời gian (phút)<input id="cMin" type="number" min="10" max="240" value="40"></label>
         <label class="f">Trạng thái<select id="cOpen"><option value="1">Đang mở</option><option value="0">Đã đóng</option></select></label>
         <label class="f">Hiện đáp án sau khi nộp<select id="cKey"><option value="1">Có</option><option value="0">Không</option></select></label>
       </div>
@@ -288,21 +352,21 @@ table.res tr.sel td{background:var(--accent-soft)}
         <button class="btn" id="sCsv">Xuất CSV (Excel)</button></div>
       <div id="sMsg"></div>
       <div class="scroll"><table class="res">
-        <thead><tr><th>MSSV</th><th>Họ tên</th><th class="num">TN (/60)</th><th class="num">Tình huống máy</th><th class="num">Tình huống GV</th><th class="num">Nhận định máy</th><th class="num">Nhận định GV</th><th class="num">Tổng (/100)</th><th>Nộp lúc</th><th class="num">Phút</th><th class="num">Rời trang</th><th class="num">Dán</th><th class="num">Lần nộp</th><th></th></tr></thead>
-        <tbody id="sTable"><tr><td colspan="14" class="note">Chưa có dữ liệu.</td></tr></tbody>
+        <thead><tr><th>MSSV</th><th>Họ tên</th><th class="num">Số câu đúng</th><th class="num">Điểm (/10)</th><th class="num">Điều chỉnh GV</th><th class="num">Điểm cuối</th><th>Nộp lúc</th><th class="num">Phút</th><th class="num">Rời trang</th><th class="num">Lần nộp</th><th></th></tr></thead>
+        <tbody id="sTable"><tr><td colspan="11" class="note">Chưa có dữ liệu.</td></tr></tbody>
       </table></div>
       <div id="sDetail"></div>
     </div>
     <div class="card" data-p="bank" hidden>
       <h3>Ngân hàng đề</h3>
-      <div class="row"><label class="f" style="min-width:160px">Lọc<select id="bFilter"><option value="mcq">100 câu trắc nghiệm</option><option value="case">20 tình huống</option><option value="op">10 câu nhận định</option></select></label>
+      <div class="row"><label class="f" style="min-width:160px">Lọc<select id="bFilter"><option value="all">Cả 150 câu</option><option value="A">Tài sản số và token hóa</option><option value="B">Tiền mã hóa và blockchain</option><option value="C">Tiền kỹ thuật số và stablecoin</option><option value="D">CBDC</option><option value="E">Ngân hàng số và fintech</option></select></label>
         <label class="f" style="min-width:160px">Xem đề của MSSV<input id="bMssv" placeholder="ví dụ 62131234"></label><button class="btn" id="bShow">Xem đề</button><button class="btn" id="bPrint">In</button></div>
       <div class="bank qz" id="bankList"></div>
     </div>
   </div>
 </section>
 </main>
-<footer class="wrap foot">Bài kiểm tra chạy trong trình duyệt. Bài làm được mã hóa bằng khóa công khai của giảng viên trước khi gửi qua trạm trung chuyển; chỉ giảng viên giải mã được. Ngân hàng đề cập nhật pháp luật đến 08/11/2026: Luật Công nghiệp công nghệ số 2025, Nghị quyết 05/2025/NQ-CP, Nghị định 284/2026/NĐ-CP, Luật Thuế TNCN (sửa đổi) 2025, Thông tư 32/2026/TT-BTC, Thông tư 165/2026/TT-BTC, Quyết định 1413/QĐ-TTg, Luật Bảo vệ dữ liệu cá nhân 2025, các thông tư của NHNN về ngân hàng số.</footer>
+<footer class="wrap foot">Bài kiểm tra chạy trong trình duyệt. Bài làm được mã hóa bằng khóa công khai của giảng viên trước khi gửi qua trạm trung chuyển; chỉ giảng viên giải mã được. Ngân hàng 150 câu, cập nhật đến 10/11/2026; phần pháp lý giới hạn ở Luật Công nghiệp công nghệ số 2025, Nghị quyết 05/2025/NQ-CP, Thông tư 165/2026/TT-BTC và Quyết định 1413/QĐ-TTg.</footer>
 <script>
 /* ===== Đăng nhập học viên: MSSV + mật khẩu mở "khóa lớp" (PBKDF2-SHA256 + AES-GCM) =====
    hocvien.json chỉ chứa khóa lớp và khóa ký riêng của từng tài khoản, đã bọc bằng mật khẩu; không chứa mật khẩu.
@@ -446,74 +510,29 @@ const b64=GT.b64,ub=GT.ub;
 const ls={get:k=>{try{return localStorage.getItem(k);}catch(e){return null;}},set:(k,v)=>{try{localStorage.setItem(k,v);}catch(e){}},del:k=>{try{localStorage.removeItem(k);}catch(e){}}};
 const BROKERS=['wss://broker.emqx.io:8084/mqtt','wss://broker.hivemq.com:8884/mqtt'];
 const ROOT=()=>'gialapPhamDinhTuan/'+A.room+'/exam';
-const DEF_CFG={round:'KT1',minutes:60,open:true,showKey:true};
-const r25=x=>Math.round(x*4)/4;
+const DEF_CFG={round:'KT1',minutes:40,open:true,showKey:true};
+const NQ=40,PER=8,PT=0.25;
 const fmtN=x=>(Math.round(x*100)/100).toLocaleString('vi-VN');
 const fmtT=t=>t?new Date(t).toLocaleString('vi-VN'):'–';
-const TOPIC={A:'Pháp lý tài sản số',B:'Tiền mã hóa & blockchain',C:'Tiền kỹ thuật số & stablecoin',D:'CBDC',E:'Ngân hàng số'};
-const KIND={LT:'Khái niệm',PB:'Phân biệt',TH:'Tình huống'};
+const TOPIC={A:'Tài sản số & token hóa',B:'Tiền mã hóa & blockchain',C:'Tiền kỹ thuật số & stablecoin',D:'CBDC',E:'Ngân hàng số'};
+const KIND={LT:'Khái niệm',PB:'Phân biệt',TH:'Tình huống',CS:'Case study'};
 
 /* ---------- Ngân hàng đề ---------- */
 function decodeBank(){const raw=atob(window.__DE__||'');const out=new Uint8Array(raw.length);let ks='',ki=0,blk=0;
   for(let i=0;i<raw.length;i++){if(ki>=ks.length){ks=sha256('ltso-kt-v1:'+(blk++));ki=0;}out[i]=raw.charCodeAt(i)^parseInt(ks.substr(ki,2),16);ki+=2;}
   return JSON.parse(dec.decode(out));}
-let B=null,QI={},CI={},OI={};
-try{B=decodeBank();B.mcq.forEach(q=>QI[q.id]=q);B.cases.forEach(c=>CI[c.id]=c);B.ops.forEach(o=>OI[o.id]=o);}catch(e){console.error(e);}
+let B=null,QI={};
+try{B=decodeBank();B.mcq.forEach(q=>QI[q.id]=q);}catch(e){console.error(e);}
 
 /* ---------- Sinh đề theo MSSV ---------- */
 function rng(hex){let a=parseInt(hex.slice(0,8),16)>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function shuffle(arr,r){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function makeExam(mssv,round){const m=GT.norm(mssv);const r=rng(sha256('kt|'+round+'|'+m));const qs=[];
-  for(const t of 'ABCDE')qs.push(...shuffle(B.mcq.filter(q=>q.t===t),r).slice(0,6));
+function makeExam(mssv,round){const m=GT.norm(mssv);const r=rng(sha256('kt2|'+round+'|'+m));const qs=[];
+  for(const t of 'ABCDE')qs.push(...shuffle(B.mcq.filter(q=>q.t===t),r).slice(0,PER));
   const mcq=shuffle(qs,r).map(q=>({id:q.id,perm:shuffle([0,1,2,3],r)}));
-  const cs=B.cases[Math.floor(r()*B.cases.length)],op=B.ops[Math.floor(r()*B.ops.length)];
-  return {round,mssv:m,mcq,caseId:cs.id,opId:op.id};}
-
-/* ---------- Chấm trắc nghiệm ---------- */
-function gradeMcq(ex,ans){let ok=0;const rows=ex.mcq.map(it=>{const q=QI[it.id];const c=ans[it.id];const right=c===q.a;if(right)ok++;return{id:it.id,c,right};});
-  return {ok,n:ex.mcq.length,pts:ok*2,rows};}
-
-/* ---------- Chấm tự luận theo rubric ---------- */
-const nz=s=>String(s||'').toLowerCase().replace(/đ/g,'d').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/%/g,' phantram ').replace(/[^a-z0-9]+/g,' ').trim();
-const has=(T,k)=>{const kk=nz(k);return kk&&T.includes(' '+kk+' ');};
-const CONNECT=['vi','vi vay','do do','tuy nhien','ngoai ra','boi vi','mat khac','theo do','do vay','nhu vay','thu nhat','thu hai','ket luan','tom lai','dong thoi','ben canh do','trong khi'];
-const MIS=[
- ['bitcoin la phuong tien thanh toan hop phap','Bitcoin không phải là phương tiện thanh toán hợp pháp tại Việt Nam; chỉ đồng Việt Nam do NHNN phát hành mới là phương tiện thanh toán hợp pháp.'],
- ['tien ma hoa la phuong tien thanh toan hop phap','Tiền mã hóa không phải là phương tiện thanh toán hợp pháp tại Việt Nam.'],
- ['tai san ma hoa la phuong tien thanh toan','Tài sản mã hóa không được dùng làm phương tiện thanh toán.'],
- ['bitcoin la tien te hop phap','Bitcoin không phải tiền tệ hợp pháp tại Việt Nam.'],
- ['duoc phep thanh toan bang bitcoin','Pháp luật Việt Nam không cho phép thanh toán bằng Bitcoin.'],
- ['duoc thanh toan bang tien ma hoa','Pháp luật Việt Nam không cho phép thanh toán bằng tiền mã hóa.'],
- ['usdt la ngoai te','USDT không phải ngoại tệ theo pháp luật quản lý ngoại hối.'],
- ['stablecoin la ngoai te','Stablecoin không phải ngoại tệ theo pháp luật quản lý ngoại hối.'],
- ['chao ban cho nha dau tu trong nuoc','Theo NQ 05/2025/NQ-CP, tài sản mã hóa chỉ được chào bán, phát hành cho nhà đầu tư nước ngoài.'],
- ['0 1 phantram tren loi nhuan','Thuế 0,1% tính trên giá trị từng lần chuyển nhượng, không tính trên lợi nhuận.'],
- ['cbdc la tien ma hoa','CBDC là nghĩa vụ nợ của ngân hàng trung ương, không phải tiền mã hóa.'],
- ['ngan hang thuong mai phat hanh cbdc','CBDC do ngân hàng trung ương phát hành; ngân hàng thương mại chỉ phân phối trong mô hình hai tầng.']];
-function scoreEssay(item,text,prompt){
-  const raw=String(text||'');const N=nz(raw);const T=' '+N+' ';const words=N?N.split(' '):[];const w=words.length;
-  const sentences=raw.split(/[.!?;\n]+/).map(s=>s.trim()).filter(s=>s.split(/\s+/).length>=4).length;
-  const uniq=new Set(words).size/(w||1);const notes=[];
-  let factor=w<50?0.25:w<100?0.45:w<150?0.7:w<200?0.85:1;
-  if(w<200)notes.push(`Bài dài ${w} từ (khuyến nghị từ 250 từ): điểm các tiêu chí nội dung được nhân hệ số ${String(factor).replace('.',',')}.`);
-  if(w>=60&&uniq<0.3){factor*=0.7;notes.push('Bài lặp từ nhiều bất thường: điểm nội dung bị nhân hệ số 0,7.');}
-  if(prompt&&w>=20){const P=nz(prompt).split(' ');const grams=new Set();for(let i=0;i+5<=P.length;i++)grams.add(P.slice(i,i+5).join(' '));
-    let c=0,t=0;for(let i=0;i+5<=words.length;i++){t++;if(grams.has(words.slice(i,i+5).join(' ')))c++;}
-    if(t&&c/t>0.4){factor*=0.6;notes.push('Phần lớn bài làm chép lại đề bài: điểm nội dung bị nhân hệ số 0,6.');}}
-  const crit=item.crit.map(cr=>{
-    if(cr.auto==='style'){let conn=0;CONNECT.forEach(k=>{if(T.includes(' '+k+' '))conn++;});
-      const s=(w>=200?1:w>=120?0.6:w>=60?0.3:0)+(sentences>=5?0.5:sentences>=3?0.25:0)+(conn>=3?0.5:conn>=1?0.25:0);
-      return {n:cr.n,p:cr.p,got:r25(Math.min(cr.p,s)),hit:null,need:null,tip:cr.tip,info:`${w} từ · ${sentences} câu · ${conn} từ nối lập luận`};}
-    const hitIdx=cr.g.map((grp,i)=>grp.some(k=>has(T,k))?i:-1).filter(i=>i>=0);
-    const got=r25(cr.p*Math.min(1,hitIdx.length/cr.need)*factor);
-    return {n:cr.n,p:cr.p,got,hit:hitIdx.length,need:cr.need,tip:cr.tip};});
-  let pen=0;const mis=[];
-  MIS.forEach(([pat,msg])=>{const k=' '+pat+' ';let i=T.indexOf(k);while(i>=0){const pre=T.slice(Math.max(0,i-32),i);
-      if(!/ (khong|chua|cam|chang|sai|nham|khong phai) /.test(pre+' ')){mis.push(msg);pen+=2;break;}i=T.indexOf(k,i+1);}});
-  pen=Math.min(4,pen);if(mis.length)notes.push(`Phát hiện nhận định sai về pháp lý hoặc khái niệm: trừ ${pen} điểm.`);
-  const sum=crit.reduce((s,c)=>s+c.got,0);const score=Math.max(0,r25(sum-pen));
-  const band=score>=17?'Rất tốt':score>=14?'Tốt':score>=11?'Khá':score>=8?'Trung bình':'Cần bổ sung nhiều';
-  return {score,max:20,crit,notes,mis,pen,w,band};}
+  return {round,mssv:m,mcq};}
+function gradeMcq(ex,ans){let ok=0;const byT={};const rows=ex.mcq.map(it=>{const q=QI[it.id];const c=ans[it.id];const right=c===q.a;byT[q.t]=byT[q.t]||{ok:0,n:0};byT[q.t].n++;if(right){ok++;byT[q.t].ok++;}return{id:it.id,c,right};});
+  return {ok,n:ex.mcq.length,pts:Math.round(ok*PT*100)/100,rows,byT};}
 
 /* ---------- Trạm trung chuyển (MQTT) ---------- */
 function withBroker(url,fn,ms){return new Promise(res=>{if(typeof mqtt==='undefined'){res(null);return;}let done=false,cl;
@@ -551,7 +570,7 @@ async function openSealed(env,jwk){const tk=await sub.importKey('jwk',{kty:'EC',
 
 /* ---------- Trạng thái học viên ---------- */
 let ME=null,CFG={...DEF_CFG},EX=null,ST=null,tick=null;
-const skey=()=>'kt-'+CFG.round+'-'+ME.mssv;
+const skey=()=>'kt2-'+CFG.round+'-'+ME.mssv;
 const save=()=>{if(ME&&ST)ls.set(skey(),JSON.stringify(ST));};
 function show(v){['vLogin','vIntro','vExam','vResult','vTeacher'].forEach(id=>$(id).hidden=id!==v);$('examBar').hidden=v!=='vExam';window.scrollTo({top:0});}
 async function myName(){try{const f=await GT.loadFile();const id=await GT.idOf(ME.mssv);const e=f&&f.users&&f.users[id];if(!e||!e.l)return'';
@@ -580,49 +599,33 @@ $('lgPw').onkeydown=e=>{if(e.key==='Enter')$('lgGo').click();};
 $('logoutBtn').onclick=$('logout2').onclick=()=>GT.logout(true);
 
 /* ---------- Làm bài ---------- */
-$('startBtn').onclick=()=>{if(!ST)ST={round:CFG.round,mssv:ME.mssv,start:Date.now(),minutes:CFG.minutes,ans:{},caseText:'',opText:'',blur:0,paste:0,pasteChars:0,submitted:false};
+$('startBtn').onclick=()=>{if(!ST)ST={round:CFG.round,mssv:ME.mssv,start:Date.now(),minutes:CFG.minutes,ans:{},blur:0,submitted:false};
   save();renderExam();show('vExam');startTimer();};
+function qHtml(it,i,c,showKey,res){const q=QI[it.id];const right=c===q.a;
+  return `<div class="q ${res?(right?'right':'wrong'):''}" id="${res?'r':'q'}${i+1}"><div class="lab"><b>Câu ${i+1}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span>${res?`<span class="pill ${right?'ok':'bad'}">${right?'Đúng · 0,25':c===undefined?'Bỏ trống':'Sai'}</span>`:''}</div>
+  <p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label class="${res&&showKey&&oi===q.a?'right':''} ${res&&oi===c&&!right?'wrongpick':''}"><input type="radio" name="m_${it.id}" value="${oi}" ${res?'disabled':''} ${c===oi?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}
+  ${res&&showKey?`<div class="fb">${esc(q.e)}</div>`:''}</div>`;}
 function renderExam(){
-  $('mcqList').innerHTML=EX.mcq.map((it,i)=>{const q=QI[it.id];return `<div class="q" id="q${i+1}"><div class="lab"><b>Câu ${i+1}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span></div>
-    <p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label><input type="radio" name="m_${it.id}" value="${oi}" ${ST.ans[it.id]===oi?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}</div>`;}).join('');
+  $('mcqList').innerHTML=EX.mcq.map((it,i)=>qHtml(it,i,ST.ans[it.id],false,false)).join('');
   $('qnav').innerHTML=EX.mcq.map((it,i)=>`<a href="#q${i+1}" id="nv${i+1}">${i+1}</a>`).join('');
-  const cs=CI[EX.caseId],op=OI[EX.opId];
-  $('caseCard').innerHTML=`<h2>Phần II. Tình huống (20 điểm)</h2><h3>${esc(cs.title)}</h3><div class="scen">${esc(cs.q)}</div>
-    <p class="note">Gợi ý trình bày: quyết định hoặc kết luận, căn cứ pháp lý cụ thể (số hiệu văn bản), phân tích rủi ro, giải pháp. Nên viết từ 250 đến 600 từ.</p>
-    <textarea id="caseTxt" spellcheck="false" aria-label="Bài làm tình huống">${esc(ST.caseText)}</textarea><div class="cnt" id="caseCnt"></div>`;
-  $('opCard').innerHTML=`<h2>Phần III. Nhận định (20 điểm)</h2><h3>${esc(op.title)}</h3><div class="scen">${esc(op.q)}</div>
-    <p class="note">Gợi ý trình bày: bối cảnh đơn vị, quan điểm của anh/chị, cơ hội, rủi ro, đề xuất và lộ trình, liên hệ pháp lý hoặc chuyên môn. Nên viết từ 250 đến 500 từ.</p>
-    <textarea id="opTxt" spellcheck="false" aria-label="Bài làm nhận định">${esc(ST.opText)}</textarea><div class="cnt" id="opCnt"></div>`;
   document.querySelectorAll('#mcqList input[type=radio]').forEach(r=>r.onchange=()=>{ST.ans[r.name.slice(2)]=+r.value;save();progress();});
-  [['caseTxt','caseText','caseCnt'],['opTxt','opText','opCnt']].forEach(([id,k,cn])=>{const t=$(id);
-    t.oninput=()=>{ST[k]=t.value;save();cnt(t,cn);progress();};
-    t.onpaste=e=>{const d=(e.clipboardData&&e.clipboardData.getData('text'))||'';ST.paste++;ST.pasteChars+=d.length;save();};cnt(t,cn);});
   progress();}
-function cnt(t,cn){const w=(t.value.trim().match(/\S+/g)||[]).length;$(cn).textContent=w+' từ';}
 function progress(){let d=0;EX.mcq.forEach((it,i)=>{const on=ST.ans[it.id]!==undefined;if(on)d++;const a=$('nv'+(i+1));if(a)a.classList.toggle('done',on);});
-  const e=(ST.caseText.trim().length>30?1:0)+(ST.opText.trim().length>30?1:0);const tot=d+e;
-  $('progBar').style.width=(tot/32*100)+'%';$('progTxt').textContent=`${d}/30 câu · ${e}/2 tự luận`;}
+  $('progBar').style.width=(d/NQ*100)+'%';$('progTxt').textContent=`${d}/${NQ} câu`;}
 function startTimer(){clearInterval(tick);const end=ST.start+ST.minutes*60000;
   const f=()=>{const left=Math.max(0,end-Date.now());const m=Math.floor(left/60000),s=Math.floor(left%60000/1000);
     $('timer').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');$('timer').classList.toggle('low',left<5*60000);
     if(left<=0){clearInterval(tick);submit(true);}};f();tick=setInterval(f,1000);}
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&ST&&ST.start&&!ST.submitted&&!$('vExam').hidden){ST.blur++;save();}});
 $('submitBtn').onclick=$('submitTop').onclick=()=>{const miss=EX.mcq.filter(it=>ST.ans[it.id]===undefined).length;
-  const em=(ST.caseText.trim()?0:1)+(ST.opText.trim()?0:1);
-  const warn=(miss?`Còn ${miss} câu trắc nghiệm chưa chọn. `:'')+(em?`Còn ${em} câu tự luận để trống. `:'');
-  if(!confirm((warn||'Bạn đã làm đủ các câu. ')+'Nộp bài? Sau khi nộp không sửa được.'))return;submit(false);};
+  if(!confirm((miss?`Còn ${miss} câu chưa chọn. `:'Bạn đã làm đủ 40 câu. ')+'Nộp bài? Sau khi nộp không sửa được.'))return;submit(false);};
 
 /* ---------- Nộp bài ---------- */
-function computeAll(ex,st){const m=gradeMcq(ex,st.ans);const cs=CI[ex.caseId],op=OI[ex.opId];
-  const c=scoreEssay(cs,st.caseText,cs.q),o=scoreEssay(op,st.opText,op.q);
-  return {mcq:m,cs:c,op:o,total:r25(m.pts+c.score+o.score)};}
 async function submit(auto){if(!ST||ST.submitted)return;clearInterval(tick);
   ST.end=Date.now();ST.auto=!!auto;ST.submitted=true;ST.nonce=Math.random().toString(36).slice(2,10);
-  const R=computeAll(EX,ST);ST.result={mcq:R.mcq.pts,ok:R.mcq.ok,cs:R.cs.score,op:R.op.score,total:R.total};save();
-  renderResult();await send();}
-function payload(){return {kind:'ltso-kt',v:1,round:ST.round,mssv:ST.mssv,name:ME.name||'',start:ST.start,end:ST.end,minutes:ST.minutes,auto:ST.auto,
-  ans:ST.ans,caseId:EX.caseId,caseText:ST.caseText,opId:EX.opId,opText:ST.opText,blur:ST.blur,paste:ST.paste,pasteChars:ST.pasteChars,
-  result:ST.result,bank:B.v,ua:navigator.userAgent.slice(0,120),nonce:ST.nonce};}
+  const g=gradeMcq(EX,ST.ans);ST.result={ok:g.ok,pts:g.pts};save();renderResult();await send();}
+function payload(){return {kind:'ltso-kt2',v:2,round:ST.round,mssv:ST.mssv,name:ME.name||'',start:ST.start,end:ST.end,minutes:ST.minutes,auto:ST.auto,
+  ans:ST.ans,blur:ST.blur,result:ST.result,bank:B.v,ua:navigator.userAgent.slice(0,120),nonce:ST.nonce};}
 async function send(){$('sendState').innerHTML='<div class="callout">Đang mã hóa và gửi bài cho giảng viên…</div>';$('resendBtn').hidden=true;
   try{const env=await sealForTeacher(payload());ST.env=env;save();
     const id=await GT.idOf(ST.mssv);const n=await publishAll(ROOT()+'/sub/'+ST.round+'/'+id+'/'+ST.nonce,JSON.stringify(env));
@@ -636,26 +639,14 @@ $('dlBtn').onclick=async()=>{let env=ST.env;if(!env){try{env=await sealForTeache
 $('printRes').onclick=()=>window.print();
 
 /* ---------- Hiển thị kết quả ---------- */
-function rubricHtml(r,item,title,showHint){const icon=c=>c.got>=c.p-0.01?['p','✓']:c.got>0?['h','△']:['f','✗'];
-  return `<h2>${title}: ${fmtN(r.score)}/20 <span class="pill ${r.score>=14?'ok':r.score>=8?'warn':'bad'}">${r.band}</span></h2><h3>${esc(item.title)}</h3>
-  <ul class="rub">${r.crit.map(c=>{const[k,m]=icon(c);return `<li class="${k}"><span class="m">${m}</span><span>${esc(c.n)}${c.hit!=null?` <span class="note">(${c.hit>=c.need?'đạt':'mới nêu '+c.hit+'/'+c.need+' nhóm ý'})</span>`:` <span class="note">(${c.info})</span>`}${c.got<c.p-0.01?`<span class="tip">${esc(c.tip)}</span>`:''}</span><span class="pt">${fmtN(c.got)}/${c.p}</span></li>`;}).join('')}</ul>
-  ${r.mis.length?`<div class="callout bad">${r.mis.map(esc).join('<br>')}</div>`:''}
-  ${r.notes.length?`<div class="callout warn">${r.notes.map(esc).join('<br>')}</div>`:''}
-  ${showHint?`<details><summary>Gợi ý đáp án</summary><ul class="hintlist">${item.hint.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></details>`:''}`;}
-function mcqReview(ex,st,showKey,box,nav){const g=gradeMcq(ex,st.ans);
-  $(nav).innerHTML=ex.mcq.map((it,i)=>`<a href="#${box}${i+1}" class="${g.rows[i].right?'ok':'no'}">${i+1}</a>`).join('');
-  $(box).innerHTML=ex.mcq.map((it,i)=>{const q=QI[it.id],c=st.ans[it.id],right=c===q.a;
-    return `<div class="q ${right?'right':'wrong'}" id="${box}${i+1}"><div class="lab"><b>Câu ${i+1}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill ${right?'ok':'bad'}">${right?'Đúng · 2 điểm':c===undefined?'Bỏ trống':'Sai'}</span></div>
-    <p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label class="${showKey&&oi===q.a?'right':''} ${oi===c&&!right?'wrongpick':''}"><input type="radio" disabled ${oi===c?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}
-    ${showKey?`<div class="fb">${esc(q.e)}</div>`:''}</div>`;}).join('');}
-function renderResult(){show('vResult');const R=computeAll(EX,ST);const showKey=CFG.showKey!==false;
+function mcqReview(ex,ans,showKey,box,nav){const g=gradeMcq(ex,ans);
+  $(nav).innerHTML=ex.mcq.map((it,i)=>`<a href="#${box==='resMcq'?'r':box}${i+1}" class="${g.rows[i].right?'ok':'no'}">${i+1}</a>`).join('');
+  $(box).innerHTML=ex.mcq.map((it,i)=>qHtml(it,i,ans[it.id],showKey,true).replace(`id="r${i+1}"`,`id="${box==='resMcq'?'r':box}${i+1}"`)).join('');return g;}
+function scoreHtml(g,extra){const byT=Object.keys(TOPIC).map(t=>`<div class="s"><b>${g.byT[t]?g.byT[t].ok:0}/${PER}</b><span>${TOPIC[t]}</span></div>`).join('');
+  return `<div class="s total"><b>${fmtN(g.pts)}/10</b><span>${g.ok}/${g.n} câu đúng · 0,25 điểm/câu${extra||''}</span></div>`+byT;}
+function renderResult(){show('vResult');const showKey=CFG.showKey!==false;
   $('resMeta').innerHTML=`<span>MSSV: <b>${esc(ST.mssv)}</b></span>${ME.name?`<span>Họ tên: <b>${esc(ME.name)}</b></span>`:''}<span>Đợt: <b>${esc(ST.round)}</b></span><span>Bắt đầu: <b>${fmtT(ST.start)}</b></span><span>Nộp: <b>${fmtT(ST.end)}</b>${ST.auto?' (tự nộp khi hết giờ)':''}</span>`;
-  $('resScore').innerHTML=`<div class="s"><b>${fmtN(R.mcq.pts)}/60</b><span>Trắc nghiệm: ${R.mcq.ok}/30 câu đúng</span></div>
-    <div class="s"><b>${fmtN(R.cs.score)}/20</b><span>Tình huống (máy chấm)</span></div><div class="s"><b>${fmtN(R.op.score)}/20</b><span>Nhận định (máy chấm)</span></div>
-    <div class="s total"><b>${fmtN(R.total)}/100</b><span>Tổng điểm · thang 10: ${fmtN(R.total/10)}</span></div>`;
-  $('resCase').innerHTML=rubricHtml(R.cs,CI[EX.caseId],'Phần II. Tình huống',showKey)+`<details><summary>Bài làm của bạn</summary><div class="scen" style="white-space:pre-wrap">${esc(ST.caseText)||'<i>(để trống)</i>'}</div></details>`;
-  $('resOp').innerHTML=rubricHtml(R.op,OI[EX.opId],'Phần III. Nhận định',showKey)+`<details><summary>Bài làm của bạn</summary><div class="scen" style="white-space:pre-wrap">${esc(ST.opText)||'<i>(để trống)</i>'}</div></details>`;
-  mcqReview(EX,ST,showKey,'resMcq','resNav');
+  const g=mcqReview(EX,ST.ans,showKey,'resMcq','resNav');$('resScore').innerHTML=scoreHtml(g);
   if(ST.sent)$('sendState').innerHTML=`<div class="callout ok">Đã gửi bài cho giảng viên lúc ${fmtT(ST.sent)}.</div>`;
   else if(!$('sendState').innerHTML){$('sendState').innerHTML='<div class="callout warn">Bài chưa được gửi cho giảng viên.</div>';$('resendBtn').hidden=false;}}
 
@@ -678,62 +669,52 @@ document.querySelectorAll('#gvTabs button').forEach(b=>b.onclick=()=>{document.q
 async function openPanel(){$('gvLogin').hidden=true;$('gvPanel').hidden=false;$('cMsg').textContent='Đang đọc cấu hình hiện tại…';
   const{cfg,reached,signed}=await loadCfg();$('cRound').value=cfg.round;$('cMin').value=cfg.minutes;$('cOpen').value=cfg.open?'1':'0';$('cKey').value=cfg.showKey!==false?'1':'0';$('sRound').value=cfg.round;
   $('cMsg').textContent=!reached?'Chưa kết nối được trạm; đang hiện cấu hình mặc định.':signed?'Đang hiện cấu hình đã phát gần nhất.':'Chưa có cấu hình nào được phát; đang dùng mặc định.';}
-$('cPub').onclick=async()=>{const c={round:$('cRound').value.trim().replace(/[^\w-]/g,'')||'KT1',minutes:Math.max(10,Math.min(240,+$('cMin').value||60)),open:$('cOpen').value==='1',showKey:$('cKey').value==='1',ts:Date.now()};
+$('cPub').onclick=async()=>{const c={round:$('cRound').value.trim().replace(/[^\w-]/g,'')||'KT1',minutes:Math.max(10,Math.min(240,+$('cMin').value||40)),open:$('cOpen').value==='1',showKey:$('cKey').value==='1',ts:Date.now()};
   const sk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x:GV.x,y:GV.y,d:GV.d,ext:true},EC,false,['sign']);
   const sig=b64(await sub.sign(SG,sk,enc.encode(JSON.stringify(c))));const n=await publishAll(ROOT()+'/cfg',JSON.stringify({c,sig}));
   $('cMsg').textContent=n?`Đã phát cấu hình đợt ${c.round} (${c.minutes} phút, ${c.open?'đang mở':'đã đóng'}) tới ${n}/2 trạm.`:'Không kết nối được trạm trung chuyển. Thử lại sau.';$('sRound').value=c.round;};
 
 /* ---- bài nộp ---- */
-const ovKey=()=>'kt-gv-'+$('sRound').value.trim();
+const ovKey=()=>'kt2-gv-'+$('sRound').value.trim();
 const getOv=()=>{try{return JSON.parse(ls.get(ovKey())||'{}');}catch(e){return{};}};
-function regrade(p){const ex=makeExam(p.mssv,p.round);const st={ans:p.ans||{},caseText:p.caseText||'',opText:p.opText||''};const R=computeAll(ex,st);
-  const valid=ex.caseId===p.caseId&&ex.opId===p.opId;return{ex,st,R,valid};}
-async function addEnv(env,src){try{const p=await openSealed(env,GV);if(p.kind!=='ltso-kt')return false;const g=regrade(p);
-  const k=p.mssv;const cur=SUBS.get(k);const item={p,g,src,all:cur?cur.all.concat([p.nonce]):[p.nonce]};
-  if(cur&&!cur.all.includes(p.nonce)){item.all=[...new Set(cur.all.concat([p.nonce]))];if(cur.p.end<=p.end){item.p=cur.p;item.g=cur.g;}}
-  else if(cur){item.p=cur.p;item.g=cur.g;item.all=cur.all;}
-  SUBS.set(k,item);return true;}catch(e){return false;}}
+function regrade(p){const ex=makeExam(p.mssv,p.round);const g=gradeMcq(ex,p.ans||{});return{ex,g};}
+async function addEnv(env){try{const p=await openSealed(env,GV);if(p.kind!=='ltso-kt2')return false;const g=regrade(p);
+  const k=p.mssv;const cur=SUBS.get(k);
+  if(!cur)SUBS.set(k,{p,g,all:[p.nonce]});
+  else{const all=[...new Set(cur.all.concat([p.nonce]))];if(p.end<cur.p.end)SUBS.set(k,{p,g,all});else SUBS.set(k,{...cur,all});}
+  return true;}catch(e){return false;}}
 $('sFetch').onclick=async()=>{const rd=$('sRound').value.trim();$('sMsg').innerHTML='<div class="callout">Đang tải bài nộp từ trạm (khoảng 8 giây)…</div>';
   const {msgs,reached}=await collect(ROOT()+'/sub/'+rd+'/#',6000);let ok=0,bad=0;
-  for(const[,v] of msgs){try{const env=JSON.parse(v);(await addEnv(env,'trạm'))?ok++:bad++;}catch(e){bad++;}}
+  for(const[,v] of msgs){try{(await addEnv(JSON.parse(v)))?ok++:bad++;}catch(e){bad++;}}
   $('sMsg').innerHTML=`<div class="callout ${reached?'ok':'warn'}">${reached?`Nhận ${msgs.length} bản nộp (${ok} giải mã được${bad?`, ${bad} lỗi`:''}).`:'Không kết nối được trạm trung chuyển. Có thể nhập tệp bài làm học viên gửi.'}</div>`;renderSubs();};
-$('sFile').onchange=async e=>{let ok=0,bad=0;for(const f of e.target.files){try{(await addEnv(JSON.parse(await f.text()),'tệp'))?ok++:bad++;}catch(x){bad++;}}
+$('sFile').onchange=async e=>{let ok=0,bad=0;for(const f of e.target.files){try{(await addEnv(JSON.parse(await f.text())))?ok++:bad++;}catch(x){bad++;}}
   $('sMsg').innerHTML=`<div class="callout ${bad?'warn':'ok'}">Đã nhập ${ok} tệp${bad?`, ${bad} tệp không đọc được (sai định dạng hoặc không phải bài của lớp này)`:''}.</div>`;e.target.value='';renderSubs();};
-function rowVals(it){const ov=getOv()[it.p.mssv]||{};const cs=ov.cs!=null&&ov.cs!==''?+ov.cs:it.g.R.cs.score,op=ov.op!=null&&ov.op!==''?+ov.op:it.g.R.op.score;
-  return{ov,cs,op,total:r25(it.g.R.mcq.pts+cs+op)};}
+function finalOf(it){const ov=getOv()[it.p.mssv];const adj=ov!=null&&ov!==''?+ov:null;return {adj,fin:adj!=null?adj:it.g.g.pts};}
 function renderSubs(){const rd=$('sRound').value.trim();const L=[...SUBS.values()].filter(it=>it.p.round===rd).sort((a,b)=>a.p.mssv.localeCompare(b.p.mssv));
-  if(!L.length){$('sTable').innerHTML='<tr><td colspan="14" class="note">Chưa có bài nộp của đợt này.</td></tr>';return;}
-  $('sTable').innerHTML=L.map(it=>{const v=rowVals(it),p=it.p,R=it.g.R;const mins=p.end&&p.start?Math.round((p.end-p.start)/60000):'';
-    return `<tr class="${SEL===p.mssv?'sel':''}"><td class="mono">${esc(p.mssv)}</td><td>${esc(p.name)}</td><td class="num">${fmtN(R.mcq.pts)}</td><td class="num">${fmtN(R.cs.score)}</td>
-    <td class="num"><input type="number" min="0" max="20" step="0.25" data-ov="cs" data-m="${esc(p.mssv)}" value="${v.ov.cs??''}" placeholder="–"></td><td class="num">${fmtN(R.op.score)}</td>
-    <td class="num"><input type="number" min="0" max="20" step="0.25" data-ov="op" data-m="${esc(p.mssv)}" value="${v.ov.op??''}" placeholder="–"></td><td class="num"><b>${fmtN(v.total)}</b></td>
-    <td>${fmtT(p.end)}${p.auto?' <span class="pill warn">hết giờ</span>':''}</td><td class="num">${mins}</td><td class="num">${p.blur||0}</td><td class="num">${p.paste||0}</td>
-    <td class="num">${it.all.length}${it.g.valid?'':' <span class="pill bad">đề không khớp</span>'}</td><td><button class="btn sm" data-view="${esc(p.mssv)}">Xem</button></td></tr>`;}).join('');
-  document.querySelectorAll('[data-ov]').forEach(i=>i.onchange=()=>{const o=getOv();o[i.dataset.m]=o[i.dataset.m]||{};const v=i.value===''?null:Math.max(0,Math.min(20,+i.value));o[i.dataset.m][i.dataset.ov]=v;ls.set(ovKey(),JSON.stringify(o));setTimeout(renderSubs,0);});
+  if(!L.length){$('sTable').innerHTML='<tr><td colspan="11" class="note">Chưa có bài nộp của đợt này.</td></tr>';return;}
+  $('sTable').innerHTML=L.map(it=>{const p=it.p,g=it.g.g,f=finalOf(it);const mins=p.end&&p.start?Math.round((p.end-p.start)/60000):'';
+    return `<tr class="${SEL===p.mssv?'sel':''}"><td class="mono">${esc(p.mssv)}</td><td>${esc(p.name)}</td><td class="num">${g.ok}/${g.n}</td><td class="num">${fmtN(g.pts)}</td>
+    <td class="num"><input type="number" min="0" max="10" step="0.25" data-ov="1" data-m="${esc(p.mssv)}" value="${f.adj??''}" placeholder="–"></td><td class="num"><b>${fmtN(f.fin)}</b></td>
+    <td>${fmtT(p.end)}${p.auto?' <span class="pill warn">hết giờ</span>':''}</td><td class="num">${mins}</td><td class="num">${p.blur||0}</td><td class="num">${it.all.length}</td><td><button class="btn sm" data-view="${esc(p.mssv)}">Xem</button></td></tr>`;}).join('');
+  document.querySelectorAll('[data-ov]').forEach(i=>i.onchange=()=>{const o=getOv();o[i.dataset.m]=i.value===''?null:Math.max(0,Math.min(10,+i.value));ls.set(ovKey(),JSON.stringify(o));setTimeout(renderSubs,0);});
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{SEL=b.dataset.view;renderSubs();viewSub(SUBS.get(SEL));});}
-function viewSub(it){const p=it.p,g=it.g;const sid='gvq';
+function viewSub(it){const p=it.p;
   $('sDetail').innerHTML=`<div class="card" style="margin-top:12px"><h2>Bài của ${esc(p.mssv)} ${esc(p.name)}</h2>
-    <div class="meta"><span>Bắt đầu <b>${fmtT(p.start)}</b></span><span>Nộp <b>${fmtT(p.end)}</b></span><span>Rời trang <b>${p.blur||0}</b> lần</span><span>Dán <b>${p.paste||0}</b> lần (${p.pasteChars||0} ký tự)</span><span>Trình duyệt: ${esc(p.ua||'')}</span></div>
-    ${g.valid?'':'<div class="callout bad">Mã tình huống hoặc nhận định trong bài khác với đề sinh ra từ MSSV: có thể bài bị chỉnh sửa hoặc ngân hàng đề đã thay đổi.</div>'}
-    <div class="card">${rubricHtml(g.R.cs,CI[p.caseId]||CI[g.ex.caseId],'Tình huống (máy chấm)',true)}<div class="scen" style="white-space:pre-wrap">${esc(p.caseText)||'<i>(để trống)</i>'}</div></div>
-    <div class="card">${rubricHtml(g.R.op,OI[p.opId]||OI[g.ex.opId],'Nhận định (máy chấm)',true)}<div class="scen" style="white-space:pre-wrap">${esc(p.opText)||'<i>(để trống)</i>'}</div></div>
-    <div class="card"><h3>Trắc nghiệm: ${g.R.mcq.ok}/30 câu đúng</h3><div class="qnav" id="${sid}n"></div></div><div class="qz" id="${sid}"></div></div>`;
-  mcqReview(g.ex,g.st,true,sid,sid+'n');$('sDetail').scrollIntoView({behavior:'smooth'});}
+    <div class="meta"><span>Bắt đầu <b>${fmtT(p.start)}</b></span><span>Nộp <b>${fmtT(p.end)}</b></span><span>Rời trang <b>${p.blur||0}</b> lần</span><span>Trình duyệt: ${esc(p.ua||'')}</span></div>
+    <div class="score" id="gvScore"></div><div class="qnav" id="gvqn"></div><div class="qz" id="gvq"></div></div>`;
+  const g=mcqReview(it.g.ex,p.ans||{},true,'gvq','gvqn');$('gvScore').innerHTML=scoreHtml(g);$('sDetail').scrollIntoView({behavior:'smooth'});}
 $('sCsv').onclick=()=>{const rd=$('sRound').value.trim();const L=[...SUBS.values()].filter(it=>it.p.round===rd).sort((a,b)=>a.p.mssv.localeCompare(b.p.mssv));
-  const head=['MSSV','Họ tên','Đợt','TN số câu đúng','TN điểm (/60)','Tình huống máy (/20)','Tình huống GV (/20)','Nhận định máy (/20)','Nhận định GV (/20)','Tổng (/100)','Thang 10','Bắt đầu','Nộp','Số phút','Tự nộp khi hết giờ','Rời trang','Số lần dán','Ký tự dán','Số lần nộp','Mã tình huống','Mã nhận định'];
+  const head=['MSSV','Họ tên','Đợt','Số câu đúng','Điểm máy chấm (/10)','Điều chỉnh GV','Điểm cuối (/10)'].concat(Object.values(TOPIC).map(t=>t+' (/8)')).concat(['Bắt đầu','Nộp','Số phút','Tự nộp khi hết giờ','Rời trang','Số lần nộp']);
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=L.map(it=>{const v=rowVals(it),p=it.p,R=it.g.R;return[p.mssv,p.name,p.round,R.mcq.ok,R.mcq.pts,R.cs.score,v.ov.cs??'',R.op.score,v.ov.op??'',v.total,v.total/10,fmtT(p.start),fmtT(p.end),p.end&&p.start?Math.round((p.end-p.start)/60000):'',p.auto?'Có':'',p.blur||0,p.paste||0,p.pasteChars||0,it.all.length,p.caseId,p.opId].map(q).join(',');});
+  const rows=L.map(it=>{const p=it.p,g=it.g.g,f=finalOf(it);return[p.mssv,p.name,p.round,g.ok,g.pts,f.adj??'',f.fin].concat(Object.keys(TOPIC).map(t=>g.byT[t]?g.byT[t].ok:0)).concat([fmtT(p.start),fmtT(p.end),p.end&&p.start?Math.round((p.end-p.start)/60000):'',p.auto?'Có':'',p.blur||0,it.all.length]).map(q).join(',');});
   const blob=new Blob(['﻿'+[head.map(q).join(',')].concat(rows).join('\r\n')],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`diem-${rd}.csv`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);};
 
 /* ---- ngân hàng đề ---- */
-function renderBank(){const f=$('bFilter').value;let h='';
-  if(f==='mcq')h=B.mcq.map(q=>`<div class="q"><div class="lab"><b>${q.id}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span></div><p class="qt">${esc(q.q)}</p>${q.o.map((o,j)=>`<label class="${j===q.a?'right':''}"><input type="radio" disabled ${j===q.a?'checked':''}>${String.fromCharCode(65+j)}. ${esc(o)}</label>`).join('')}<div class="fb">${esc(q.e)}</div></div>`).join('');
-  else{const L=f==='case'?B.cases:B.ops;h=L.map(c=>`<div class="q"><div class="lab"><b>${c.id}</b></div><p class="qt">${esc(c.title)}</p><div class="scen">${esc(c.q)}</div><h3>Gợi ý đáp án</h3><ul class="hintlist">${c.hint.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h3>Rubric chấm</h3><ul class="hintlist">${c.crit.map(r=>`<li><b>${esc(r.n)}</b> (${r.p} điểm)${r.auto?': máy tính theo độ dài, số câu, từ nối lập luận':`: cần ${r.need} trong ${r.g.length} nhóm ý`} – ${esc(r.tip)}</li>`).join('')}</ul></div>`).join('');}
-  $('bankList').innerHTML=h;}
+function bankQ(q,it){const perm=it?it.perm:[0,1,2,3];return `<div class="q"><div class="lab"><b>${q.id}</b><span class="pill">${TOPIC[q.t]}</span><span class="pill">${KIND[q.k]}</span></div><p class="qt">${esc(q.q)}</p>${perm.map((oi,j)=>`<label class="${oi===q.a?'right':''}"><input type="radio" disabled ${oi===q.a?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}<div class="fb">${esc(q.e)}</div></div>`;}
+function renderBank(){const f=$('bFilter').value;const L=f==='all'?B.mcq:B.mcq.filter(q=>q.t===f);$('bankList').innerHTML=`<div class="callout">${L.length} câu.</div>`+L.map(q=>bankQ(q)).join('');}
 $('bFilter').onchange=renderBank;$('bPrint').onclick=()=>window.print();
-$('bShow').onclick=()=>{const m=$('bMssv').value.trim();if(!m)return;const ex=makeExam(m,$('cRound').value.trim()||'KT1');const cs=CI[ex.caseId],op=OI[ex.opId];
-  $('bankList').innerHTML=`<div class="callout">Đề của MSSV <b>${esc(GT.norm(m))}</b>, đợt <b>${esc(ex.round)}</b>: tình huống ${cs.id} (${esc(cs.title)}), nhận định ${op.id} (${esc(op.title)}).</div>`+
-  ex.mcq.map((it,i)=>{const q=QI[it.id];return `<div class="q"><div class="lab"><b>Câu ${i+1} · ${q.id}</b><span class="pill">${TOPIC[q.t]}</span></div><p class="qt">${esc(q.q)}</p>${it.perm.map((oi,j)=>`<label class="${oi===q.a?'right':''}"><input type="radio" disabled ${oi===q.a?'checked':''}>${String.fromCharCode(65+j)}. ${esc(q.o[oi])}</label>`).join('')}</div>`;}).join('');};
+$('bShow').onclick=()=>{const m=$('bMssv').value.trim();if(!m)return;const ex=makeExam(m,$('cRound').value.trim()||'KT1');
+  $('bankList').innerHTML=`<div class="callout">Đề của MSSV <b>${esc(GT.norm(m))}</b>, đợt <b>${esc(ex.round)}</b>: 40 câu, mã câu ${ex.mcq.map(it=>it.id).join(', ')}.</div>`+ex.mcq.map((it,i)=>bankQ(QI[it.id],it).replace('<b>'+it.id+'</b>','<b>Câu '+(i+1)+' · '+it.id+'</b>')).join('');};
 
 /* ---------- Khởi động ---------- */
 $('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;ls.set('ltso-theme',n);};
