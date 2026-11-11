@@ -68,12 +68,17 @@ update erp_cfg set v = v || '{"bankClear":true}'::jsonb where k = 'main' and not
 insert into erp_role_perm(role,tc,act)
 select r, tc, a from (values
  ('TH','FB50','C'),('TH','FB08','C'),('TH','FBS1','C'),('TH','FF67','C'),('TH','FAGLL03','V'),('TH','ZBRR','V'),('TH','ZSO','V'),
- ('TQ','FBCJ','C'),('TQ','ZKQ','C'),('TQ','FAGLL03','V'),
+ ('TQ','FBCJ','V'),('TQ','ZTQ','C'),('TQ','ZKQ','C'),('TQ','FAGLL03','V'),
+ ('TH','FBCJ','C'),('AP','FBCJ','C'),('AR','FBCJ','C'),
+ ('KTT','FBCJ','V'),('KTT','ZKQ','V'),('KTT','FF67','V'),('KTT','ZTU','V'),('GD','FBCJ','V'),('GD','FF67','V'),('KSNB','FBCJ','V'),('KSNB','ZKQ','V'),('KSNB','FF67','V'),('KSNB','ZTU','V'),
  ('KTT','OB52','A'),('KTT','FAGLL03','V'),('KTT','ZBRR','V'),('KTT','ZSO','V'),
  ('GD','FAGLL03','V'),('GD','ZBRR','V'),('GD','ZSO','V'),
  ('KSNB','FAGLL03','V'),('KSNB','ZBRR','V'),('KSNB','ZSO','V'),
  ('AP','FAGLL03','V'),('AR','FAGLL03','V'),('GT','FAGLL03','V'),('TS','FAGLL03','V'),('TQ','ZSO','V')
 ) as p(r,tc,a) on conflict do nothing;
+-- Sau rà soát độc lập (RV-11): Thủ quỹ không lập phiếu, chỉ xác nhận đã thu/đã chi (ZTQ)
+update erp_role_perm set act = 'V' where role = 'TQ' and tc = 'FBCJ' and act = 'C'
+  and not exists (select 1 from erp_role_perm where role = 'TQ' and tc = 'FBCJ' and act = 'V');
 -- Đề nghị tạm ứng / quyết toán: mọi vai trò tác nghiệp (trừ KTT là người duyệt, KSNB độc lập)
 insert into erp_role_perm(role,tc,act)
 select code, 'ZTU', 'C' from erp_role where code not in ('KTT','KSNB') on conflict do nothing;
@@ -89,7 +94,7 @@ $$ select exists (select 1 from erp_period_close where co = p_co and fy = extrac
 create or replace function erp_type_role(p_type text) returns text language sql immutable set search_path = public, extensions as $$
   select case p_type when 'PR' then 'KHO' when 'GR' then 'KHO' when 'DL' then 'KHO' when 'PO' then 'MH' when 'SO' then 'KD'
                      when 'IV' then 'AP' when 'PAY' then 'AP' when 'BI' then 'AR' when 'RC' then 'AR'
-                     when 'JE' then 'TH' when 'CJ' then 'TQ' when 'CNT' then 'TQ' end
+                     when 'JE' then 'TH' when 'CJ' then 'TH' when 'CNT' then 'TQ' end
 $$;
 create or replace function erp_type_tc(p_type text) returns text language sql immutable set search_path = public, extensions as $$
   select case p_type when 'PR' then 'ME51N' when 'PO' then 'ME21N' when 'GR' then 'MIGO' when 'IV' then 'MIRO' when 'PAY' then 'F-53'
@@ -208,19 +213,27 @@ declare wd date := erp_wdate(p_co); r record; k int := 0; s int;
 begin
   perform pg_advisory_xact_lock(hashtext('erp:bank:' || p_co));
   select coalesce(max(substr(id,3)::int),0) into s from erp_bank_line where co = p_co;
-  -- Chi, thu qua ngân hàng: ngân hàng hạch toán ngày làm việc kế tiếp sau ngày ghi sổ
-  for r in select d.id, d.type, (d.data->>'amount')::numeric amt, j.post_date, d.data->>'vendor' ven, d.data->>'cust' cus,
-                  coalesce(d.data->>'bankAcc','') bacc
+  -- Chi chuyển khoản (PAY) và nộp tiền mặt vào ngân hàng (CJ dep) ghi qua TK 113: ngân hàng hạch toán ngày làm việc kế tiếp, chờ khớp ở FF67
+  -- Thu có giấy báo Có (RC) và rút tiền gửi (CJ wd) đã ghi thẳng TK 112: dòng sao kê phát hành cùng ngày, ở trạng thái đã khớp
+  for r in select d.id, d.type, d.data->>'dir' dir, (d.data->>'amount')::numeric amt, j.post_date, d.data->>'vendor' ven, d.data->>'cust' cus,
+                  coalesce(d.data->>'bankAcc','') bacc, coalesce((d.data->>'bankDirect')::boolean,false) direct
              from erp_doc d join erp_je j on j.co = d.co and j.doc_id = d.id
-            where d.co = p_co and d.type in ('PAY','RC') and d.status = 'posted' and d.data->>'clr' = erp_ad('BANK_CLR')
-              and j.post_date + 1 <= wd
+            where d.co = p_co and d.status = 'posted'
+              and ((d.type = 'PAY' and d.data->>'clr' = erp_ad('BANK_CLR'))
+                or (d.type = 'CJ' and d.data->>'dir' = 'dep' and d.data->>'clr' = erp_ad('BANK_CLR'))
+                or (d.type in ('RC','CJ') and coalesce((d.data->>'bankDirect')::boolean,false)))
+              and j.post_date + case when coalesce((d.data->>'bankDirect')::boolean,false) then 0 else 1 end <= wd
               and not exists (select 1 from erp_bank_line b where b.co = p_co and b.ref_doc = d.id)
             order by j.post_date, d.id loop
     s := s + 1; k := k + 1;
-    insert into erp_bank_line(co,id,vdate,amt,descr,kind,ref_doc)
-    values (p_co, 'SL' || lpad(s::text,5,'0'), r.post_date + 1, case when r.type = 'PAY' then -r.amt else r.amt end,
+    insert into erp_bank_line(co,id,vdate,amt,descr,kind,ref_doc,status,bs_doc,matched_at)
+    values (p_co, 'SL' || lpad(s::text,5,'0'), r.post_date + case when r.direct then 0 else 1 end,
+            case when r.type = 'PAY' or r.dir = 'wd' then -r.amt else r.amt end,
             case when r.type = 'PAY' then 'CHUYEN TIEN DEN ' || coalesce(r.ven,'') || ' TK ' || r.bacc
-                 else 'NHAN TIEN TU ' || coalesce(r.cus,'') end || ' REF ' || r.id, 'doc', r.id);
+                 when r.type = 'RC' then 'NHAN TIEN TU ' || coalesce(r.cus,'')
+                 when r.dir = 'wd' then 'RUT TIEN MAT TAI QUAY'
+                 else 'NOP TIEN MAT VAO TAI KHOAN' end || ' REF ' || r.id, 'doc', r.id,
+            case when r.direct then 'matched' else 'open' end, case when r.direct then r.id end, case when r.direct then clock_timestamp() end);
   end loop;
   for r in select * from erp_bank_preset where co = p_co and not issued and vdate <= wd order by vdate, id loop
     s := s + 1; k := k + 1;
@@ -285,7 +298,7 @@ end $$;
 -- tiền về chưa rõ nội dung: Nợ 112/Có 131 (nếu xác định được khách hàng) hoặc Có 3388 (chờ xác định).
 create or replace function erp_bank_match(p_token text, p_co text, p_line text, p_opts jsonb, p_act_role text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
-declare u erp_user; r text; b erp_bank_line; lines jsonb; posted jsonb; ins jsonb; ts text := erp_iso(); x numeric; cus text; memo text;
+declare u erp_user; r text; b erp_bank_line; lines jsonb; posted jsonb; ins jsonb; ts text := erp_iso(); x numeric; bi jsonb; memo text; rem numeric; extra jsonb := '{}';
 begin
   u := erp_auth(p_token);
   if not u.is_admin and p_co is distinct from u.co then raise exception 'Không được xử lý sao kê của công ty khác.'; end if;
@@ -308,15 +321,22 @@ begin
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK'),'dr',x), jsonb_build_object('a',erp_ad('INT_INC'),'cr',x));
     memo := 'Lãi tiền gửi theo sao kê';
   else
-    cus := nullif(trim(coalesce(p_opts->>'cust','')),'');
-    if cus is not null and not exists (select 1 from erp_partner where co = p_co and code = cus and kind = 'C') then raise exception 'Khách hàng không hợp lệ.'; end if;
-    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK'),'dr',x),
-      case when cus is null then jsonb_build_object('a',erp_ad('SUSPENSE'),'cr',x) else jsonb_build_object('a',erp_ad('AR'),'cr',x,'p',cus) end);
-    memo := case when cus is null then 'Tiền về chưa rõ nội dung, treo TK 3388 chờ xác định' else 'Khách hàng ' || cus || ' chuyển tiền (xác định theo sao kê)' end;
+    if coalesce(p_opts->>'bi','') <> '' then
+      bi := erp_doc_data(p_co, p_opts->>'bi');
+      if bi is null or bi->>'type' <> 'BI' or bi->>'status' <> 'posted' then raise exception 'Hóa đơn bán không hợp lệ.'; end if;
+      rem := (bi->>'total')::numeric - erp_kid_amt(p_co,'RC','bi',p_opts->>'bi') - erp_bs_alloc(p_co, p_opts->>'bi');
+      if x > rem then raise exception 'Số tiền về (% đồng) lớn hơn phần còn nợ của hóa đơn (% đồng). Ghi treo TK 3388 rồi phân bổ từng phần.', erp_fm(x), erp_fm(rem); end if;
+      lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK'),'dr',x), jsonb_build_object('a',erp_ad('AR'),'cr',x,'p',bi->>'cust'));
+      memo := 'Khách hàng ' || (bi->>'cust') || ' trả hóa đơn ' || (bi->>'invSym') || ' số ' || (bi->>'invNo') || ' (xác định theo sao kê)';
+      extra := jsonb_build_object('bi', p_opts->>'bi', 'cust', bi->>'cust', 'alloc', x);
+    else
+      lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK'),'dr',x), jsonb_build_object('a',erp_ad('SUSPENSE'),'cr',x));
+      memo := 'Tiền về chưa rõ nội dung, treo TK 3388 chờ xác định';
+    end if;
   end if;
   ins := erp_doc_ins(p_co, 'BS', 'posted', jsonb_build_object('line',b.id,'kind',b.kind,'amount',b.amt,'vdate',to_char(b.vdate,'YYYY-MM-DD'),
-           'date',to_char(erp_wdate(p_co),'YYYY-MM-DD'),'descr',b.descr,'ref',b.ref_doc,'cust',cus,'memo',memo,
-           'at',ts,'by',u.id::text,'role',r,'hist',jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','create','note',memo))));
+           'date',to_char(erp_wdate(p_co),'YYYY-MM-DD'),'descr',b.descr,'ref',b.ref_doc,'memo',memo,
+           'at',ts,'by',u.id::text,'role',r,'hist',jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','create','note',memo))) || extra);
   posted := erp_post(p_co, ins->>'id', 'BS', null, u.id, lines, memo);
   update erp_doc set data = data || jsonb_build_object('je',posted->'lines','jeNo',posted->>'je','pdate',posted->>'date'), updated_at = clock_timestamp()
    where co = p_co and id = ins->>'id';
@@ -330,6 +350,8 @@ declare u erp_user;
 begin
   u := erp_auth(p_token);
   if not u.is_admin and p_co is distinct from u.co then raise exception 'Không được xem sao kê của công ty khác.'; end if;
+  if not u.is_admin and not exists (select 1 from erp_role_perm where role = any(erp_roles_of(u)) and tc = 'FF67') then
+    raise exception 'Vai trò của bạn không được nhận sao kê ngân hàng (FF67).'; end if;
   return erp_bank_issue(p_co);
 end $$;
 
@@ -365,6 +387,126 @@ begin
   return nv;
 end $$;
 
+
+-- ---------- Sau rà soát độc lập P3 (RV-xx): hàm bổ sung ----------
+-- Tài khoản đối ứng được phép theo loại chứng từ tiền mặt / tạm ứng (RV-09)
+create or replace function erp_acc_ok(p_ctx text, p_acc text) returns boolean language sql immutable set search_path = public, extensions as $$
+  select case p_ctx
+    when 'CJ_OUT' then p_acc ~ '^(6|811|1331|242|1381|1388|3381|3388|334|335|338)'
+    when 'CJ_IN'  then p_acc ~ '^(711|515|1381|1388|3381|3388|338|344)'
+    when 'ADS'    then p_acc ~ '^(6|811|1331|242)'
+    else false end
+$$;
+-- Số đã thu trên hóa đơn bán qua phân bổ tiền về theo sao kê (RV-06, RV-07)
+create or replace function erp_bs_alloc(p_co text, p_bi text) returns numeric language sql stable set search_path = public, extensions as $$
+  select coalesce(sum((data->>'alloc')::numeric), 0) from erp_doc
+   where co = p_co and type = 'BS' and status = 'posted' and data->>'bi' = p_bi and not (data ? 'revBy')
+$$;
+-- Tổng tiền chứng từ con còn hiệu lực (thêm trạng thái đã duyệt chờ thủ quỹ)
+create or replace function erp_kid_amt(p_co text, p_type text, p_fld text, p_parent text) returns numeric
+language sql stable set search_path = public, extensions as $$
+  select coalesce(sum((data->>'amount')::numeric), 0) from erp_doc
+   where co = p_co and type = p_type and status in ('pending','approved','posted') and data->>p_fld = p_parent
+$$;
+-- Dòng bút toán quyết toán tạm ứng
+create or replace function erp_ads_lines(p jsonb) returns jsonb language plpgsql stable set search_path = public, extensions as $$
+declare l jsonb := '[]'; it jsonb; r numeric := (p->>'ret')::numeric;
+begin
+  for it in select * from jsonb_array_elements(p->'lines') loop
+    l := l || jsonb_build_object('a',it->>'a','dr',it->'amount','cc',it->>'cc','memo',it->>'memo');
+  end loop;
+  if r > 0 then l := l || jsonb_build_object('a',erp_ad('CASH'),'dr',r,'memo','Hoàn ứng nộp lại quỹ'); end if;
+  if r < 0 then l := l || jsonb_build_object('a',erp_ad('CASH'),'cr',-r,'memo','Chi bổ sung phần vượt tạm ứng'); end if;
+  return l || jsonb_build_object('a',erp_ad('ADV'),'cr',p->'advAmount','p',p->>'emp');
+end $$;
+
+-- Thủ quỹ xác nhận đã thu / đã chi tiền mặt → ghi TK 111 (RV-11, RV-13)
+create or replace function erp_cash_confirm(p_token text, p_co text, p_id text, p_act_role text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare u erp_user; r text; d erp_doc; nd jsonb; amt numeric; lines jsonb; posted jsonb; ts text := erp_iso(); ns text := 'posted'; memo text; pa erp_partner;
+begin
+  u := erp_auth(p_token);
+  if not u.is_admin and p_co is distinct from u.co then raise exception 'Không được xác nhận thu chi của công ty khác.'; end if;
+  if not erp_can(erp_act_roles(u, p_act_role), 'ZTQ', 'C') then raise exception 'Chỉ Thủ quỹ xác nhận đã thu, đã chi tiền mặt.'; end if;
+  r := case when u.is_admin then coalesce(nullif(p_act_role,''),'GV') else 'TQ' end;
+  perform pg_advisory_xact_lock(hashtext('erp:doc:' || p_co));
+  select * into d from erp_doc where co = p_co and id = p_id for update;
+  if not found then raise exception 'Không tìm thấy chứng từ.'; end if;
+  if d.status <> 'approved' or d.type not in ('PAY','RC','CJ','ADV','ADS') or (d.type in ('PAY','RC') and d.data->>'acc' <> erp_ad('CASH')) then
+    raise exception 'Chứng từ không ở trạng thái chờ thủ quỹ thu, chi.'; end if;
+  if d.data->>'by' = u.id::text and not u.is_admin then raise exception 'Vi phạm bất kiêm nhiệm: người lập chứng từ không tự thu, chi tiền.'; end if;
+  if d.type in ('ADV','ADS') and d.data->>'emp' = u.username and not u.is_admin then
+    raise exception 'Vi phạm bất kiêm nhiệm: Thủ quỹ không tự chi tạm ứng hoặc tự quyết toán tạm ứng cho chính mình.'; end if;
+  amt := (d.data->>'amount')::numeric; nd := d.data;
+  if d.type = 'PAY' then
+    select * into pa from erp_partner where co = p_co and code = d.data->>'vendor';
+    if not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02): không chi tiền.', pa.code; end if;
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('AP'),'dr',amt,'p',d.data->>'vendor'), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
+  elsif d.type = 'RC' then
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',erp_ad('AR'),'cr',amt,'p',d.data->>'cust'));
+  elsif d.type = 'ADV' then
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('ADV'),'dr',amt,'p',d.data->>'emp','memo','Chi tạm ứng ' || (d.data->>'no')),
+                               jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
+    ns := 'paid';
+  elsif d.type = 'ADS' then
+    lines := erp_ads_lines(d.data);
+  elsif d.data->>'dir' = 'out' then
+    lines := jsonb_build_array(jsonb_build_object('a',d.data->>'acc','dr',amt,'cc',d.data->>'cc'), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
+  elsif d.data->>'dir' = 'in' then
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',d.data->>'acc','cr',amt,'cc',d.data->>'cc'));
+  elsif d.data->>'dir' = 'wd' then
+    -- Rút tiền gửi về quỹ: giấy báo Nợ của ngân hàng có ngay → ghi thẳng Có 112
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',erp_ad('BANK'),'cr',amt));
+    nd := nd || jsonb_build_object('bankDirect', true);
+  else
+    -- Nộp tiền mặt vào ngân hàng, chưa có giấy báo Có → TK 113 đến khi có sao kê
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK_CLR'),'dr',amt), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
+    nd := nd || jsonb_build_object('clr', erp_ad('BANK_CLR'));
+  end if;
+  if exists (select 1 from jsonb_array_elements(lines) x where x->>'a' = erp_ad('CASH') and coalesce((x->>'cr')::numeric,0) > 0)
+     and erp_balance(p_co, erp_ad('CASH')) < (select sum(coalesce((x->>'cr')::numeric,0)) from jsonb_array_elements(lines) x where x->>'a' = erp_ad('CASH')) then
+    raise exception 'Không đủ tồn quỹ tiền mặt (còn % đồng). Tồn quỹ không được âm.', erp_fm(erp_balance(p_co, erp_ad('CASH'))); end if;
+  memo := coalesce(d.data->>'reason', d.data->>'memo', d.data->>'purpose', '');
+  posted := erp_post(p_co, d.id, d.type, null, u.id, lines, memo);
+  nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date', 'status', ns, 'cashBy', u.id::text, 'cashAt', ts,
+        'hist', coalesce(nd->'hist','[]'::jsonb) || jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','cash','note','')));
+  update erp_doc set status = ns, data = nd, updated_at = clock_timestamp() where co = p_co and id = p_id;
+  if d.type = 'ADS' then
+    update erp_doc set status = 'settled', updated_at = clock_timestamp(),
+      data = data || jsonb_build_object('status','settled','setBy',d.id,'setNo',d.data->>'no') where co = p_co and id = d.data->>'adv';
+  end if;
+  return jsonb_build_object('status', ns, 'je', posted->>'je');
+end $$;
+
+-- Phân bổ khoản tiền về đang treo 3388 cho một hóa đơn bán (RV-06)
+create or replace function erp_susp_clear(p_token text, p_co text, p_bs text, p_bi text, p_amount numeric, p_act_role text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+declare u erp_user; r text; s jsonb; bi jsonb; rem_s numeric; rem_b numeric; amt numeric := round(coalesce(p_amount,0)); ins jsonb; posted jsonb; ts text := erp_iso(); memo text;
+begin
+  u := erp_auth(p_token);
+  if not u.is_admin and p_co is distinct from u.co then raise exception 'Không được xử lý chứng từ của công ty khác.'; end if;
+  if not erp_can(erp_act_roles(u, p_act_role), 'FF67', 'C') then raise exception 'Vai trò của bạn không được xử lý sao kê ngân hàng (FF67).'; end if;
+  r := case when u.is_admin then coalesce(nullif(p_act_role,''),'GV') else 'TH' end;
+  perform pg_advisory_xact_lock(hashtext('erp:doc:' || p_co));
+  s := erp_doc_data(p_co, p_bs);
+  if s is null or s->>'type' <> 'BS' or s->>'kind' <> 'unk' or coalesce(s->>'bi','') <> '' or s ? 'revBy' then
+    raise exception 'Chỉ phân bổ được khoản tiền về chưa rõ nội dung đang treo TK 3388.'; end if;
+  bi := erp_doc_data(p_co, p_bi);
+  if bi is null or bi->>'type' <> 'BI' or bi->>'status' <> 'posted' then raise exception 'Hóa đơn bán không hợp lệ.'; end if;
+  rem_s := abs((s->>'amount')::numeric) - coalesce((select sum((data->>'alloc')::numeric) from erp_doc where co = p_co and type = 'BS' and data->>'ref' = p_bs and status = 'posted' and not (data ? 'revBy')),0);
+  rem_b := (bi->>'total')::numeric - erp_kid_amt(p_co,'RC','bi',p_bi) - erp_bs_alloc(p_co, p_bi);
+  if amt <= 0 or amt > rem_s or amt > rem_b then
+    raise exception 'Số tiền phân bổ phải lớn hơn 0, không vượt phần còn treo (% đồng) và phần còn nợ của hóa đơn (% đồng).', erp_fm(rem_s), erp_fm(rem_b); end if;
+  memo := 'Phân bổ tiền về chưa rõ (' || (s->>'no') || ') cho hóa đơn ' || (bi->>'invSym') || ' số ' || (bi->>'invNo');
+  ins := erp_doc_ins(p_co, 'BS', 'posted', jsonb_build_object('kind','clr','ref',p_bs,'bi',p_bi,'cust',bi->>'cust','alloc',amt,'amount',amt,
+           'date',to_char(erp_wdate(p_co),'YYYY-MM-DD'),'memo',memo,'at',ts,'by',u.id::text,'role',r,
+           'hist',jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','create','note',memo))));
+  posted := erp_post(p_co, ins->>'id', 'BS', null, u.id,
+    jsonb_build_array(jsonb_build_object('a',erp_ad('SUSPENSE'),'dr',amt), jsonb_build_object('a',erp_ad('AR'),'cr',amt,'p',bi->>'cust')), memo);
+  update erp_doc set data = data || jsonb_build_object('je',posted->'lines','jeNo',posted->>'je','pdate',posted->>'date'), updated_at = clock_timestamp()
+   where co = p_co and id = ins->>'id';
+  return ins;
+end $$;
 
 -- ---------- Lập chứng từ (thay bản 004) ----------
 create or replace function erp_doc_create(p_token text, p_co text, p_type text, p_body jsonb, p_note text, p_act_role text)
@@ -480,6 +622,8 @@ begin
       i := (it->>'line')::int; q := erp_num(it,'qty');
       if i is null or i < 0 or i >= jsonb_array_length(src->'items') then raise exception 'Dòng đơn mua không hợp lệ.'; end if;
       if q is null or q <= 0 then continue; end if;
+      if items @> jsonb_build_array(jsonb_build_object('line', i)) then
+        raise exception 'Dòng % bị lặp trong cùng chứng từ. Gộp số lượng vào một dòng.', i+1; end if;
       if q <> trunc(q) then raise exception 'Số lượng phải là số nguyên.'; end if;
       rem := erp_num(src->'items'->i,'qty') - erp_kid_qty(p_co,'GR','po',b->>'po',i);
       if q > rem then raise exception 'Nhập vượt đơn mua: % chỉ còn % cần nhận. Hàng giao thừa phải lập biên bản và trả lại NCC.', src->'items'->i->>'mat', rem; end if;
@@ -506,6 +650,8 @@ begin
       i := (it->>'line')::int; q := erp_num(it,'qty'); pr := round(coalesce(erp_num(it,'price'),0));
       if i is null or i < 0 or i >= jsonb_array_length(src->'items') then raise exception 'Dòng đơn mua không hợp lệ.'; end if;
       if q is null or q <= 0 then continue; end if;
+      if items @> jsonb_build_array(jsonb_build_object('line', i)) then
+        raise exception 'Dòng % bị lặp trong cùng chứng từ. Gộp số lượng vào một dòng.', i+1; end if;
       if pr <= 0 then raise exception 'Đơn giá hóa đơn phải lớn hơn 0.'; end if;
       rem := erp_kid_qty(p_co,'GR','po',b->>'po',i) - erp_kid_qty(p_co,'IV','po',b->>'po',i);
       if q > rem then raise exception 'Số lượng hóa đơn vượt số đã nhập kho: % mới nhập % chưa có hóa đơn. Không ghi nhận hàng chưa về.', src->'items'->i->>'mat', rem; end if;
@@ -539,6 +685,7 @@ begin
     if amt <= 0 or amt > rem then raise exception 'Số tiền không hợp lệ: chỉ được đề nghị tối đa % đồng.', erp_fm(rem); end if;
     if b->>'acc' not in (erp_ad('CASH'), erp_ad('BANK')) then raise exception 'Tài khoản chi phải là % hoặc %.', erp_ad('CASH'), erp_ad('BANK'); end if;
     select * into pa from erp_partner where co = p_co and code = src->>'vendor';
+    if not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02): không được đề nghị thanh toán.', pa.code; end if;
     if b->>'acc' = erp_ad('BANK') and coalesce(pa.bank_acc,'') = '' then
       raise exception 'Nhà cung cấp % chưa có tài khoản ngân hàng đã duyệt. Cập nhật ở XK02 và chờ Kế toán trưởng duyệt.', pa.code; end if;
     b := b || jsonb_build_object('vendor',src->>'vendor','amount',amt);
@@ -553,6 +700,8 @@ begin
       i := (it->>'line')::int; q := erp_num(it,'qty');
       if i is null or i < 0 or i >= jsonb_array_length(src->'items') then raise exception 'Dòng đơn bán không hợp lệ.'; end if;
       if q is null or q <= 0 then continue; end if;
+      if items @> jsonb_build_array(jsonb_build_object('line', i)) then
+        raise exception 'Dòng % bị lặp trong cùng chứng từ. Gộp số lượng vào một dòng.', i+1; end if;
       if q <> trunc(q) then raise exception 'Số lượng phải là số nguyên.'; end if;
       rem := erp_num(src->'items'->i,'qty') - erp_kid_qty(p_co,'DL','so',b->>'so',i);
       if q > rem then raise exception 'Xuất vượt đơn bán: % chỉ còn %.', src->'items'->i->>'mat', rem; end if;
@@ -590,7 +739,7 @@ begin
     src := erp_doc_data(p_co, b->>'bi');
     if src is null or src->>'status' <> 'posted' then raise exception 'Hóa đơn bán chưa ghi sổ.'; end if;
     amt := round(coalesce(erp_num(p_body,'amount'),0));
-    rem := erp_num(src,'total') - erp_kid_amt(p_co,'RC','bi',b->>'bi');
+    rem := erp_num(src,'total') - erp_kid_amt(p_co,'RC','bi',b->>'bi') - erp_bs_alloc(p_co, b->>'bi');
     if amt <= 0 or amt > rem then raise exception 'Số tiền không hợp lệ: tối đa % đồng.', erp_fm(rem); end if;
     if coalesce(trim(b->>'ref'),'') = '' then raise exception 'Thiếu số giấy báo Có hoặc người nộp tiền.'; end if;
     if b->>'acc' not in (erp_ad('CASH'), erp_ad('BANK')) then raise exception 'Tài khoản thu phải là % hoặc %.', erp_ad('CASH'), erp_ad('BANK'); end if;
@@ -604,8 +753,10 @@ begin
     if jkind = 'rev' then
       src := erp_doc_data(p_co, b->>'revOf');
       if src is null then raise exception 'Không tìm thấy chứng từ cần đảo.'; end if;
-      if src->>'type' <> 'JE' or src->>'kind' = 'rev' then
-        raise exception 'FB08 chỉ đảo bút toán tổng hợp (FB50, FBS1). Chứng từ nghiệp vụ được điều chỉnh bằng giao dịch của phân hệ.'; end if;
+      if src->>'type' not in ('JE','BS') or src->>'kind' in ('rev','doc') or (src->>'type' = 'BS' and coalesce((src->>'auto')::boolean,false)) then
+        raise exception 'FB08 chỉ đảo bút toán tổng hợp (FB50, FBS1) và chứng từ ghi sổ theo sao kê (phí, lãi, tiền về). Chứng từ nghiệp vụ được điều chỉnh bằng giao dịch của phân hệ.'; end if;
+      if src->>'type' = 'BS' and exists (select 1 from erp_doc where co = p_co and type = 'BS' and data->>'ref' = src->>'id' and status = 'posted' and not (data ? 'revBy')) then
+        raise exception 'Khoản tiền về này đã được phân bổ cho hóa đơn. Đảo các chứng từ phân bổ trước.'; end if;
       if src->>'status' <> 'posted' then raise exception 'Chỉ đảo được bút toán đã ghi sổ.'; end if;
       if src ? 'revBy' or exists (select 1 from erp_doc where co = p_co and type = 'JE' and status <> 'rejected' and data->>'revOf' = b->>'revOf') then
         raise exception 'Bút toán này đã được đảo hoặc đang có đề nghị đảo.'; end if;
@@ -637,32 +788,30 @@ begin
   elsif p_type = 'CJ' then
     amt := round(coalesce(erp_num(p_body,'amount'),0));
     if coalesce(b->>'adv','') <> '' then
-      src := erp_doc_data(p_co, b->>'adv');
-      if src is null or src->>'type' <> 'ADV' or src->>'status' <> 'approved' then raise exception 'Đề nghị tạm ứng chưa được duyệt hoặc đã chi.'; end if;
-      amt := erp_num(src,'amount');
-      if erp_balance(p_co, erp_ad('CASH')) < amt then
-        raise exception 'Không đủ tồn quỹ tiền mặt (còn % đồng).', erp_fm(erp_balance(p_co, erp_ad('CASH'))); end if;
-      je := jsonb_build_array(jsonb_build_object('a',erp_ad('ADV'),'dr',amt,'p',src->>'emp','memo','Chi tạm ứng ' || (src->>'no')),
-                              jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
-      b := b || jsonb_build_object('dir','out','acc',erp_ad('ADV'),'amount',amt,'person',src->>'empName',
-             'reason','Chi tạm ứng theo đề nghị ' || (src->>'no'),'emp',src->>'emp');
-      st := 'posted';
+      raise exception 'Chi tạm ứng: Thủ quỹ xác nhận chi trên đề nghị tạm ứng đã duyệt (FBCJ – Chờ thủ quỹ).'; end if;
+    if coalesce(b->>'dir','') not in ('in','out','wd','dep') then
+      raise exception 'Chọn loại phiếu: thu, chi, rút tiền gửi về quỹ hoặc nộp tiền mặt vào ngân hàng.'; end if;
+    if amt <= 0 then raise exception 'Số tiền phải lớn hơn 0.'; end if;
+    if coalesce(trim(b->>'person'),'') = '' or coalesce(trim(b->>'reason'),'') = '' then raise exception 'Thiếu người nộp/nhận tiền hoặc lý do.'; end if;
+    if b->>'dir' in ('wd','dep') then
+      b := (b || jsonb_build_object('amount', amt, 'acc', erp_ad('BANK'))) - 'cc';
     else
-      if coalesce(b->>'dir','') not in ('in','out') then raise exception 'Chọn phiếu thu hoặc phiếu chi.'; end if;
-      if amt <= 0 then raise exception 'Số tiền phải lớn hơn 0.'; end if;
-      if coalesce(trim(b->>'person'),'') = '' or coalesce(trim(b->>'reason'),'') = '' then raise exception 'Thiếu người nộp/nhận tiền hoặc lý do.'; end if;
       a := erp_manual_line(p_co, b->>'acc', b->>'cc', false);
+      if not erp_acc_ok(case b->>'dir' when 'out' then 'CJ_OUT' else 'CJ_IN' end, a.code) then
+        raise exception 'TK % không dùng cho % tiền mặt. Thu nợ khách dùng F-28, trả nhà cung cấp dùng F-53; góp vốn, thuế phải nộp lập chứng từ riêng.', a.code,
+          case b->>'dir' when 'out' then 'phiếu chi' else 'phiếu thu' end; end if;
       b := b || jsonb_build_object('amount', amt, 'acc', a.code);
       if coalesce(b->>'cc','') = '' then b := b - 'cc'; end if;
-      st := 'pending';
     end if;
+    st := 'pending';
 
   elsif p_type = 'CNT' then
     select cash_count into amt from erp_co_state where co = p_co;
     if amt is null then raise exception 'Giảng viên chưa nhập số tiền kiểm đếm thực tế (SPRO). Chưa kiểm quỹ được.'; end if;
     if coalesce(trim(b->>'members'),'') = '' then raise exception 'Ghi thành phần ban kiểm kê quỹ.'; end if;
-    if exists (select 1 from erp_doc where co = p_co and type in ('CJ','CNT') and status = 'pending') then
+    if exists (select 1 from erp_doc where co = p_co and type in ('CJ','CNT') and status in ('pending','approved')) then
       raise exception 'Còn phiếu thu, phiếu chi hoặc biên bản kiểm quỹ chờ duyệt. Xử lý xong mới kiểm quỹ.'; end if;
+    if erp_period_closed(p_co, wd, 'GL') then raise exception 'Kỳ %/% đã đóng. Không lập biên bản kiểm kê quỹ vào kỳ đã khóa sổ.', to_char(wd,'MM'), to_char(wd,'YYYY'); end if;
     rem := erp_balance(p_co, erp_ad('CASH'));
     diff := amt - rem;
     b := b || jsonb_build_object('book', rem, 'counted', amt, 'diff', diff);
@@ -682,10 +831,11 @@ begin
     src := erp_doc_data(p_co, b->>'adv');
     if src is null or src->>'type' <> 'ADV' or src->>'status' <> 'paid' then raise exception 'Khoản tạm ứng chưa được chi hoặc đã quyết toán.'; end if;
     if src->>'emp' <> u.username and not u.is_admin then raise exception 'Chỉ người nhận tạm ứng được lập giấy thanh toán tạm ứng.'; end if;
-    if exists (select 1 from erp_doc where co = p_co and type = 'ADS' and status = 'pending' and data->>'adv' = b->>'adv') then
+    if exists (select 1 from erp_doc where co = p_co and type = 'ADS' and status in ('pending','approved') and data->>'adv' = b->>'adv') then
       raise exception 'Khoản tạm ứng này đang có giấy thanh toán chờ duyệt.'; end if;
     for it in select * from jsonb_array_elements(coalesce(b->'lines','[]')) loop
       a := erp_manual_line(p_co, it->>'a', it->>'cc', false);
+      if not erp_acc_ok('ADS', a.code) then raise exception 'TK % không dùng cho thanh toán tạm ứng (chỉ chi phí 6xx, 811, 242, thuế GTGT được khấu trừ 1331).', a.code; end if;
       q := round(coalesce(erp_num(it,'amount'),0)); if q <= 0 then raise exception 'Số tiền từng khoản chi phải lớn hơn 0.'; end if;
       if coalesce(trim(it->>'memo'),'') = '' then raise exception 'Ghi nội dung và số chứng từ gốc của từng khoản chi.'; end if;
       v_exp := v_exp + q;
@@ -705,7 +855,7 @@ begin
   v_id := p_type || lpad(s::text, 5, '0');
   v_no := pre || lpad(s::text, 4, '0');
   if p_type = 'BI' then b := b || jsonb_build_object('invNo', lpad(s::text, 8, '0')); end if;
-  if p_type in ('GR','IV','DL','BI') or (p_type = 'CJ' and st = 'posted') then
+  if p_type in ('GR','IV','DL','BI') then
     posted := erp_post(p_co, v_id, p_type, d, u.id, je, coalesce(b->>'reason',''));
     b := b || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
     if p_type = 'GR' then
@@ -722,11 +872,6 @@ begin
   b := b || jsonb_build_object('type',p_type,'seq',s,'no',v_no,'at',ts,'by',u.id::text,'role',r,'status',st,
        'hist', jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','create','note',note)));
   insert into erp_doc(co,id,type,seq,status,data) values (p_co, v_id, p_type, s, st, b);
-  if p_type = 'CJ' and coalesce(b->>'adv','') <> '' then
-    update erp_doc set status = 'paid', updated_at = clock_timestamp(),
-      data = data || jsonb_build_object('status','paid','paidBy',v_id,'paidNo',v_no,'paidAt',ts)
-     where co = p_co and id = b->>'adv';
-  end if;
   return jsonb_build_object('id', v_id, 'no', v_no, 'status', st, 'je', b->>'jeNo');
 end $$;
 
@@ -734,7 +879,7 @@ end $$;
 create or replace function erp_doc_decide(p_token text, p_co text, p_id text, p_ok boolean, p_note text, p_act_role text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare u erp_user; r text; d erp_doc; ns text; nd jsonb; ts text := erp_iso(); acc text; amt numeric; bal numeric; posted jsonb; pa erp_partner;
-        clr text; lines jsonb; ins jsonb; p2 jsonb; it jsonb;
+        clr text; lines jsonb; ins jsonb; p2 jsonb; it jsonb; wd date; src jsonb; rd text; bankClear boolean;
 begin
   u := erp_auth(p_token);
   if u.is_admin then
@@ -743,7 +888,7 @@ begin
   else
     if not erp_can_approve(u) then raise exception 'Chỉ Kế toán trưởng hoặc người được giao quyền phê duyệt mới được duyệt chứng từ.'; end if;
     if p_co is distinct from u.co then raise exception 'Không được phê duyệt chứng từ của công ty khác.'; end if;
-    r := 'KTT';
+    r := case when erp_can(erp_roles_of(u), 'SBWP', 'A') then 'KTT' else 'T:AP' end;
   end if;
   perform pg_advisory_xact_lock(hashtext('erp:doc:' || p_co));
   select * into d from erp_doc where co = p_co and id = p_id for update;
@@ -755,69 +900,82 @@ begin
      and not coalesce((select (v->>'selfApprove')::boolean from erp_cfg where k = 'main'), false) then
     raise exception 'Vi phạm bất kiêm nhiệm: không được phê duyệt chứng từ do chính mình lập.';
   end if;
+  -- Ngoại lệ tự duyệt (kiêm nhiệm hoặc giảng viên) phải có lý do (bất biến 6)
+  if d.data->>'by' = u.id::text and p_ok and coalesce(trim(p_note),'') = '' then
+    raise exception 'Tự duyệt chứng từ do chính mình lập phải ghi lý do (ngoại lệ kiêm nhiệm).'; end if;
   if not p_ok and coalesce(trim(p_note),'') = '' then raise exception 'Hãy ghi lý do từ chối.'; end if;
 
-  nd := d.data;
+  nd := d.data; wd := erp_wdate(p_co);
+  bankClear := coalesce((select (v->>'bankClear')::boolean from erp_cfg where k = 'main'), true);
   if not p_ok then
     ns := 'rejected';
-    if d.type = 'IV' then raise exception 'Hóa đơn đã ghi sổ không hủy bằng từ chối. Hãy gỡ khóa sau khi NCC điều chỉnh, hoặc lập bút toán điều chỉnh (từ P4).'; end if;
+    if d.type = 'IV' then raise exception 'Hóa đơn đã ghi sổ không hủy bằng từ chối. Gỡ khóa khi nhà cung cấp đã xác nhận giá, hoặc chờ hóa đơn điều chỉnh (P4).'; end if;
   elsif d.type in ('PAY','RC') then
     acc := d.data->>'acc'; amt := (d.data->>'amount')::numeric;
     if acc not in (erp_ad('CASH'), erp_ad('BANK')) then raise exception 'Tài khoản tiền không hợp lệ.'; end if;
-    -- Chi/thu chuyển khoản ghi vào TK 113 (tiền đang chuyển) đến khi khớp sao kê ngân hàng (FF67)
-    clr := case when acc = erp_ad('BANK') and coalesce((select (v->>'bankClear')::boolean from erp_cfg where k = 'main'), true)
-                then erp_ad('BANK_CLR') else acc end;
     if d.type = 'PAY' then
-      bal := erp_balance(p_co, acc) + case when clr <> acc then erp_balance(p_co, clr) else 0 end;
-      if bal < amt then raise exception 'Không đủ số dư TK % (còn % đồng).', acc, erp_fm(bal); end if;
-      -- Chi chuyển khoản luôn đi vào tài khoản ngân hàng NCC đang có hiệu lực tại thời điểm duyệt chi (thay đổi chưa duyệt không được dùng)
-      if acc = erp_ad('BANK') then
-        select * into pa from erp_partner where co = p_co and code = d.data->>'vendor';
-        nd := nd || jsonb_build_object('bankAcc', pa.bank_acc, 'bankName', pa.bank_name);
-      end if;
+      select * into pa from erp_partner where co = p_co and code = d.data->>'vendor';
+      if not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02): không duyệt chi.', pa.code; end if;
+    end if;
+    if acc = erp_ad('CASH') then
+      -- Tiền mặt: Kế toán trưởng duyệt, Thủ quỹ chi/thu thực tế rồi xác nhận mới ghi TK 111
+      if d.type = 'PAY' and erp_balance(p_co, acc) < amt then
+        raise exception 'Không đủ số dư TK % (còn % đồng).', acc, erp_fm(erp_balance(p_co, acc)); end if;
+      ns := 'approved';
+    elsif d.type = 'PAY' then
+      -- Chi chuyển khoản: ghi Có TK 113 đến khi sao kê xác nhận ngân hàng đã chuyển (cách tài khoản trung gian kiểu SAP – xem TIENDO P3)
+      clr := case when bankClear then erp_ad('BANK_CLR') else acc end;
+      bal := erp_balance(p_co, acc) + case when clr <> acc then least(erp_balance(p_co, clr), 0) else 0 end;
+      if bal < amt then raise exception 'Không đủ số dư TK % (còn % đồng, đã trừ các khoản chi đang chuyển).', acc, erp_fm(bal); end if;
+      nd := nd || jsonb_build_object('bankAcc', pa.bank_acc, 'bankName', pa.bank_name);
       posted := erp_post(p_co, d.id, 'PAY', null, u.id,
         jsonb_build_array(jsonb_build_object('a',erp_ad('AP'),'dr',amt,'p',d.data->>'vendor'), jsonb_build_object('a',clr,'cr',amt)), '');
+      ns := 'posted';
+      nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date', 'postDate', ts);
+      if clr <> acc then nd := nd || jsonb_build_object('clr', clr); end if;
     else
+      -- Thu chuyển khoản đã có giấy báo Có: ghi thẳng Nợ 112; sao kê phát hành dòng đã khớp
       posted := erp_post(p_co, d.id, 'RC', null, u.id,
-        jsonb_build_array(jsonb_build_object('a',clr,'dr',amt), jsonb_build_object('a',erp_ad('AR'),'cr',amt,'p',d.data->>'cust')), '');
+        jsonb_build_array(jsonb_build_object('a',acc,'dr',amt), jsonb_build_object('a',erp_ad('AR'),'cr',amt,'p',d.data->>'cust')), '');
+      ns := 'posted';
+      nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date', 'postDate', ts);
+      if bankClear then nd := nd || jsonb_build_object('bankDirect', true); end if;
     end if;
-    ns := 'posted';
-    nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date', 'postDate', ts);
-    if clr <> acc then nd := nd || jsonb_build_object('clr', clr); end if;
   elsif d.type = 'JE' then
+    if d.data->>'kind' = 'acc' and to_char(wd,'YYYY-MM') <> left(d.data->>'date',7) then
+      raise exception 'Bút toán trích trước lập cho kỳ %, nhưng ngày làm việc đã sang kỳ %: nếu duyệt, chi phí sẽ không nằm đúng kỳ. Từ chối và lập lại, hoặc nhờ giảng viên lùi ngày làm việc.',
+        to_char(erp_date(d.data->>'date'),'MM/YYYY'), to_char(wd,'MM/YYYY'); end if;
     posted := erp_post(p_co, d.id, 'JE', null, u.id, d.data->'lines', d.data->>'memo');
     ns := 'posted';
     nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
     if d.data->>'kind' = 'rev' then
       update erp_doc set data = data || jsonb_build_object('revBy', d.id, 'revNo', d.data->>'no'), updated_at = clock_timestamp()
        where co = p_co and id = d.data->>'revOf';
+      -- Đảo chứng từ ghi sổ theo sao kê: mở lại dòng sao kê để xử lý lại
+      update erp_bank_line set status = 'open', bs_doc = null, updated_at = clock_timestamp()
+       where co = p_co and bs_doc = d.data->>'revOf';
     elsif d.data->>'kind' = 'acc' then
-      -- FBS1: bút toán trích trước tự đảo vào ngày đầu kỳ sau
+      rd := to_char(date_trunc('month', wd) + interval '1 month','YYYY-MM-DD');
       select jsonb_agg(jsonb_strip_nulls(jsonb_build_object('a',x->>'a','dr',x->'cr','cr',x->'dr','cc',x->>'cc','memo',x->>'memo')))
         into lines from jsonb_array_elements(posted->'lines') x;
       ins := erp_doc_ins(p_co, 'JE', 'posted', jsonb_build_object('kind','rev','auto',true,'revOf',d.id,'revNo',d.data->>'no',
-               'date', d.data->>'revDate', 'memo', 'Tự đảo bút toán trích trước ' || (d.data->>'no'), 'lines', lines,
+               'date', rd, 'memo', 'Tự đảo bút toán trích trước ' || (d.data->>'no'), 'lines', lines,
                'amount', d.data->'amount', 'at', ts, 'by', u.id::text, 'role', r,
                'hist', jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','create','note','Tự đảo đầu kỳ sau (FBS1)'))));
       perform set_config('erp.fixed_date', 'on', true);
-      p2 := erp_post(p_co, ins->>'id', 'JE', erp_date(d.data->>'revDate'), u.id, lines, 'Tự đảo bút toán trích trước ' || (d.data->>'no'));
+      p2 := erp_post(p_co, ins->>'id', 'JE', erp_date(rd), u.id, lines, 'Tự đảo bút toán trích trước ' || (d.data->>'no'));
       perform set_config('erp.fixed_date', '', true);
       update erp_doc set data = data || jsonb_build_object('je', p2->'lines', 'jeNo', p2->>'je', 'pdate', p2->>'date'), updated_at = clock_timestamp()
        where co = p_co and id = ins->>'id';
-      nd := nd || jsonb_build_object('revBy', ins->>'id', 'revNo', ins->>'no');
+      nd := nd || jsonb_build_object('revBy', ins->>'id', 'revNo', ins->>'no', 'revDate', rd);
     end if;
   elsif d.type = 'CJ' then
-    amt := (d.data->>'amount')::numeric; acc := d.data->>'acc';
-    if d.data->>'dir' = 'out' then
-      bal := erp_balance(p_co, erp_ad('CASH'));
-      if bal < amt then raise exception 'Không đủ tồn quỹ tiền mặt (còn % đồng). Tồn quỹ không được âm.', erp_fm(bal); end if;
-      lines := jsonb_build_array(jsonb_build_object('a',acc,'dr',amt,'cc',d.data->>'cc'), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
-    else
-      lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',acc,'cr',amt,'cc',d.data->>'cc'));
-    end if;
-    posted := erp_post(p_co, d.id, 'CJ', null, u.id, lines, d.data->>'reason');
-    ns := 'posted';
-    nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
+    amt := (d.data->>'amount')::numeric;
+    if d.data->>'dir' in ('out','dep') and erp_balance(p_co, erp_ad('CASH')) < amt then
+      raise exception 'Không đủ tồn quỹ tiền mặt (còn % đồng). Tồn quỹ không được âm.', erp_fm(erp_balance(p_co, erp_ad('CASH'))); end if;
+    if d.data->>'dir' = 'wd' and erp_balance(p_co, erp_ad('BANK')) + least(erp_balance(p_co, erp_ad('BANK_CLR')),0) < amt then
+      raise exception 'Không đủ số dư tiền gửi để rút.'; end if;
+    ns := 'approved';
   elsif d.type = 'CNT' then
     amt := (d.data->>'diff')::numeric;
     lines := case when amt < 0
@@ -827,24 +985,18 @@ begin
     ns := 'posted';
     nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
   elsif d.type = 'ADS' then
-    lines := '[]';
-    for it in select * from jsonb_array_elements(d.data->'lines') loop
-      lines := lines || jsonb_build_object('a',it->>'a','dr',it->'amount','cc',it->>'cc','memo',it->>'memo');
-    end loop;
     amt := (d.data->>'ret')::numeric;
-    if amt > 0 then lines := lines || jsonb_build_object('a',erp_ad('CASH'),'dr',amt,'memo','Hoàn ứng nộp lại quỹ'); end if;
-    if amt < 0 then
-      bal := erp_balance(p_co, erp_ad('CASH'));
-      if bal < -amt then raise exception 'Không đủ tồn quỹ để chi bổ sung phần chi vượt tạm ứng (còn % đồng).', erp_fm(bal); end if;
-      lines := lines || jsonb_build_object('a',erp_ad('CASH'),'cr',-amt,'memo','Chi bổ sung phần vượt tạm ứng');
+    if amt <> 0 then
+      if amt < 0 and erp_balance(p_co, erp_ad('CASH')) < -amt then
+        raise exception 'Không đủ tồn quỹ để chi bổ sung phần chi vượt tạm ứng (còn % đồng).', erp_fm(erp_balance(p_co, erp_ad('CASH'))); end if;
+      ns := 'approved';   -- có thu/chi tiền mặt: chờ Thủ quỹ xác nhận
+    else
+      posted := erp_post(p_co, d.id, 'ADS', null, u.id, erp_ads_lines(d.data), 'Quyết toán tạm ứng ' || coalesce(d.data->>'adv',''));
+      ns := 'posted';
+      nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
+      update erp_doc set status = 'settled', updated_at = clock_timestamp(),
+        data = data || jsonb_build_object('status','settled','setBy',d.id,'setNo',d.data->>'no') where co = p_co and id = d.data->>'adv';
     end if;
-    lines := lines || jsonb_build_object('a',erp_ad('ADV'),'cr',d.data->'advAmount','p',d.data->>'emp');
-    posted := erp_post(p_co, d.id, 'ADS', null, u.id, lines, 'Quyết toán tạm ứng ' || coalesce(d.data->>'adv',''));
-    ns := 'posted';
-    nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
-    update erp_doc set status = 'settled', updated_at = clock_timestamp(),
-      data = data || jsonb_build_object('status','settled','setBy',d.id,'setNo',d.data->>'no')
-     where co = p_co and id = d.data->>'adv';
   elsif d.type = 'IV' then ns := 'posted';
   else ns := 'approved';
   end if;
@@ -941,14 +1093,16 @@ declare f text;
 begin
   foreach f in array array['erp_wdate(text)','erp_acct_grp(text)','erp_period_closed(text,date,text)','erp_post(text,text,text,date,uuid,jsonb,text)',
     'erp_doc_ins(text,text,text,jsonb)','erp_manual_line(text,text,text,boolean)','erp_bank_seed(text)','erp_bank_issue(text)',
-    'erp_purge_co(text)','erp_type_role(text)','erp_type_tc(text)','erp_md_json(text)','erp_md_changed(text,timestamptz)'] loop
+    'erp_purge_co(text)','erp_type_role(text)','erp_type_tc(text)','erp_md_json(text)','erp_md_changed(text,timestamptz)',
+    'erp_acc_ok(text,text)','erp_bs_alloc(text,text)','erp_kid_amt(text,text,text,text)','erp_ads_lines(jsonb)'] loop
     execute 'revoke execute on function ' || f || ' from public';
     if exists (select 1 from pg_roles where rolname='anon') then execute 'revoke execute on function ' || f || ' from anon'; end if;
     if exists (select 1 from pg_roles where rolname='authenticated') then execute 'revoke execute on function ' || f || ' from authenticated'; end if;
   end loop;
   foreach f in array array['erp_doc_create(text,text,text,jsonb,text,text)','erp_doc_decide(text,text,text,boolean,text,text)',
     'erp_sync(text,text,timestamptz)','erp_admin_set_state(text,text,jsonb)','erp_period_set(text,text,integer,integer,text,boolean,text)',
-    'erp_bank_match(text,text,text,jsonb,text)','erp_bank_refresh(text,text)','erp_admin_set_cfg(text,jsonb)'] loop
+    'erp_bank_match(text,text,text,jsonb,text)','erp_bank_refresh(text,text)','erp_admin_set_cfg(text,jsonb)',
+    'erp_cash_confirm(text,text,text,text)','erp_susp_clear(text,text,text,text,numeric,text)'] loop
     execute 'revoke execute on function ' || f || ' from public';
     if exists (select 1 from pg_roles where rolname='anon') then execute 'grant execute on function ' || f || ' to anon'; end if;
     if exists (select 1 from pg_roles where rolname='authenticated') then execute 'grant execute on function ' || f || ' to authenticated'; end if;

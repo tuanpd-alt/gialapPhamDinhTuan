@@ -232,7 +232,7 @@ $$ select replace(to_char(round(n), 'FM999G999G999G999G990'), ',', '.') $$;
 -- ---------- Dữ liệu gốc: lập / thay đổi (MM01-02, XK01-02, XD01-02) ----------
 -- Trường nhạy cảm: thay đổi nằm ở trạng thái chờ đến khi một người khác có quyền ZMDA duyệt.
 create or replace function erp_md_sensitive(p_obj text, p_field text) returns boolean language sql immutable set search_path = public, extensions as $$
-  select (p_obj in ('VEN','CUS') and p_field in ('bank_acc','bank_name','credit_lim','terms','active'))
+  select (p_obj in ('VEN','CUS') and p_field in ('name','mst','bank_acc','bank_name','credit_lim','terms','active'))
       or (p_obj = 'MAT' and p_field = 'active')
 $$;
 
@@ -294,7 +294,10 @@ begin
       values (p_co, k, v_kind, trim(p_data->>'name'), p_data->>'mst', greatest(0,least(120,coalesce(erp_num(p_data,'terms'),30)::int)),
               case when v_kind = 'C' then greatest(0,coalesce(erp_num(p_data,'credit_lim'),0)) else 0 end,
               coalesce(trim(p_data->>'address'),''), coalesce(trim(p_data->>'bank_acc'),''), coalesce(trim(p_data->>'bank_name'),''), false);
-      insert into erp_md_change(co,obj,key,field,old_val,new_val,status,by) values (p_co,p_obj,k,'*tạo mới',null,trim(p_data->>'name'),'pending',u.id);
+      insert into erp_md_change(co,obj,key,field,old_val,new_val,status,by) values (p_co,p_obj,k,'*tạo mới',null,
+        trim(p_data->>'name') || ' · MST ' || (p_data->>'mst') || ' · TK NH ' || coalesce(nullif(trim(p_data->>'bank_acc'),''),'(chưa có)')
+        || coalesce(' ' || nullif(trim(p_data->>'bank_name'),''),'') || ' · hạn TT ' || greatest(0,least(120,coalesce(erp_num(p_data,'terms'),30)::int)) || ' ngày'
+        || case when v_kind = 'C' then ' · hạn mức ' || erp_fm(greatest(0,coalesce(erp_num(p_data,'credit_lim'),0))) else '' end,'pending',u.id);
       return jsonb_build_object('key',k,'created',true,'applied','{}'::text[],'pending',array['*tạo mới']);
     end if;
     select to_jsonb(x) into cur from erp_partner x where co = p_co and code = k and x.kind = v_kind;

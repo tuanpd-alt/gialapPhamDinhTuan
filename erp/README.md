@@ -96,3 +96,11 @@ Giảng viên có thể chọn "Thao tác như" một vai trò bất kỳ để 
 - Quỹ tiền mặt (FBCJ), kiểm kê quỹ (ZKQ), tạm ứng và thanh toán tạm ứng (ZTU).
 - Chi, thu chuyển khoản qua TK 113. Sao kê ngân hàng (FF67) và bảng đối chiếu ngân hàng (ZBRR).
 - Thứ tự tệp SQL thêm `005_gl_cash`. Kiểm thử: `tests/p3_gl_test.sql`.
+
+### Bổ sung sau rà soát P3
+
+- Tiền mặt: Kế toán lập phiếu → Kế toán trưởng duyệt → **Thủ quỹ** chi, thu thực tế rồi bấm xác nhận ở FBCJ mới ghi sổ TK 111. Thủ quỹ không tự lập phiếu.
+- FBCJ có thêm "Rút tiền gửi về quỹ" và "Nộp tiền mặt vào ngân hàng".
+- FF67: tiền về chưa rõ chọn hóa đơn bán nếu xác định được, nếu không thì treo TK 3388 rồi phân bổ ở bảng "Tiền về chưa rõ đang treo".
+- Kiểm thử SQL chỉ chạy khi `erp_cfg` (khóa `main`) có `"env":"dev"`. **Không** đặt cờ này trên CSDL lớp học.
+

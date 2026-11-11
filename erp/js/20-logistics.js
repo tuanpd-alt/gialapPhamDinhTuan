@@ -146,12 +146,12 @@ function scrPAY(){
   const rem = iv.total-c.ivPaid(iv)-c.ivPend(iv);
   return `<div class="wrap">${head('F-53','Đề nghị thanh toán hóa đơn '+esc(iv.invSym+'/'+iv.invNo),'Nhà cung cấp: '+esc(partnerOf(iv))+'. Hạn thanh toán '+vd(iv.due)+'.')}
   <form class="form panel" data-form="PAY" data-iv="${esc(iv.id)}"><div class="err"></div>
-   <dl class="kv"><dt>Tổng hóa đơn</dt><dd class="mono">${fm(iv.total)}</dd><dt>Đã chi</dt><dd class="mono">${fm(c.ivPaid(iv))}</dd><dt>Đang chờ duyệt chi</dt><dd class="mono">${fm(c.ivPend(iv))}</dd><dt>Còn được đề nghị</dt><dd class="mono"><b>${fm(rem)}</b></dd></dl>
+   <dl class="kv"><dt>Tổng hóa đơn</dt><dd class="mono">${fm(iv.total)}</dd><dt>Đã chi</dt><dd class="mono">${fm(c.ivPaid(iv))}</dd><dt>Đang chờ duyệt / chờ thủ quỹ chi</dt><dd class="mono">${fm(c.ivPend(iv))}</dd><dt>Còn được đề nghị</dt><dd class="mono"><b>${fm(rem)}</b></dd></dl>
    <div class="grid3"><label class="field"><span>Ngày đề nghị</span><input type="date" id="f-date" value="${today()}" required></label>
    <label class="field"><span>Hình thức</span><select id="f-acc"><option value="112">Ủy nhiệm chi – TK 112</option><option value="111">Phiếu chi tiền mặt – TK 111</option></select></label>
    <label class="field"><span>Số tiền</span><input id="f-amt" class="num" type="number" min="1" max="${Math.round(rem)}" step="1" value="${Math.round(rem)}" required></label></div>
    <label class="field"><span>Nội dung</span><input id="f-memo" required maxlength="200" value="Thanh toán hóa đơn ${esc(iv.invSym)} số ${esc(iv.invNo)} cho ${esc(iv.vendor)}"></label>
-   <div class="form-foot"><span class="small muted">Sau khi duyệt: Nợ TK 331 / Có TK 112 hoặc 1111.</span><button class="btn pri">Gửi duyệt chi</button></div></form></div>`;
+   <div class="form-foot"><span class="small muted">${S.cfg.bankClear!==false?'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 113 (tiền đang chuyển), ngân hàng báo Nợ ngày làm việc kế tiếp, khớp ở FF67 thì Nợ 113 / Có 112 (cách tài khoản trung gian kiểu SAP – CẦN GIẢNG VIÊN KIỂM TRA). ':'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 112. '}Tiền mặt: KTT duyệt → Thủ quỹ chi và xác nhận → Nợ 331 / Có 111.</span><button class="btn pri">Gửi duyệt chi</button></div></form></div>`;
 }
 
 /* ============ O2C SCREENS ============ */
@@ -218,7 +218,7 @@ function scrRC(){
    <label class="field"><span>Hình thức</span><select id="f-acc"><option value="112">Giấy báo Có ngân hàng – TK 112</option><option value="111">Phiếu thu tiền mặt – TK 111</option></select></label>
    <label class="field"><span>Số tiền thực thu</span><input id="f-amt" class="num" type="number" min="1" max="${Math.round(rem)}" step="1" value="${Math.round(rem)}" required></label>
    <label class="field"><span>Số giấy báo Có / người nộp</span><input id="f-ref" required maxlength="40" placeholder="GBC 2026-0815"></label></div>
-   <div class="form-foot"><span class="small muted">Sau khi duyệt: Nợ TK 112/1111 / Có TK 131.</span><button class="btn pri">Gửi duyệt thu</button></div></form></div>`;
+   <div class="form-foot"><span class="small muted">Chuyển khoản (đã có giấy báo Có): KTT duyệt → Nợ 112 / Có 131. Tiền mặt: KTT duyệt → Thủ quỹ thu và xác nhận → Nợ 111 / Có 131.</span><button class="btn pri">Gửi duyệt thu</button></div></form></div>`;
 }
 
 /* ============ APPROVAL INBOX ============ */

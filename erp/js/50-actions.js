@@ -88,7 +88,9 @@ const FORM = {
     if(!allowed('SBWP')) return setErr(f,'<b>Không có quyền phê duyệt.</b>');
     if(d.by===S.uid&&!S.isAdmin&&!S.cfg.selfApprove) return setErr(f,'<b>Vi phạm bất kiêm nhiệm.</b> Bạn không thể phê duyệt chứng từ do chính mình lập. Nếu nhóm không còn ai khác được duyệt, báo giảng viên bật "Cho phép tự duyệt khi kiêm nhiệm" trong SPRO.');
     if(!ok&&!note) return setErr(f,'<b>Hãy ghi lý do từ chối</b> để người lập biết cần sửa gì.');
-    if(ok&&d.type==='PAY'&&c.bal(d.acc)<d.amount) return setErr(f,`<b>Không đủ số dư TK ${d.acc}.</b> Số dư ${fm(c.bal(d.acc))}.`);
+    if(ok&&d.by===S.uid&&!note) return setErr(f,'<b>Tự duyệt chứng từ do chính mình lập phải ghi lý do</b> (ngoại lệ kiêm nhiệm, được ghi vào nhật ký).');
+    const avail = d.type==='PAY' ? c.bal(d.acc)+(d.acc==='112'&&S.cfg.bankClear!==false?Math.min(0,c.bal('113')):0) : 0;
+    if(ok&&d.type==='PAY'&&avail<d.amount) return setErr(f,`<b>Không đủ số dư TK ${d.acc}.</b> Số dư khả dụng ${fm(avail)}.`);
     if(!ok&&d.type==='IV') return setErr(f,'<b>Hóa đơn đã ghi sổ không hủy bằng từ chối.</b> Gỡ khóa khi nhà cung cấp xác nhận giá, hoặc chờ chức năng điều chỉnh hóa đơn (P4).');
     await api('erp_doc_decide',{p_token:S.token,p_co:co,p_id:id,p_ok:ok,p_note:note,p_act_role:S.isAdmin?S.role:''}); await sync(); toast(ok?'Đã phê duyệt '+d.no+'.':'Đã từ chối '+d.no+'.'); render(true,true); }); },
   EXTRA(f){ guard(f,async()=>{ const u=S.users[f.dataset.u]; if(!u) return;

@@ -27,7 +27,7 @@ function jeTable(d){
   ${J.map(j=>`<tr><td class="mono">${esc(j.a)}</td><td>${esc(ACCS[j.a])}</td><td class="small">${esc(j.p||j.mat||'')}</td>${hasCC?`<td class="small mono">${esc(j.cc||'')}</td>`:''}<td class="small">${esc(j.memo||'')}</td><td class="num">${j.dr?fm(j.dr):''}</td><td class="num">${j.cr?fm(j.cr):''}</td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="${hasCC?5:4}">Cộng${d.jeNo?' · Số bút toán '+esc(d.jeNo):''}${d.pdate?' · Ngày ghi sổ '+vd(d.pdate):''}</td><td class="num">${fm(sum(J,j=>j.dr||0))}</td><td class="num">${fm(sum(J,j=>j.cr||0))}</td></tr></tfoot></table></div>`;
 }
-const ACTN = {create:'Lập chứng từ',approve:'Phê duyệt',reject:'Từ chối'};
+const ACTN = {create:'Lập chứng từ',approve:'Phê duyệt',reject:'Từ chối',cash:'Thủ quỹ xác nhận đã thu/chi'};
 function histList(d){ return `<ul class="hist">${(d.hist||[]).map(h=>`<li><time>${vdt(h.at)}</time><div><b>${esc(ACTN[h.act]||h.act)}</b>${h.self?' <span class="chip c-pending">tự duyệt do kiêm nhiệm</span>':''} — ${esc(nameOf(h.by))} <span class="small muted">(${esc(roleName(h.role))})</span>${h.note?`<div class="small">${esc(h.note)}</div>`:''}</div></li>`).join('')}</ul>`; }
 function nextSteps(c,d){
   const b=[]; const B=(tc,p,l)=>{ if(allowed(tc)) b.push(`<button class="btn sm pri" data-go="${tc}" data-p="${P(p)}">${esc(l)} (${tc})</button>`); };
@@ -40,12 +40,20 @@ function nextSteps(c,d){
   if(d.type==='BI'&&c.Q.biForRC.includes(d)) B('F-28',{bi:d.id},'Thu tiền');
   return b.join('');
 }
+function cashSign(d){
+  const cash = (['PAY','RC'].includes(d.type)&&d.acc==='111')||d.type==='CJ'||d.type==='ADV'||(d.type==='ADS'&&+d.ret);
+  if(!cash) return '';
+  const inn = d.type==='RC'||(d.type==='CJ'&&['in','wd'].includes(d.dir))||(d.type==='ADS'&&d.ret>0);
+  const who = d.person||d.empName||partnerOf(d);
+  return `<div><b>Thủ quỹ</b>${signer(d,'cash')}</div><div><b>${inn?'Người nộp tiền':'Người nhận tiền'}</b><div class="sg none">${esc(who||'')}</div></div>`;
+}
 function approvalPanel(c,d){
   const pend = (['PR','PO','PAY','RC','JE','CJ','CNT','ADV','ADS'].includes(d.type)&&d.status==='pending')||(['IV','SO'].includes(d.type)&&d.status==='blocked');
   if(!pend) return '';
   if(!allowed('SBWP')) return `<div class="note warn">Chứng từ đang chờ <b>Kế toán trưởng</b> xử lý.</div>`;
   let info='';
-  if(d.type==='PAY'){ const b=c.bal(d.acc); info=`<dl class="kv"><dt>Số dư TK ${d.acc} hiện tại</dt><dd class="mono" style="color:${b<d.amount?'var(--bad)':'inherit'}">${fm(b)}</dd><dt>Số tiền đề nghị chi</dt><dd class="mono">${fm(d.amount)}</dd><dt>Hóa đơn gốc</dt><dd>${docLink(S.param.co,c.by[d.iv])}</dd></dl>`; }
+  if(d.type==='PAY'){ const b=c.bal(d.acc)+(d.acc==='112'&&S.cfg.bankClear!==false?Math.min(0,c.bal('113')):0); const v=ven(d.vendor);
+    info=`${v&&v.active===false?'<div class="note bad">Nhà cung cấp đang bị khóa (XK02): không duyệt chi được.</div>':''}${d.acc==='111'?'<p class="small" style="margin:0 0 6px">Chi tiền mặt: sau khi duyệt, <b>Thủ quỹ</b> chi tiền và xác nhận ở FBCJ mới ghi sổ TK 111.</p>':''}<dl class="kv"><dt>Số dư TK ${d.acc} khả dụng${d.acc==='112'?' (đã trừ khoản chi đang chuyển TK 113)':''}</dt><dd class="mono" style="color:${b<d.amount?'var(--bad)':'inherit'}">${fm(b)}</dd><dt>Số tiền đề nghị chi</dt><dd class="mono">${fm(d.amount)}</dd><dt>Hóa đơn gốc</dt><dd>${docLink(S.param.co,c.by[d.iv])}</dd></dl>`; }
   if(d.type==='RC'){ info=`<dl class="kv"><dt>Số tiền</dt><dd class="mono">${fm(d.amount)}</dd><dt>Chứng từ ngân hàng</dt><dd>${esc(d.ref)}</dd><dt>Hóa đơn</dt><dd>${docLink(S.param.co,c.by[d.bi])}</dd></dl>`; }
   if(d.type==='SO'){ const e=c.exposure(d.cust); info=`<dl class="kv"><dt>Hạn mức tín dụng</dt><dd class="mono">${fm(cus(d.cust).lim)}</dd><dt>Dư nợ TK 131</dt><dd class="mono">${fm(e.ar)}</dd><dt>Đơn bán chưa xuất HĐ (kể cả đơn này)</dt><dd class="mono">${fm(e.so+d.total)}</dd><dt>Vượt hạn mức</dt><dd class="mono" style="color:var(--bad)">${fm(e.tot+d.total-cus(d.cust).lim)}</dd></dl>`; }
   if(d.type==='IV') info=`<p class="small" style="margin:0">Hóa đơn có đơn giá lệch vượt ${S.cfg.tol}% so với đơn mua (xem cột Lệch %). Gỡ khóa nếu chênh lệch đã được thương lượng; hủy nếu cần nhà cung cấp lập hóa đơn điều chỉnh.</p>`;
@@ -55,11 +63,13 @@ function approvalPanel(c,d){
   if(d.type==='CNT') info=`<dl class="kv"><dt>Tồn quỹ theo sổ</dt><dd class="mono">${fm(d.book)}</dd><dt>Thực tế kiểm đếm</dt><dd class="mono">${fm(d.counted)}</dd><dt>Chênh lệch</dt><dd class="mono" style="color:var(--bad)">${fm(d.diff)} (${d.diff<0?'thiếu → TK 1381':'thừa → TK 3381'})</dd></dl>`;
   if(d.type==='ADS') info=`<dl class="kv"><dt>Đã tạm ứng</dt><dd class="mono">${fm(d.advAmount)}</dd><dt>Đã chi theo chứng từ gốc</dt><dd class="mono">${fm(d.expTotal)}</dd><dt>${d.ret>=0?'Nộp lại quỹ':'Chi bổ sung'}</dt><dd class="mono">${fm(Math.abs(d.ret))}</dd></dl>`;
   const okL = {PR:'Phê duyệt',PO:'Phê duyệt đơn mua',IV:'Gỡ khóa thanh toán',SO:'Gỡ khóa tín dụng',PAY:'Duyệt chi',RC:'Duyệt thu',JE:'Duyệt và ghi sổ',CJ:'Duyệt phiếu',CNT:'Duyệt xử lý chênh lệch',ADV:'Duyệt tạm ứng',ADS:'Duyệt quyết toán'}[d.type];
-  const noL = {IV:'Hủy hóa đơn'}[d.type]||'Từ chối';
+  const noB = d.type==='IV' ? '' : `<button class="btn badb" name="ok" value="0">Từ chối</button>`;
+  const self = d.by===S.uid;
   return `<div class="panel" style="border-color:var(--warn)"><h2>Phê duyệt</h2>${info}
    <form class="form" data-form="DECIDE" data-co="${esc(S.param.co)}" data-id="${esc(d.id)}" style="margin-top:12px"><div class="err"></div>
-   <label class="field"><span>Ý kiến (bắt buộc khi từ chối)</span><input id="f-note" maxlength="200"></label>
-   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn okb" name="ok" value="1">${okL}</button><button class="btn badb" name="ok" value="0">${noL}</button></div></form></div>`;
+   ${self?'<div class="note warn">Chứng từ do chính bạn lập: chỉ được tự duyệt khi kiêm nhiệm được giảng viên cho phép, và <b>phải ghi lý do</b>.</div>':''}
+   <label class="field"><span>Ý kiến (bắt buộc khi từ chối${self?' và khi tự duyệt':''})</span><input id="f-note" maxlength="200"></label>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn okb" name="ok" value="1">${okL}</button>${noB}</div></form></div>`;
 }
 function scrDoc(){
   const p = S.param||{}; const co = p.co||S.co;
@@ -98,23 +108,23 @@ function signer(d,act){ const h=(d.hist||[]).find(x=>x.act===act); return h?`<di
 function voucher(c,co,d){
   const t = {PR:['GIẤY ĐỀ NGHỊ MUA HÀNG'],PO:['ĐƠN ĐẶT HÀNG'],GR:['PHIẾU NHẬP KHO'],IV:['PHIẾU ĐỐI CHIẾU HÓA ĐƠN MUA VÀO'],PAY:[d.acc==='111'?'PHIẾU CHI':'ỦY NHIỆM CHI'],
     SO:['XÁC NHẬN ĐƠN HÀNG'],DL:['PHIẾU XUẤT KHO'],BI:['HÓA ĐƠN GIÁ TRỊ GIA TĂNG'],RC:[d.acc==='111'?'PHIẾU THU':'GIẤY BÁO CÓ (bản ghi nhận)'],OB:['CHỨNG TỪ MỞ SỔ – SỐ DƯ ĐẦU KỲ'],
-    JE:['CHỨNG TỪ GHI SỔ (BÚT TOÁN TỔNG HỢP)'],CJ:[d.dir==='in'?'PHIẾU THU':'PHIẾU CHI'],CNT:['BIÊN BẢN KIỂM KÊ QUỸ'],BS:['CHỨNG TỪ GHI SỔ THEO SAO KÊ NGÂN HÀNG'],
+    JE:['CHỨNG TỪ GHI SỔ (BÚT TOÁN TỔNG HỢP)'],CJ:[['in','wd'].includes(d.dir)?'PHIẾU THU':'PHIẾU CHI'],CNT:['BIÊN BẢN KIỂM KÊ QUỸ'],BS:['CHỨNG TỪ GHI SỔ THEO SAO KÊ NGÂN HÀNG'],
     ADV:['GIẤY ĐỀ NGHỊ TẠM ỨNG'],ADS:['GIẤY THANH TOÁN TIỀN TẠM ỨNG']}[d.type][0];
   const ns = d.je&&d.je.length?`Nợ: ${[...new Set(d.je.filter(j=>j.dr).map(j=>j.a))].join(', ')} — Có: ${[...new Set(d.je.filter(j=>j.cr).map(j=>j.a))].join(', ')}`:'';
   const total = valueOf(d);
   const appr = ['PR','PO','PAY','RC','JE','CJ','CNT','ADV','ADS'].includes(d.type) || (d.hist||[]).some(h=>h.act==='approve');
   let body='';
   if(d.items){ body = itemsTable(d); }
-  return `<div class="voucher"><div class="v-head"><div><b>${esc(coName(co))}</b><br>MST: 42010${co.slice(1)}8899 · Nha Trang, Khánh Hòa</div><div style="text-align:right">Mẫu tham khảo – mô phỏng<br>${ns?esc(ns):''}</div></div>
+  return `<div class="voucher"><div class="v-head"><div><b>${esc(coName(co))}</b><br>MST: 4201${co.slice(1)}8899 · Nha Trang, Khánh Hòa</div><div style="text-align:right">Mẫu tham khảo – mô phỏng<br>${ns?esc(ns):''}</div></div>
   <div class="v-title">${t}</div><div class="v-sub">Số: ${esc(d.no)}${d.invNo?' · Ký hiệu '+esc(d.invSym)+' Số '+esc(d.invNo):''} · Ngày ${vd(d.date)}</div>
   ${d.vendor||d.cust?`<p style="margin:4px 0">${d.vendor?'Nhà cung cấp':'Khách hàng'}: <b>${esc(partnerOf(d))}</b> — MST ${esc((ven(d.vendor)||cus(d.cust)).mst)}</p>`:''}
   ${d.reason?`<p style="margin:4px 0">Lý do: ${esc(d.reason)}</p>`:''}${d.memo?`<p style="margin:4px 0">Nội dung: ${esc(d.memo)}</p>`:''}
-  ${d.person?`<p style="margin:4px 0">${d.dir==='in'?'Họ tên người nộp tiền':'Họ tên người nhận tiền'}: <b>${esc(d.person)}</b></p>`:''}${d.empName?`<p style="margin:4px 0">Người tạm ứng: <b>${esc(d.empName)}</b>${d.purpose?' — Lý do: '+esc(d.purpose):''}</p>`:''}
+  ${d.person?`<p style="margin:4px 0">${['in','wd'].includes(d.dir)?'Họ tên người nộp tiền':'Họ tên người nhận tiền'}: <b>${esc(d.person)}</b></p>`:''}${d.empName?`<p style="margin:4px 0">Người tạm ứng: <b>${esc(d.empName)}</b>${d.purpose?' — Lý do: '+esc(d.purpose):''}</p>`:''}
   ${body}${d.type==='JE'||d.type==='CNT'||d.type==='BS'?jeTable(d):''}
   <p style="margin:6px 0">Tổng số tiền: <b class="mono">${fm(total)}</b> đồng<br><i>Bằng chữ: ${esc(docSo(total))}</i></p>
   ${d.type==='BI'?'<p class="small muted">Hóa đơn mô phỏng phục vụ học tập, không có giá trị pháp lý.</p>':''}
   <div class="signs"><div><b>Người lập</b>${signer(d,'create')}</div>${appr?`<div><b>Kế toán trưởng / Người duyệt</b>${signer(d,'approve')}</div>`:''}
-  ${d.type==='GR'?`<div><b>Người giao hàng</b><div class="sg none">${esc(d.deliverer||'')}</div></div>`:''}${d.type==='DL'?`<div><b>Người nhận hàng</b><div class="sg none">${esc(d.receiver||'')}</div></div>`:''}</div></div>`;
+  ${cashSign(d)}${d.type==='GR'?`<div><b>Người giao hàng</b><div class="sg none">${esc(d.deliverer||'')}</div></div>`:''}${d.type==='DL'?`<div><b>Người nhận hàng</b><div class="sg none">${esc(d.receiver||'')}</div></div>`:''}</div></div>`;
 }
 
 /* ============ REPORTS ============ */

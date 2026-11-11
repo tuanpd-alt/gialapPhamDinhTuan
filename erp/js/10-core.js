@@ -99,13 +99,14 @@ function calc(co){
   const poOpen = po => po.items.map((it,i)=>it.qty-sum(kids('GR','po',po.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
   const poUninv = po => po.items.map((it,i)=>sum(kids('GR','po',po.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty))-sum(kids('IV','po',po.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
   const ivPaid = iv => sum(T.PAY.filter(p=>p.iv===iv.id&&p.status==='posted'),p=>p.amount);
-  const ivPend = iv => sum(T.PAY.filter(p=>p.iv===iv.id&&p.status==='pending'),p=>p.amount);
+  const ivPend = iv => sum(T.PAY.filter(p=>p.iv===iv.id&&['pending','approved'].includes(p.status)),p=>p.amount);
   // O2C
   const soDeliv = so => so.items.map((it,i)=>sum(kids('DL','so',so.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
   const soOpen = so => { const dv=soDeliv(so); return so.items.map((it,i)=>it.qty-dv[i]); };
   const soBilled = so => so.items.map((it,i)=>sum(kids('BI','so',so.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
-  const biPaid = bi => sum(T.RC.filter(p=>p.bi===bi.id&&p.status==='posted'),p=>p.amount);
-  const biPend = bi => sum(T.RC.filter(p=>p.bi===bi.id&&p.status==='pending'),p=>p.amount);
+  // Đã thu = phiếu thu đã ghi sổ + tiền về qua sao kê đã phân bổ cho hóa đơn (FF67, chưa bị đảo)
+  const biPaid = bi => sum(T.RC.filter(p=>p.bi===bi.id&&p.status==='posted'),p=>p.amount) + sum((T.BS||[]).filter(b=>b.bi===bi.id&&b.status==='posted'&&!b.revBy),b=>+b.alloc||0);
+  const biPend = bi => sum(T.RC.filter(p=>p.bi===bi.id&&['pending','approved'].includes(p.status)),p=>p.amount);
   const exposure = c => { const r0=P0(ar,c); const arb=r0.dr-r0.cr; const openSO=sum(T.SO.filter(s=>s.cust===c&&s.status==='approved'),s=>{const b=soBilled(s);return sum(s.items.map((it,i)=>(it.qty-b[i])*it.price*(1+VATR())));}); return {ar:Math.round(arb),so:Math.round(openSO),tot:Math.round(arb+openSO)}; };
 
   const Q = {
@@ -207,16 +208,16 @@ function stLabel(d){
     PO:{pending:'Chờ duyệt',approved:'Đã duyệt',rejected:'Từ chối'},
     GR:{posted:'Đã nhập kho'}, DL:{posted:'Đã xuất kho'},
     IV:{posted:'Đã ghi sổ',blocked:'Khóa thanh toán',rejected:'Đã hủy'},
-    PAY:{pending:'Chờ duyệt chi',posted:'Đã chi',rejected:'Từ chối'},
+    PAY:{pending:'Chờ duyệt chi',approved:'Đã duyệt, chờ thủ quỹ chi',posted:'Đã chi',rejected:'Từ chối'},
     SO:{approved:'Đã xác nhận',blocked:'Khóa tín dụng',rejected:'Từ chối'},
     BI:{posted:'Đã ghi sổ'},
-    RC:{pending:'Chờ duyệt thu',posted:'Đã thu',rejected:'Từ chối'},
+    RC:{pending:'Chờ duyệt thu',approved:'Đã duyệt, chờ thủ quỹ thu',posted:'Đã thu',rejected:'Từ chối'},
     JE:{pending:'Chờ duyệt',posted:'Đã ghi sổ',rejected:'Từ chối'},
-    CJ:{pending:'Chờ duyệt',posted:'Đã ghi sổ',rejected:'Từ chối'},
+    CJ:{pending:'Chờ duyệt',approved:'Đã duyệt, chờ thủ quỹ',posted:'Đã ghi sổ',rejected:'Từ chối'},
     CNT:{pending:'Chờ xử lý chênh lệch',posted:'Đã xử lý',rejected:'Từ chối'},
     BS:{posted:'Đã ghi sổ'},
     ADV:{pending:'Chờ duyệt',approved:'Đã duyệt, chờ chi',paid:'Đã chi, chờ quyết toán',settled:'Đã quyết toán',rejected:'Từ chối'},
-    ADS:{pending:'Chờ duyệt',posted:'Đã quyết toán',rejected:'Từ chối'}
+    ADS:{pending:'Chờ duyệt',approved:'Đã duyệt, chờ thủ quỹ',posted:'Đã quyết toán',rejected:'Từ chối'}
   };
   return (map[d.type]&&map[d.type][s])||s;
 }

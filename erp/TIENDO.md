@@ -9,7 +9,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Xong trên `erp2` + `erp-lab-dev`; chờ rà soát độc lập | 11/11/2026 |
+| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; **chờ chạy lại kiểm thử SQL** và rà soát lần 2 | 11/11/2026 |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
 | P6 | Tài sản cố định | Chưa | |
@@ -120,6 +120,43 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
   - Kiểm thử khói giao diện: 58 T-code, không có lỗi JS.
 - Lưu ý vận hành: áp SQL bằng `apply_migration` sẽ dừng chờ xác nhận vì có lệnh xóa trong hàm; ở P3 đã áp bằng `execute_sql`.
 
+
+## P3 – rà soát độc lập lần 1 và sửa lỗi
+
+Rà soát độc lập (prompt 4.17) phát hiện 30 vấn đề: 2 Critical, 9 High, còn lại Medium/Low. Đã sửa:
+
+| Mã | Mức | Vấn đề | Cách sửa |
+| --- | --- | --- | --- |
+| RV-01, 02 | Critical | Nhập kho, hóa đơn mua, giao hàng nhận hai dòng cùng `line` → vượt số lượng, ghi công nợ hai lần | `erp_doc_create` chặn dòng trùng |
+| RV-03 | High | Đổi tên, MST đối tác áp dụng ngay; tạo mới thiếu thông tin kiểm tra | `name`, `mst` thành trường nhạy cảm; nhật ký tạo mới ghi tên · MST · TK NH · hạn TT · hạn mức |
+| RV-04 | High | Vẫn chi được cho NCC đã khóa | Chặn khi lập, khi duyệt và khi Thủ quỹ chi |
+| RV-05 | High | Duyệt FBS1 sau khi sang kỳ mới làm chi phí lệch kỳ | Chặn duyệt nếu ngày làm việc khác tháng của chứng từ; ngày tự đảo tính lúc duyệt |
+| RV-06 | High | Không có cách xử lý khoản treo 3388; đảo chứng từ sao kê không mở lại dòng | `erp_susp_clear` (Nợ 3388 / Có 131, phân bổ từng phần); FB08 đảo được chứng từ BS và mở lại dòng sao kê |
+| RV-07 | High | Tiền về ghi thẳng cho khách, không gắn hóa đơn → hóa đơn vẫn "chưa thu", lập phiếu thu trùng | Tiền về chỉ gắn với hóa đơn cụ thể (`opts.bi`) hoặc treo 3388; phần còn phải thu trừ phần đã phân bổ |
+| RV-08 | High | Không có rút tiền gửi, nộp tiền mặt vào ngân hàng | Thêm loại `wd` (Nợ 111/Có 112, dòng sao kê khớp sẵn) và `dep` (Nợ 113/Có 111, khớp ở FF67) |
+| RV-09 | High | Phiếu thu, chi tiền mặt ghi được vào mọi TK cho phép ghi tay (4111, 211…) | Danh mục TK cho phép `erp_acc_ok` theo ngữ cảnh: phiếu chi, phiếu thu, quyết toán tạm ứng |
+| RV-10 | High | Thu chuyển khoản ghi qua 113 trong khi đã có giấy báo Có | Thu chuyển khoản ghi thẳng Nợ 112; chi chuyển khoản giữ qua 113, ghi rõ là cách tài khoản trung gian kiểu SAP (CẦN GIẢNG VIÊN KIỂM TRA) |
+| RV-11 | High | Thủ quỹ vừa lập phiếu vừa chi tiền; tiền mặt ghi sổ ngay khi KTT duyệt | Kế toán (TH, AP, AR) lập → KTT duyệt (trạng thái "chờ thủ quỹ") → Thủ quỹ xác nhận (`erp_cash_confirm`, quyền ZTQ) mới ghi TK 111; Thủ quỹ chỉ xem FBCJ |
+| RV-12 | Medium | Tự duyệt không để lại lý do | Bắt buộc ghi lý do, nhật ký có cờ `self` |
+| RV-13 | Medium | Thủ quỹ tự chi tạm ứng cho mình | Chặn |
+| RV-14 | Medium | Nút "Hủy hóa đơn" trên hóa đơn đã ghi sổ | Bỏ nút |
+| RV-15 | Medium | Duyệt chi chuyển khoản không trừ khoản đang chuyển | Số dư khả dụng = 112 + min(0, 113) |
+| RV-20 | Medium | KTT, GD, KSNB không xem được FBCJ, ZKQ, FF67, ZTU | Thêm quyền xem |
+| RV-22 | Low | Kiểm quỹ không kiểm tra kỳ đã đóng | Thêm kiểm tra |
+| RV-23 | Medium | Ai đăng nhập cũng gọi được `erp_bank_refresh` | Yêu cầu quyền FF67 |
+| RV-26 | Low | MST trên chứng từ in 11 chữ số | Sửa còn 10 chữ số |
+| RV-28 | Low | Người dùng nhầm ngày ghi sổ FB50 là ngày lập | Ghi chú trên màn hình |
+| RV-29 | Medium | Bảng kết quả kiểm thử `tst_pN` nằm ở schema public; kiểm thử chạy được trên mọi CSDL | Bảng và hàm kiểm thử chuyển sang `pg_temp`; chốt `erp_cfg.main.env = "dev"` (đã đặt trên erp-lab-dev, **không đặt trên erp-lab**) |
+
+Hoãn sang giai đoạn sau: RV-16 (hạn mức tạm ứng theo người – P9), RV-17 (phân bổ một khoản 3388 cho nhiều khách cùng lúc – P5), RV-18 (in ủy nhiệm chi theo mẫu ngân hàng – P10), RV-19 (đối chiếu sao kê nhiều tài khoản ngân hàng – P10), RV-21 (khóa sổ quỹ cuối ngày – P11), RV-24 (lịch sử số kiểm đếm quỹ – P11), RV-25 (cảnh báo tạm ứng quá hạn – P9), RV-27 (bảng chữ số bằng chữ cho số âm – P10), RV-30 (tối ưu `erp_sync` khi nhiều sao kê – P13).
+
+Trạng thái kiểm thử:
+- Toàn bộ hàm đã áp lên erp-lab-dev; md5 thân hàm trùng tệp nguồn (11 hàm).
+- `tests/p3_gl_test.sql` viết lại cho luồng mới: 85 kiểm tra, thêm kiểm tra cho từng RV.
+- **Chưa chạy lại được trên máy chủ**: công cụ SQL yêu cầu giảng viên xác nhận vì bộ kiểm thử có lệnh xóa dữ liệu thử C08, và hộp xác nhận bị tự hủy.
+- Kiểm thử khói giao diện (dữ liệu giả): 58 T-code không lỗi; hàng chờ thủ quỹ, phân bổ 3388, rút tiền gửi, chữ ký Thủ quỹ trên phiếu, FB08 liệt kê chứng từ sao kê đều chạy đúng.
+- Thu hồi quyền lập FBCJ của Thủ quỹ bằng `update` (C → V) thay vì xóa dòng, để không phải chờ xác nhận lệnh xóa.
+
 ## Quyết định đã chọn ở P3
 
 | Mã | Quyết định | Lý do |
@@ -127,7 +164,9 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P3-1 | Ngày ghi sổ do máy chủ lấy theo ngày làm việc; ngày chứng từ không được sau ngày làm việc | Mô phỏng thời gian trôi do giảng viên điều khiển; chặn ghi nghiệp vụ tương lai |
 | P3-2 | Chi, thu chuyển khoản qua TK 113 đến khi khớp sao kê | Sinh viên thấy rõ chênh lệch thời điểm và khoản đang chuyển |
 | P3-3 | Khớp sao kê (FF67) do Kế toán tổng hợp làm và ghi sổ ngay, không qua duyệt | Sao kê ngân hàng là chứng từ bên ngoài; Kế toán trưởng kiểm soát qua ZBRR |
-| P3-4 | Chi tạm ứng đã duyệt ghi sổ ngay khi Thủ quỹ chi | Đề nghị tạm ứng đã qua Kế toán trưởng; tránh duyệt hai lần |
+| P3-4 | ~~Chi tạm ứng đã duyệt ghi sổ ngay khi Thủ quỹ chi~~ → thay bằng P3-7 | |
+| P3-7 | Mọi khoản thu, chi tiền mặt (F-53, F-28 tiền mặt, FBCJ, tạm ứng, quyết toán có nộp lại/chi thêm) chỉ ghi TK 111 khi Thủ quỹ xác nhận | Tách người lập – người duyệt – người giữ tiền (RV-11) |
+| P3-8 | Thu chuyển khoản ghi thẳng 112; chi chuyển khoản, nộp tiền mặt qua 113 | Thu đã có giấy báo Có; chi và nộp tiền mô phỏng độ trễ ngân hàng (RV-10) |
 | P3-5 | FBS1 tự đảo bằng chứng từ riêng ghi ngày đầu kỳ sau ngay khi duyệt | Đơn giản, có dấu vết; kỳ sau đóng thì không duyệt được |
 | P3-6 | Gói vai trò cho buổi P3 nên dùng PK3 (TQ, TH, AP, AR, KTT) | PK1 không có Kế toán tổng hợp, Thủ quỹ |
 
@@ -166,6 +205,8 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 5. Danh mục vai trò, ma trận xung đột (SPEC 4.3) và danh sách trường nhạy cảm có phù hợp bài giảng kiểm soát nội bộ không.
 6. Mẫu sổ S03a-DN, S03b-DN ở ZSO đang theo cách đánh số quen dùng; cần đối chiếu mẫu sổ kèm Thông tư 99/2025/TT-BTC.
 7. Hạch toán phí ngân hàng vào 6427, lãi tiền gửi vào 515, tiền về chưa rõ vào 3388, thiếu quỹ vào 1381, thừa quỹ vào 3381.
+8. Dùng TK 113 cho ủy nhiệm chi đã lập nhưng ngân hàng chưa báo Nợ (cách tài khoản trung gian kiểu SAP) có phù hợp Thông tư 99/2025/TT-BTC không; có thể tắt bằng `bankClear` trong SPRO.
+9. Danh mục TK cho phép trên phiếu thu, phiếu chi, quyết toán tạm ứng (`erp_acc_ok`): chi 6x, 811, 1331, 242, 1381, 1388, 3381, 3388, 334, 335, 338; thu 711, 515, 1381, 1388, 3381, 3388, 338, 344.
 
 ## Câu hỏi cho giảng viên
 

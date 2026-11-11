@@ -45,8 +45,8 @@ function scrJE(kind){
   const rev = new Date(today()); rev.setMonth(rev.getMonth()+1); rev.setDate(1);
   const revS = rev.getFullYear()+'-'+String(rev.getMonth()+1).padStart(2,'0')+'-01';
   return `<div class="wrap">${head(tc,kind==='acc'?'Bút toán trích trước (tự đảo đầu kỳ sau)':'Lập bút toán tổng hợp',
-     kind==='acc'?'Ghi nhận chi phí phải trả cuối kỳ (ví dụ tiền điện, lãi vay chưa có hóa đơn). Khi Kế toán trưởng duyệt, hệ thống ghi sổ và tự lập bút toán đảo vào ngày '+vd(revS)+'.'
-       :'Bút toán tay chỉ dùng cho nghiệp vụ không có giao dịch phân hệ (trích trước, phân bổ, điều chỉnh). Không ghi được vào tài khoản công nợ, tồn kho, tiền; tài khoản có dấu ◆ bắt buộc trung tâm chi phí. Bút toán chờ Kế toán trưởng duyệt mới ghi sổ.')}
+     kind==='acc'?'Ghi nhận chi phí phải trả cuối kỳ (ví dụ tiền điện, lãi vay chưa có hóa đơn). Khi Kế toán trưởng duyệt, hệ thống ghi sổ và tự lập bút toán đảo vào ngày đầu kỳ sau ('+vd(revS)+' nếu duyệt trong kỳ này). Bút toán phải được duyệt trước khi sang kỳ mới; duyệt muộn bị chặn.'
+       :'Bút toán tay chỉ dùng cho nghiệp vụ không có giao dịch phân hệ (trích trước, phân bổ, điều chỉnh). Không ghi được vào tài khoản công nợ, tồn kho, tiền; tài khoản có dấu ◆ bắt buộc trung tâm chi phí. Bút toán chờ Kế toán trưởng duyệt mới ghi sổ; <b>ngày ghi sổ là ngày làm việc lúc Kế toán trưởng duyệt</b>, không phải ngày lập.')}
   ${closedNote()}
   <form class="form panel" data-form="GLJE" data-kind="${kind}" data-calc="GLJE"><div class="err"></div>
    <div class="grid3"><label class="field"><span>Ngày chứng từ</span><input id="f-date" type="date" max="${today()}" value="${today()}" required></label>
@@ -74,9 +74,10 @@ function readJE(f){
 function scrFB08(){
   const c=calc(S.co); const id=S.param&&S.param.id;
   const pendRev = new Set(c.T.JE.filter(x=>x.kind==='rev'&&x.status==='pending').map(x=>x.revOf));
-  const can8 = d => d.status==='posted'&&d.kind!=='rev'&&!d.revBy&&!pendRev.has(d.id);
+  const alloc = d => c.T.BS.some(x=>x.ref===d.id&&x.kind==='clr'&&x.status==='posted'&&!x.revBy);
+  const can8 = d => d.status==='posted'&&d.kind!=='rev'&&!d.auto&&!d.revBy&&!pendRev.has(d.id)&&(d.type==='JE'||(d.type==='BS'&&d.kind!=='doc'&&!alloc(d)));
   if(id){ const d=c.by[id];
-    if(!d||d.type!=='JE') return `<div class="wrap">${head('FB08','Đảo bút toán','')}<div class="err">FB08 chỉ đảo bút toán tổng hợp (FB50, FBS1). Chứng từ nghiệp vụ được điều chỉnh bằng giao dịch của phân hệ.</div></div>`;
+    if(!d||!['JE','BS'].includes(d.type)) return `<div class="wrap">${head('FB08','Đảo bút toán','')}<div class="err">FB08 chỉ đảo bút toán tổng hợp (FB50, FBS1) và chứng từ ghi sổ theo sao kê (phí, lãi, tiền về chưa rõ). Chứng từ nghiệp vụ được điều chỉnh bằng giao dịch của phân hệ.</div></div>`;
     if(!can8(d)) return `<div class="wrap">${head('FB08','Đảo bút toán','')}<div class="err">Bút toán ${esc(d.no)} không đảo được: chưa ghi sổ, đã được đảo hoặc đang có đề nghị đảo.</div></div>`;
     return `<div class="wrap">${head('FB08','Đảo bút toán '+d.no,'Hệ thống lập bút toán đảo Nợ ↔ Có, ghi vào ngày làm việc '+vd(today())+' (kỳ '+ymLabel(ym(today()))+'). Sổ của kỳ gốc giữ nguyên; hai chứng từ liên kết hai chiều.')}
     ${closedNote()}
@@ -84,10 +85,10 @@ function scrFB08(){
     <form class="form panel" data-form="GLREV" data-id="${esc(d.id)}"><div class="err"></div>
      <label class="field"><span>Lý do đảo *</span><input id="f-reason" maxlength="200" required placeholder="Ví dụ: ghi nhầm tài khoản, chi phí đã được điều chỉnh"></label>
      <div class="form-foot"><span class="small muted">Bút toán đảo cũng phải được Kế toán trưởng duyệt.</span><button class="btn pri">Lập bút toán đảo</button></div></form></div>`; }
-  const rows=c.T.JE.filter(d=>d.status==='posted'&&d.kind!=='rev').slice().reverse();
-  return `<div class="wrap">${head('FB08','Đảo bút toán tổng hợp','Chọn bút toán FB50/FBS1 đã ghi sổ cần đảo. Bút toán FBS1 đã tự đảo đầu kỳ sau nên không đảo lại được.')}
+  const rows=c.T.JE.filter(d=>d.status==='posted'&&d.kind!=='rev').concat(c.T.BS.filter(d=>d.status==='posted'&&d.kind!=='doc')).slice().reverse();
+  return `<div class="wrap">${head('FB08','Đảo bút toán tổng hợp','Chọn bút toán FB50/FBS1 hoặc chứng từ ghi sổ theo sao kê (phí, lãi, tiền về chưa rõ, phân bổ) cần đảo. Đảo chứng từ sao kê thì dòng sao kê mở lại để xử lý lại ở FF67. Khoản treo 3388 đã phân bổ phải đảo phần phân bổ trước.')}
   <div class="tw"><table class="t"><thead><tr><th>Số CT</th><th>Ngày ghi sổ</th><th>Diễn giải</th><th class="num">Số tiền</th><th>Trạng thái</th><th></th></tr></thead><tbody>
-  ${rows.map(d=>`<tr><td>${docLink(S.co,d)}</td><td>${vd(pdOf(d))}</td><td>${esc(d.memo||'')}</td><td class="num">${fm(d.amount)}</td>
+  ${rows.map(d=>`<tr><td>${docLink(S.co,d)}</td><td>${vd(pdOf(d))}</td><td>${esc(d.memo||'')}</td><td class="num">${fm(Math.abs(d.amount||0))}</td>
     <td>${d.revBy?`<span class="chip c-rejected">Đã đảo</span> ${docLink(S.co,{id:d.revBy,no:d.revNo||d.revBy})}`:pendRev.has(d.id)?'<span class="chip c-pending">Đang chờ duyệt đảo</span>':chip(d)}</td>
     <td>${can8(d)?`<button class="btn sm" data-go="FB08" data-p="${P({id:d.id})}">Đảo</button>`:''}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">Chưa có bút toán tổng hợp nào đã ghi sổ.</td></tr>'}</tbody></table></div></div>`;
 }
@@ -202,27 +203,40 @@ function scrOB52(){
 /* ---------- FBCJ: quỹ tiền mặt ---------- */
 function cashBook(co){ const c=calc(co); const L=gl(co).filter(x=>x.j.a==='111'); let run=c.acc['111']?c.acc['111'].o:0; const open=run;
   L.forEach(x=>{ run+=(x.j.dr||0)-(x.j.cr||0); x.run=run; }); return {open,L,close:run}; }
+const CJDIR = {out:'Phiếu chi',in:'Phiếu thu',wd:'Rút tiền gửi về quỹ',dep:'Nộp tiền mặt vào ngân hàng'};
+// Chứng từ KTT đã duyệt, chờ Thủ quỹ thu/chi thực tế rồi xác nhận (RV-11)
+function cashQueue(c){
+  return [].concat(c.T.PAY.filter(d=>d.status==='approved'&&d.acc==='111'), c.T.RC.filter(d=>d.status==='approved'&&d.acc==='111'),
+    c.T.CJ.filter(d=>d.status==='approved'), c.T.ADV.filter(d=>d.status==='approved'), c.T.ADS.filter(d=>d.status==='approved'));
+}
+function cashDir(d){ if(d.type==='PAY') return ['Chi',d.amount]; if(d.type==='RC') return ['Thu',d.amount]; if(d.type==='ADV') return ['Chi',d.amount];
+  if(d.type==='ADS') return d.ret>0?['Thu',d.ret]:['Chi',-d.ret]; return [['in','wd'].includes(d.dir)?'Thu':'Chi',d.amount]; }
 function scrFBCJ(){
-  const c=calc(S.co); const cb=cashBook(S.co); const canC=can('FBCJ','C');
-  const advs=c.T.ADV.filter(d=>d.status==='approved'); const pend=c.T.CJ.filter(d=>d.status==='pending');
+  const c=calc(S.co); const cb=cashBook(S.co); const canC=can('FBCJ','C'); const canT=can('ZTQ','C');
+  const q=cashQueue(c); const pend=c.T.CJ.filter(d=>d.status==='pending');
   const accs=manualAccs();
-  return `<div class="wrap">${head('FBCJ','Sổ quỹ tiền mặt – phiếu thu, phiếu chi','Thủ quỹ lập phiếu thu, phiếu chi; Kế toán trưởng duyệt mới ghi sổ. Tồn quỹ không được âm. Thu nợ khách hàng dùng F-28, chi trả nhà cung cấp dùng F-53 (không ghi thẳng TK 131, 331 ở đây).')}
-  <div class="kpis"><div class="kpi"><span>Tồn quỹ theo sổ</span><b class="mono">${fm(cb.close)}</b></div><div class="kpi"><span>Phiếu chờ duyệt</span><b>${pend.length}</b></div><div class="kpi"><span>Tạm ứng chờ chi</span><b>${advs.length}</b></div></div>
+  return `<div class="wrap">${head('FBCJ','Sổ quỹ tiền mặt – phiếu thu, phiếu chi','Kế toán lập phiếu thu, phiếu chi; Kế toán trưởng duyệt; Thủ quỹ thu, chi tiền thực tế rồi xác nhận mới ghi sổ TK 111. Thủ quỹ không tự lập phiếu. Tồn quỹ không được âm. Thu nợ khách hàng dùng F-28, chi trả nhà cung cấp dùng F-53 (không ghi thẳng TK 131, 331 ở đây).')}
+  <div class="kpis"><div class="kpi"><span>Tồn quỹ theo sổ</span><b class="mono">${fm(cb.close)}</b></div><div class="kpi"><span>Phiếu chờ KTT duyệt</span><b>${pend.length}</b></div><div class="kpi"><span>Chờ thủ quỹ thu, chi</span><b>${q.length}</b></div></div>
   ${closedNote()}
+  ${canT?`<div class="panel" style="border-color:var(--warn)"><h2>Chờ thủ quỹ thu, chi</h2>
+   <p class="small muted" style="margin:0 0 8px">Chỉ bấm xác nhận sau khi đã đếm và giao, nhận tiền thực tế. Hệ thống ghi sổ TK 111 vào ngày làm việc ${vd(today())} và ghi tên bạn vào ô chữ ký Thủ quỹ.</p>
+   ${q.length?`<div class="tw"><table class="t"><thead><tr><th>Chứng từ</th><th>Loại</th><th>Người nộp / nhận</th><th>Nội dung</th><th>Thu/Chi</th><th class="num">Số tiền</th><th></th></tr></thead><tbody>${q.map(d=>{const [k,a]=cashDir(d);
+     return `<tr><td>${docLink(S.co,d)}</td><td class="small">${esc(d.type==='CJ'?CJDIR[d.dir]:TYPES[d.type].n)}</td><td>${esc(partnerOf(d))}</td><td class="small">${esc(d.reason||d.purpose||d.memo||'')}</td><td>${k}</td><td class="num">${fm(a)}</td>
+      <td><button class="btn sm pri" data-act="cashOk" data-id="${esc(d.id)}">${k==='Thu'?'Đã thu tiền':'Đã chi tiền'}</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="small muted">Không có chứng từ chờ thu, chi.</p>'}</div>`:''}
   ${canC?`<form class="form panel" data-form="CJ" data-calc="CJ"><div class="err"></div><h2 style="margin:0">Lập phiếu</h2>
-   <div class="grid3"><label class="field"><span>Loại phiếu</span><select id="f-dir"><option value="out">Phiếu chi</option><option value="in">Phiếu thu</option></select></label>
+   <div class="grid3"><label class="field"><span>Loại phiếu</span><select id="f-dir" data-chg="cjdir">${Object.keys(CJDIR).map(k=>`<option value="${k}">${CJDIR[k]}</option>`).join('')}</select></label>
    <label class="field"><span>Ngày</span><input id="f-date" type="date" max="${today()}" value="${today()}" required></label>
    <label class="field"><span>Số tiền *</span><input id="f-amt" class="num" type="number" min="1" step="1" required></label>
-   <label class="field"><span>TK đối ứng *</span><select id="f-acc" data-chg="cjacc">${accOpts('',accs)}</select></label>
-   <label class="field"><span>Trung tâm chi phí</span><select id="f-cc" disabled>${ccOpts('')}</select></label>
+   <label class="field cj-acc"><span>TK đối ứng *</span><select id="f-acc" data-chg="cjacc">${accOpts('',accs)}</select></label>
+   <label class="field cj-acc"><span>Trung tâm chi phí</span><select id="f-cc" disabled>${ccOpts('')}</select></label>
    <label class="field"><span>Người nộp / người nhận *</span><input id="f-person" maxlength="80" required></label>
    <label class="field" style="grid-column:1/-1"><span>Lý do *</span><input id="f-reason" maxlength="200" required></label></div>
+   <p class="small muted cj-bank" hidden>Rút tiền gửi: Nợ 111 / Có 112 khi Thủ quỹ nhận tiền. Nộp tiền mặt: Nợ 113 / Có 111 khi Thủ quỹ nộp; ngân hàng báo Có vào ngày làm việc kế tiếp, khớp ở FF67 (Nợ 112 / Có 113).</p>
    <div class="form-foot"><span id="f-sum" class="sum"></span><button class="btn pri">Lưu và trình duyệt</button></div></form>`:''}
-  ${canC&&advs.length?`<div class="panel"><h2>Tạm ứng đã duyệt, chờ chi</h2><div class="tw"><table class="t"><tbody>${advs.map(d=>`<tr><td>${docLink(S.co,d)}</td><td>${esc(d.empName)}</td><td class="small">${esc(d.purpose)}</td><td class="num">${fm(d.amount)}</td><td><button class="btn sm pri" data-act="advPay" data-id="${esc(d.id)}">Chi tạm ứng</button></td></tr>`).join('')}</tbody></table></div></div>`:''}
   <div><h3 class="sec-title">Sổ quỹ tiền mặt (TK 111)</h3><div class="tw"><table class="t"><thead><tr><th>Ngày GS</th><th>Số CT</th><th>Diễn giải</th><th class="num">Thu</th><th class="num">Chi</th><th class="num">Tồn</th></tr></thead><tbody>
    <tr><td colspan="5"><i>Tồn đầu kỳ</i></td><td class="num">${fm(cb.open)}</td></tr>
    ${cb.L.map(x=>`<tr class="click" data-go="DOC" data-p="${P({co:S.co,id:x.d.id})}"><td>${vd(x.pd)}</td><td class="mono">${esc(x.d.no)}</td><td class="small">${esc(x.d.reason||x.d.memo||TYPES[x.d.type].n)}${x.d.person?' – '+esc(x.d.person):''}</td><td class="num">${x.j.dr?fm(x.j.dr):''}</td><td class="num">${x.j.cr?fm(x.j.cr):''}</td><td class="num">${fm(x.run)}</td></tr>`).join('')}</tbody></table></div></div>
-  ${pend.length?`<div><h3 class="sec-title">Phiếu chờ Kế toán trưởng duyệt</h3><div class="tw"><table class="t"><tbody>${pend.map(d=>`<tr class="click" data-go="DOC" data-p="${P({co:S.co,id:d.id})}"><td class="mono">${esc(d.no)}</td><td>${d.dir==='in'?'Thu':'Chi'}</td><td>${esc(d.reason)}</td><td class="num">${fm(d.amount)}</td><td>${chip(d)}</td></tr>`).join('')}</tbody></table></div></div>`:''}</div>`;
+  ${pend.length?`<div><h3 class="sec-title">Phiếu chờ Kế toán trưởng duyệt</h3><div class="tw"><table class="t"><tbody>${pend.map(d=>`<tr class="click" data-go="DOC" data-p="${P({co:S.co,id:d.id})}"><td class="mono">${esc(d.no)}</td><td>${esc(CJDIR[d.dir]||d.dir)}</td><td>${esc(d.reason)}</td><td class="num">${fm(d.amount)}</td><td>${chip(d)}</td></tr>`).join('')}</tbody></table></div></div>`:''}</div>`;
 }
 
 /* ---------- ZKQ: kiểm kê quỹ ---------- */
@@ -245,7 +259,8 @@ function stmtOpen(co){ const c=calc(co); const ob=(c.T.OB[0]&&c.T.OB[0].je||[]).
 function scrFF67(){
   const B=md(S.co).bank; const canC=can('FF67','C'); const open=stmtOpen(S.co); let run=open;
   const rows=B.map(b=>{ run+=+b.amt; return Object.assign({run},b); });
-  const custs=okCusts(S.co);
+  const c=calc(S.co); const bis=biOpen(c);
+  const susp=c.T.BS.filter(d=>d.kind==='unk'&&!d.bi&&d.status==='posted'&&!d.revBy).map(d=>({d,rem:Math.abs(d.amount)-sum(c.T.BS.filter(x=>x.ref===d.id&&x.kind==='clr'&&x.status==='posted'&&!x.revBy),x=>+x.alloc||0)})).filter(x=>x.rem>0.5);
   return `<div class="wrap">${head('FF67','Sao kê ngân hàng – xử lý từng dòng','Ngân hàng hạch toán chi, thu chuyển khoản vào ngày làm việc kế tiếp sau ngày ghi sổ, đồng thời báo phí, lãi và các khoản khách chuyển chưa rõ nội dung. Mỗi dòng sao kê phải được xử lý để ghi vào TK 112.',
      `<button class="btn sm" data-act="bankRefresh">Nhận sao kê đến ngày ${vd(today())}</button>`)}
   ${closedNote()}
@@ -255,17 +270,25 @@ function scrFF67(){
    ${rows.map(b=>`<tr><td class="mono small">${esc(b.id)}</td><td>${vd(String(b.vdate).slice(0,10))}</td><td class="small mono">${esc(b.descr)}</td><td class="small">${esc(KIND[b.kind])}${b.ref?' · '+docLink(S.co,{id:b.ref,no:(calc(S.co).by[b.ref]||{}).no||b.ref}):''}</td>
     <td class="num">${b.amt>0?fm(b.amt):''}</td><td class="num">${b.amt<0?fm(-b.amt):''}</td><td class="num">${fm(b.run)}</td>
     <td>${b.st==='matched'?`<span class="chip c-approved">Đã ghi sổ</span> ${b.bs?docLink(S.co,{id:b.bs,no:(calc(S.co).by[b.bs]||{}).no||b.bs}):''}`:canC?
-      (b.kind==='unk'?`<select id="cus-${esc(b.id)}" aria-label="Khách hàng"><option value="">Chưa xác định → treo 3388</option>${custs.map(x=>`<option value="${esc(x.c)}">${esc(x.c)} · ${esc(x.n)}</option>`).join('')}</select> `:'')
+      (b.kind==='unk'?`<select id="bi-${esc(b.id)}" aria-label="Hóa đơn bán"><option value="">Chưa xác định → treo 3388</option>${bis.filter(x=>x.rem>=Math.abs(b.amt)).map(x=>`<option value="${esc(x.d.id)}">${esc(x.d.cust)} · HĐ ${esc(x.d.invNo)} · còn ${fm(x.rem)}</option>`).join('')}</select> `:'')
       +`<button class="btn sm pri" data-act="bankMatch" data-id="${esc(b.id)}">${b.kind==='doc'?'Khớp':'Ghi sổ'}</button>`:'<span class="chip c-pending">Chưa xử lý</span>'}</td></tr>`).join('')}</tbody></table></div>
-  <p class="small muted">Bút toán: chi chuyển khoản Nợ 113 / Có 112; thu chuyển khoản Nợ 112 / Có 113; phí Nợ 6427 (CC700) / Có 112; lãi Nợ 112 / Có 515; tiền về xác định được khách Nợ 112 / Có 131, chưa xác định Nợ 112 / Có 3388.</p></div>`;
+  ${susp.length?`<div class="panel"><h2>Tiền về chưa rõ đang treo TK 3388</h2><p class="small muted" style="margin:0 0 8px">Khi xác định được khách hàng và hóa đơn (qua điện thoại, ủy nhiệm chi của khách...), phân bổ khoản treo: Nợ 3388 / Có 131. Có thể phân bổ từng phần cho nhiều hóa đơn.</p>
+   <div class="tw"><table class="t"><thead><tr><th>Chứng từ</th><th>Nội dung ngân hàng</th><th class="num">Còn treo</th><th>Hóa đơn bán</th><th class="num">Số tiền phân bổ</th><th></th></tr></thead><tbody>${susp.map(x=>`<tr><td>${docLink(S.co,x.d)}</td><td class="small mono">${esc(x.d.descr||'')}</td><td class="num">${fm(x.rem)}</td>
+    <td>${canC?`<select id="sb-${esc(x.d.id)}" aria-label="Hóa đơn bán"><option value="">Chọn hóa đơn</option>${bis.map(y=>`<option value="${esc(y.d.id)}" data-rem="${y.rem}">${esc(y.d.cust)} · HĐ ${esc(y.d.invNo)} · còn ${fm(y.rem)}</option>`).join('')}</select>`:''}</td>
+    <td>${canC?`<input id="sa-${esc(x.d.id)}" class="num" type="number" min="1" step="1" max="${x.rem}" style="width:130px" aria-label="Số tiền phân bổ">`:''}</td>
+    <td>${canC?`<button class="btn sm pri" data-act="suspClear" data-id="${esc(x.d.id)}">Phân bổ</button>`:''}</td></tr>`).join('')}</tbody></table></div></div>`:''}
+  <p class="small muted">Bút toán: chi chuyển khoản và nộp tiền mặt ghi qua TK 113 (tiền đang chuyển), khớp sao kê thì Nợ 113 / Có 112 hoặc Nợ 112 / Có 113; thu chuyển khoản đã có giấy báo Có ghi thẳng Nợ 112 / Có 131 và dòng sao kê tự ở trạng thái đã khớp; phí Nợ 6427 (CC700) / Có 112; lãi Nợ 112 / Có 515; tiền về xác định được hóa đơn Nợ 112 / Có 131, chưa xác định Nợ 112 / Có 3388.</p>
+  <div class="note warn small">Cách dùng TK 113 cho khoản chi chuyển khoản đã lập ủy nhiệm chi nhưng ngân hàng chưa báo Nợ là cách tài khoản trung gian kiểu SAP (bank clearing) để mô phỏng độ trễ ngân hàng. Theo Thông tư 99/2025/TT-BTC, TK 113 dùng cho tiền đang chuyển; việc áp dụng cho ủy nhiệm chi chờ báo Nợ — CẦN GIẢNG VIÊN KIỂM TRA. Có thể tắt ở SPRO để ghi thẳng TK 112.</div></div>`;
 }
 
+// Hóa đơn bán đã ghi sổ còn phải thu (trừ phiếu thu chờ duyệt/chờ thủ quỹ và phần đã phân bổ qua sao kê)
+function biOpen(c){ return c.T.BI.filter(d=>d.status==='posted').map(d=>({d,rem:d.total-c.biPaid(d)-c.biPend(d)})).filter(x=>x.rem>0.5); }
 /* ---------- ZBRR: đối chiếu ngân hàng ---------- */
 function scrZBRR(){
   const c=calc(S.co); const B=md(S.co).bank; const open=stmtOpen(S.co); const stmt=open+sum(B,b=>+b.amt);
   const book=c.bal('112'); const un=B.filter(b=>b.st==='open'); const unIn=un.filter(b=>b.amt>0), unOut=un.filter(b=>b.amt<0);
   const issued=new Set(B.filter(b=>b.ref).map(b=>b.ref));
-  const transit=c.T.PAY.concat(c.T.RC).filter(d=>d.status==='posted'&&d.clr==='113'&&!issued.has(d.id));
+  const transit=c.T.PAY.concat(c.T.RC,c.T.CJ).filter(d=>d.status==='posted'&&d.clr==='113'&&!issued.has(d.id));
   const adj=book+sum(unIn,b=>+b.amt)+sum(unOut,b=>+b.amt); const ok=Math.abs(adj-stmt)<1;
   return `<div class="wrap">${head('ZBRR','Bảng đối chiếu tiền gửi ngân hàng','Đối chiếu số dư sổ TK 112 với số dư sao kê đến ngày '+vd(today())+'. Chênh lệch gồm các dòng sao kê chưa được ghi sổ; khoản đang chuyển (TK 113) là phần sổ đã ghi nhưng ngân hàng chưa hạch toán.',`<button class="btn sm pri" data-act="print">In</button>`)}
   <div class="voucher printable"><div class="v-title">BẢNG ĐỐI CHIẾU TIỀN GỬI NGÂN HÀNG</div><div class="v-sub">${esc(coName(S.co))} · Tài khoản tiền gửi tại Ngân hàng TMCP Mô phỏng · Đến ngày ${vd(today())}</div>
@@ -287,9 +310,9 @@ function scrZBRR(){
 
 /* ---------- ZTU: tạm ứng ---------- */
 function scrZTU(){
-  const c=calc(S.co); const me=S.me&&S.me.username; const mine=c.T.ADV.filter(d=>d.emp===me||S.isAdmin).slice().reverse();
+  const c=calc(S.co); const me=S.me&&S.me.username; const canC=can('ZTU','C'); const all=S.isAdmin||!canC; const mine=c.T.ADV.filter(d=>d.emp===me||all).slice().reverse();
   const open=mine.find(d=>['pending','approved','paid'].includes(d.status)&&d.emp===me);
-  const toSettle=mine.filter(d=>d.status==='paid'&&(d.emp===me||S.isAdmin)&&!c.T.ADS.some(x=>x.adv===d.id&&x.status==='pending'));
+  const toSettle=mine.filter(d=>d.status==='paid'&&(d.emp===me||S.isAdmin)&&!c.T.ADS.some(x=>x.adv===d.id&&['pending','approved'].includes(x.status)));
   const sid=S.param&&S.param.adv; const sd=sid&&c.by[sid];
   const bal=calc(S.co).lines.filter(x=>x.j.a==='141'); const owe={}; bal.forEach(x=>{ owe[x.j.p]=(owe[x.j.p]||0)+(x.j.dr||0)-(x.j.cr||0); });
   if(sd&&sd.status==='paid') return `<div class="wrap">${head('ZTU','Thanh toán tạm ứng '+sd.no,'Kê các khoản đã chi kèm số chứng từ gốc. Phần tạm ứng không dùng hết nộp lại quỹ; chi vượt được Thủ quỹ chi bổ sung khi Kế toán trưởng duyệt.')}
@@ -299,18 +322,18 @@ function scrZTU(){
     <div class="tw"><table class="t"><thead><tr><th>TK chi phí</th><th>TTCP</th><th>Nội dung, số chứng từ gốc</th><th class="num">Số tiền</th><th></th></tr></thead><tbody id="ads-lines">${adsRow()}${adsRow()}</tbody></table></div>
     <div><button type="button" class="btn sm" data-act="adsAdd">+ Thêm khoản chi</button></div>
     <div class="form-foot"><span id="f-sum" class="sum"></span><button class="btn pri">Gửi quyết toán</button></div></form></div>`;
-  return `<div class="wrap">${head('ZTU','Tạm ứng và thanh toán tạm ứng','Nhân viên đề nghị tạm ứng → Kế toán trưởng duyệt → Thủ quỹ chi (Nợ 141 chi tiết người nhận) → người nhận quyết toán bằng chứng từ chi → Kế toán trưởng duyệt. Chưa quyết toán khoản cũ thì không tạm ứng tiếp.')}
-  ${open?`<div class="note">Bạn đang có khoản tạm ứng ${docLink(S.co,open)} – ${esc(stLabel(open))}.</div>`:`<form class="form panel" data-form="ADV"><div class="err"></div><h2 style="margin:0">Giấy đề nghị tạm ứng</h2>
+  return `<div class="wrap">${head('ZTU','Tạm ứng và thanh toán tạm ứng','Nhân viên đề nghị tạm ứng → Kế toán trưởng duyệt → Thủ quỹ chi và xác nhận (Nợ 141 chi tiết người nhận) → người nhận quyết toán bằng chứng từ chi → Kế toán trưởng duyệt → Thủ quỹ thu lại phần thừa hoặc chi bổ sung. Thủ quỹ không tự chi tạm ứng cho chính mình. Chưa quyết toán khoản cũ thì không tạm ứng tiếp.')}
+  ${!canC?'<div class="note">Bạn đang xem các khoản tạm ứng của công ty (vai trò kiểm soát, không lập đề nghị).</div>':open?`<div class="note">Bạn đang có khoản tạm ứng ${docLink(S.co,open)} – ${esc(stLabel(open))}.</div>`:`<form class="form panel" data-form="ADV"><div class="err"></div><h2 style="margin:0">Giấy đề nghị tạm ứng</h2>
    <div class="grid3"><label class="field"><span>Ngày</span><input id="f-date" type="date" max="${today()}" value="${today()}"></label>
    <label class="field"><span>Số tiền *</span><input id="f-amt" class="num" type="number" min="1" step="1" required></label>
    <label class="field" style="grid-column:1/-1"><span>Lý do tạm ứng *</span><input id="f-purpose" maxlength="200" required placeholder="Công tác phí, mua vật tư lẻ…"></label></div>
    <div class="form-foot"><span></span><button class="btn pri">Gửi đề nghị</button></div></form>`}
   ${toSettle.length?`<div class="panel"><h2>Chờ thanh toán tạm ứng</h2><div class="tw"><table class="t"><tbody>${toSettle.map(d=>`<tr><td>${docLink(S.co,d)}</td><td>${esc(d.empName)}</td><td class="num">${fm(d.amount)}</td><td><button class="btn sm pri" data-go="ZTU" data-p="${P({adv:d.id})}">Lập giấy thanh toán</button></td></tr>`).join('')}</tbody></table></div></div>`:''}
-  <div><h3 class="sec-title">Các khoản tạm ứng ${S.isAdmin?'của công ty':'của bạn'}</h3><div class="tw"><table class="t"><thead><tr><th>Số</th><th>Người tạm ứng</th><th>Lý do</th><th class="num">Số tiền</th><th>Trạng thái</th></tr></thead><tbody>
+  <div><h3 class="sec-title">Các khoản tạm ứng ${all?'của công ty':'của bạn'}</h3><div class="tw"><table class="t"><thead><tr><th>Số</th><th>Người tạm ứng</th><th>Lý do</th><th class="num">Số tiền</th><th>Trạng thái</th></tr></thead><tbody>
   ${mine.map(d=>`<tr class="click" data-go="DOC" data-p="${P({co:S.co,id:d.id})}"><td class="mono">${esc(d.no)}</td><td>${esc(d.empName)}</td><td class="small">${esc(d.purpose)}</td><td class="num">${fm(d.amount)}</td><td>${chip(d)}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Chưa có.</td></tr>'}</tbody></table></div></div>
   ${Object.keys(owe).some(k=>owe[k])?`<div><h3 class="sec-title">Số dư TK 141 theo người nhận tạm ứng</h3><div class="tw"><table class="t"><tbody>${Object.keys(owe).filter(k=>owe[k]).map(k=>`<tr><td class="mono">${esc(k)}</td><td class="num">${fm(owe[k])}</td></tr>`).join('')}</tbody></table></div></div>`:''}</div>`;
 }
-function adsRow(){ const accs=manualAccs().filter(a=>/^6|^15[23]|^242|^8/.test(a));
+function adsRow(){ const accs=manualAccs().filter(a=>/^(6|811|1331|242)/.test(a));
   return `<tr><td><select class="ads-a" data-chg="adsacc">${accOpts('',accs)}</select></td><td><select class="ads-cc" disabled>${ccOpts('')}</select></td>
   <td><input class="ads-memo" maxlength="120" placeholder="Vé xe HĐ 0012345"></td><td><input class="ads-amt num" type="number" min="1" step="1"></td><td><button type="button" class="btn sm" data-act="glDel">✕</button></td></tr>`; }
 
@@ -346,12 +369,12 @@ const FORMS = {
   FAGL(f){ go('FAGLL03',{acc:val(f,'f-acc'),from:val(f,'f-from'),to:val(f,'f-to'),partner:f.querySelector('#f-par')?val(f,'f-par'):'',cc:f.querySelector('#f-cc')?val(f,'f-cc'):''}); },
   TBP(f){ go('F.01',{from:val(f,'f-from'),to:val(f,'f-to')}); },
   ZSO(f){ go('ZSO',{k:val(f,'f-k'),acc:val(f,'f-acc'),from:val(f,'f-from'),to:val(f,'f-to')}); },
-  CJ(f){ const amt=Math.round(num(val(f,'f-amt'))), acc=val(f,'f-acc'), cc=val(f,'f-cc');
-    if(!(amt>0)) return setErr(f,'<b>Số tiền phải lớn hơn 0.</b>'); if(!acc) return setErr(f,'<b>Chọn tài khoản đối ứng.</b>');
-    if(ccNeed(acc)&&!cc) return setErr(f,'<b>TK '+esc(acc)+' bắt buộc chọn trung tâm chi phí.</b>');
-    if(val(f,'f-dir')==='out'&&amt>cashBook(S.co).close) return setErr(f,'<b>Vượt tồn quỹ</b> ('+fm(cashBook(S.co).close)+' đồng). Tồn quỹ không được âm.');
-    guard(f,async()=>{ const r=await createDoc(S.co,'CJ',{dir:val(f,'f-dir'),date:val(f,'f-date'),amount:amt,acc,cc,person:val(f,'f-person'),reason:val(f,'f-reason')});
-      toast('Đã lưu '+(val(f,'f-dir')==='in'?'phiếu thu ':'phiếu chi ')+r.no+', chờ duyệt.'); render(true,true); }); },
+  CJ(f){ const dir=val(f,'f-dir'), bank=['wd','dep'].includes(dir); const amt=Math.round(num(val(f,'f-amt'))), acc=bank?'':val(f,'f-acc'), cc=bank?'':val(f,'f-cc');
+    if(!(amt>0)) return setErr(f,'<b>Số tiền phải lớn hơn 0.</b>'); if(!bank&&!acc) return setErr(f,'<b>Chọn tài khoản đối ứng.</b>');
+    if(acc&&ccNeed(acc)&&!cc) return setErr(f,'<b>TK '+esc(acc)+' bắt buộc chọn trung tâm chi phí.</b>');
+    if(['out','dep'].includes(dir)&&amt>cashBook(S.co).close) return setErr(f,'<b>Vượt tồn quỹ</b> ('+fm(cashBook(S.co).close)+' đồng). Tồn quỹ không được âm.');
+    guard(f,async()=>{ const b={dir,date:val(f,'f-date'),amount:amt,person:val(f,'f-person'),reason:val(f,'f-reason')}; if(acc){ b.acc=acc; if(cc) b.cc=cc; }
+      const r=await createDoc(S.co,'CJ',b); toast('Đã lưu '+CJDIR[dir].toLowerCase()+' '+r.no+', chờ Kế toán trưởng duyệt.'); render(true,true); }); },
   CNT(f){ guard(f,async()=>{ const r=await createDoc(S.co,'CNT',{date:val(f,'f-date'),members:val(f,'f-members'),reason:val(f,'f-reason')});
       toast(r.status==='posted'?'Biên bản '+r.no+': tiền thực tế khớp sổ.':'Biên bản '+r.no+' có chênh lệch, chờ Kế toán trưởng duyệt.'); go('DOC',{co:S.co,id:r.id}); }); },
   ADV(f){ const amt=Math.round(num(val(f,'f-amt'))); if(!(amt>0)) return setErr(f,'<b>Số tiền phải lớn hơn 0.</b>');
@@ -382,22 +405,28 @@ const ACTS = {
   async period(a){ const close=a.dataset.close==='1'; a.disabled=true;
     try{ await api('erp_period_set',{p_token:S.token,p_co:S.co,p_fy:+a.dataset.fy,p_period:+a.dataset.per,p_grp:a.dataset.grp,p_close:close,p_act_role:actRole()}); await sync();
       toast((close?'Đã đóng ':'Đã mở ')+'kỳ '+String(a.dataset.per).padStart(2,'0')+'/'+a.dataset.fy+' – '+GRP[a.dataset.grp]+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
-  async advPay(a){ a.disabled=true;
-    try{ const r=await createDoc(S.co,'CJ',{adv:a.dataset.id,date:today()}); toast('Đã chi tạm ứng, phiếu chi '+r.no+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
+  async cashOk(a){ const d=calc(S.co).by[a.dataset.id]; if(!d) return; const [k,amt]=cashDir(d);
+    a.disabled=true;
+    try{ await api('erp_cash_confirm',{p_token:S.token,p_co:S.co,p_id:d.id,p_act_role:actRole()}); await sync(); toast('Đã ghi sổ quỹ theo '+d.no+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
+  async suspClear(a){ const id=a.dataset.id; const bi=document.getElementById('sb-'+id).value; const amt=Math.round(num(document.getElementById('sa-'+id).value));
+    if(!bi) return toast('Chọn hóa đơn bán cần phân bổ.'); if(!(amt>0)) return toast('Nhập số tiền phân bổ.'); a.disabled=true;
+    try{ const r=await api('erp_susp_clear',{p_token:S.token,p_co:S.co,p_bs:id,p_bi:bi,p_amount:amt,p_act_role:actRole()}); await sync(); toast('Đã phân bổ, chứng từ '+r.no+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
   async bankRefresh(a){ a.disabled=true;
     try{ const n=await api('erp_bank_refresh',{p_token:S.token,p_co:S.co}); await sync(); toast(n?'Nhận '+n+' dòng sao kê mới.':'Không có dòng sao kê mới.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
-  async bankMatch(a){ const id=a.dataset.id; const s=document.getElementById('cus-'+id); a.disabled=true;
-    try{ const r=await api('erp_bank_match',{p_token:S.token,p_co:S.co,p_line:id,p_opts:{cust:s?s.value:''},p_act_role:actRole()}); await sync(); toast('Đã ghi sổ dòng sao kê '+id+' (chứng từ '+r.no+').'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } }
+  async bankMatch(a){ const id=a.dataset.id; const s=document.getElementById('bi-'+id); a.disabled=true;
+    try{ const r=await api('erp_bank_match',{p_token:S.token,p_co:S.co,p_line:id,p_opts:s&&s.value?{bi:s.value}:{},p_act_role:actRole()}); await sync(); toast('Đã ghi sổ dòng sao kê '+id+' (chứng từ '+r.no+').'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } }
 };
 const CHGS = {
   glacc(s){ const tr=s.closest('tr'); const cc=tr.querySelector('.gl-cc'); cc.disabled=!ccNeed(s.value); if(cc.disabled) cc.value=''; },
+  cjdir(s){ const f=s.closest('form'); const bank=['wd','dep'].includes(s.value);
+    f.querySelectorAll('.cj-acc').forEach(x=>x.hidden=bank); f.querySelector('.cj-bank').hidden=!bank; if(CALC.CJ) CALC.CJ(f); },
   cjacc(s){ const cc=document.getElementById('f-cc'); cc.disabled=!ccNeed(s.value); if(cc.disabled) cc.value=''; },
   adsacc(s){ const cc=s.closest('tr').querySelector('.ads-cc'); cc.disabled=!ccNeed(s.value); if(cc.disabled) cc.value=''; }
 };
 const CALCS = {
   GLJE(f){ let dr=0,cr=0; f.querySelectorAll('#gl-lines tr').forEach(tr=>{ dr+=num(tr.querySelector('.gl-dr').value); cr+=num(tr.querySelector('.gl-cr').value); });
     const d=dr-cr; f.querySelector('#f-sum').innerHTML=`<span>Tổng Nợ <b>${fm(dr)}</b></span><span>Tổng Có <b>${fm(cr)}</b></span><span>Chênh lệch <b style="color:${d?'var(--bad)':'var(--ok)'}">${fm(d)}</b></span>`; },
-  CJ(f){ const amt=num(val(f,'f-amt')); const t=cashBook(S.co).close; const out=val(f,'f-dir')==='out';
+  CJ(f){ const amt=num(val(f,'f-amt')); const t=cashBook(S.co).close; const out=['out','dep'].includes(val(f,'f-dir'));
     f.querySelector('#f-sum').innerHTML=`<span>Tồn quỹ <b>${fm(t)}</b></span><span>Sau phiếu <b style="color:${out&&amt>t?'var(--bad)':'inherit'}">${fm(out?t-amt:t+amt)}</b></span>`; },
   ADS(f){ let e=0; f.querySelectorAll('#ads-lines .ads-amt').forEach(i=>e+=num(i.value)); const adv=num(f.dataset.amt); const r=adv-e;
     f.querySelector('#f-sum').innerHTML=`<span>Đã chi <b>${fm(e)}</b></span><span>${r>=0?'Nộp lại quỹ':'Chi bổ sung'} <b>${fm(Math.abs(r))}</b></span>`; }
@@ -414,9 +443,9 @@ erpModule({name:'P3 sổ cái, tiền, ngân hàng',
     'FAGLL03':{m:FI,t:'Sổ cái theo tài khoản',r:['TH','TQ','KTT','AP','AR','GD','KSNB']},
     'ZSO':{m:FI,t:'Sổ kế toán theo mẫu (in)',r:['TH','TQ','KTT','GD','KSNB']},
     'OB52':{m:FI,t:'Đóng / mở kỳ kế toán',r:ALL},
-    'FBCJ':{m:CASH,t:'Quỹ tiền mặt – phiếu thu, chi',r:['TQ']},
-    'ZKQ':{m:CASH,t:'Kiểm kê quỹ',r:['TQ']},
-    'FF67':{m:CASH,t:'Sao kê ngân hàng',r:['TH']},
+    'FBCJ':{m:CASH,t:'Quỹ tiền mặt – phiếu thu, chi',r:['TH','AP','AR','KT','TQ','KTT','GD','KSNB']},
+    'ZKQ':{m:CASH,t:'Kiểm kê quỹ',r:['TQ','KTT','KSNB']},
+    'FF67':{m:CASH,t:'Sao kê ngân hàng',r:['TH','KTT','GD','KSNB']},
     'ZBRR':{m:CASH,t:'Đối chiếu tiền gửi ngân hàng',r:['TH','KTT','GD','KSNB']},
     'ZTU':{m:CASH,t:'Tạm ứng và thanh toán tạm ứng',r:OPS}
   },
