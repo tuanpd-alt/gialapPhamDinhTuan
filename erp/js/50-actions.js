@@ -102,7 +102,7 @@ const FORM = {
 const ACT = {
   back(){ back(); },
   menu(){ document.getElementById('side').classList.toggle('open'); },
-  addLine(a){ const tb=document.getElementById('lines'); if(tb.children.length>=MATS.length) return toast('Tối đa '+MATS.length+' dòng.'); tb.insertAdjacentHTML('beforeend',lineRow(a.dataset.kind,S.co)); const f=a.closest('form'); CALC[f.dataset.calc](f); },
+  addLine(a){ const tb=document.getElementById('lines'); const nm=lineMats(a.dataset.kind,S.co).length; if(tb.children.length>=nm) return toast('Tối đa '+nm+' dòng.'); tb.insertAdjacentHTML('beforeend',lineRow(a.dataset.kind,S.co)); const f=a.closest('form'); CALC[f.dataset.calc](f); },
   delLine(a){ const tb=document.getElementById('lines'); if(tb.children.length<=1) return; const f=a.closest('form'); a.closest('tr').remove(); CALC[f.dataset.calc](f); },
   viewCo(a){ LS.set('erp.co',a.dataset.co); S.co=a.dataset.co; S.sideKey=''; go('HOME'); },
   editExtra(a){ S.editExtra = S.editExtra===a.dataset.u ? null : a.dataset.u; render(true,true); },
@@ -122,6 +122,10 @@ const ACT = {
           const pick=(cand.length?cand:m).slice().sort((a,b)=>score(a)-score(b))[0]; pick.extra.push(r); pick.touched=true; }); }
       m.forEach(x=>{ if(!x.old||x.touched) rows.push({id:x.id,co,role:x.role,extra:x.extra}); }); });
     try{ await api('erp_admin_assign',{p_token:S.token,p_rows:rows}); await sync(); toast('Đã phân công '+todo.length+' sinh viên. Nhóm thiếu người đã được giao kiêm nhiệm.'); render(true,true);}catch(e){ toast(dbErr(e)); } },
+  async applyPack(a){ const pk=document.getElementById('pk-code').value, co=document.getElementById('pk-co').value;
+    if(a.dataset.sure!=='1'){ a.dataset.sure='1'; a.textContent='Bấm lần nữa để áp '+pk+(co?' cho '+co:' cho cả 8 công ty'); setTimeout(()=>{a.dataset.sure='';a.textContent='Áp gói';},4000); return; }
+    a.disabled=true;
+    try{ const r=await api('erp_admin_apply_pack',{p_token:S.token,p_pack:pk,p_co:co}); await sync(); toast('Đã áp gói '+pk+' cho '+Object.keys(r||{}).length+' công ty.'); render(true,true);}catch(e){ toast(dbErr(e)); a.disabled=false; } },
   async rotate(a){ if(a.dataset.sure!=='1'){ a.dataset.sure='1'; a.textContent='Bấm lần nữa để xoay vòng'; setTimeout(()=>{a.dataset.sure='';a.textContent='Xoay vòng vai trò';},4000); return; }
     const rows=[];
     COS.forEach(co=>{ const m=Object.values(S.users).filter(u=>!u.is_admin&&u.co===co&&u.role).sort((x,y)=>ROLE_ORDER.indexOf(x.role)-ROLE_ORDER.indexOf(y.role));
@@ -146,7 +150,7 @@ const CHG = {
   co(s){ LS.set('erp.co',s.value); S.sideKey=''; render(true); },
   role(s){ LS.set('erp.role',s.value); S.sideKey=''; render(true); },
   linemat(s){ const tr=s.closest('tr'); const p=tr.querySelector('.li-price'); if(p) p.value=mat(s.value).sp; const f=s.closest('form'); CALC[f.dataset.calc](f); },
-  povendor(s){ const v=ven(s.value); const f=s.closest('form'); f.querySelectorAll('#polines tr').forEach(tr=>{tr.querySelector('.po-price').value=Math.round(mat(tr.dataset.mat).bp*v.f);}); CALC.PO(f); },
+  povendor(s){ const f=s.closest('form'); const d=(f.querySelector('#f-date')||{}).value; f.querySelectorAll('#polines tr').forEach(tr=>{tr.querySelector('.po-price').value=priceOf(S.co,s.value,tr.dataset.mat,d).p;}); CALC.PO(f); },
   socust(s){ CALC.SO(s.closest('form')); },
   async asgCo(s){ const u=S.users[s.dataset.u]||{}; const co=s.value||null; const role=co?(u.role||'KHO'):null;
     try{ await api('erp_admin_assign',{p_token:S.token,p_rows:[{id:s.dataset.u,co,role}]}); await sync(); render(true,true);}catch(e){toast(dbErr(e));} },

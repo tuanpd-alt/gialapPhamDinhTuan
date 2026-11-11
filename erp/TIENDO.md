@@ -6,9 +6,9 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 
 | Giai đoạn | Nội dung | Trạng thái | Ngày |
 | --- | --- | --- | --- |
-| P0 | Khảo sát, đặc tả `SPEC.md` | Xong, chờ giảng viên duyệt | 11/11/2026 |
+| P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Chưa | |
+| P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Chưa | |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
@@ -49,6 +49,54 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 - Giao diện: biểu mẫu chỉ gửi dữ liệu đầu vào; trạng thái và số liệu lấy từ kết quả máy chủ; số dư đầu kỳ đọc từ chứng từ OB; hệ thống tài khoản đồng bộ từ máy chủ; SPRO thêm thuế suất GTGT; F.01 chỉ hiện tài khoản có số liệu; nhãn "Môi trường thử"; chân trang miễn trừ.
 - Kiểm thử `tests/p1_ledger_test.sql`: 45/45 ca đạt trên `erp-lab-dev` (hai buổi ZCASE với số tính tay, 7 bất biến, 12 ca tấn công/ngoại lệ, phân quyền tầng cơ sở dữ liệu). Kiểm thử chuyển dữ liệu bản 1: bảng cân đối số phát sinh trùng 9/9 tài khoản. Kiểm thử khói giao diện: 32 T-code mở không lỗi.
 
+## P2 – đã làm
+
+- SQL `sql/004_masterdata.sql`:
+  - Cơ cấu tổ chức `erp_org` (nhà máy 1000, kho 1001–1003, tổ chức mua, bán, kênh 10/20, trung tâm chi phí CC100–CC700, trung tâm lợi nhuận PC10–PC30).
+  - 15 vai trò `erp_role`, quyền dạng dữ liệu `erp_role_perm` (C lập, A duyệt, V xem). KT được hiểu là AP + AR.
+  - 5 gói vai trò `erp_role_pack`, ma trận xung đột `erp_role_conflict` cùng hàm `erp_conflict` (KTT, KSNB xung đột mức 3 với mọi vai trò tác nghiệp).
+- Dữ liệu gốc riêng từng công ty:
+  - Vật tư có loại HH/NVL/TP/DV, tài khoản tồn kho tự xác định (152/155/156), ngày hiệu lực và tồn tối thiểu. Thêm 6 NVL, 2 TP, 2 DV.
+  - Có 6 nhà cung cấp (thêm tài khoản ngân hàng) và 6 khách hàng.
+  - Bảng giá mua `erp_price` (ME11).
+- Kiểm soát thay đổi dữ liệu gốc (`erp_md_save`, `erp_md_decide`):
+  - Các trường nhạy cảm (tài khoản ngân hàng, hạn thanh toán, hạn mức, khóa/mở) và việc tạo mới nhà cung cấp, khách hàng phải chờ người thứ hai có quyền ZMDA duyệt. Người yêu cầu không tự duyệt được.
+  - Mọi thay đổi ghi vào `erp_md_change`.
+  - Chặn trùng tên vật tư, trùng mã số thuế, sai định dạng mã số thuế.
+  - Phiếu chi chụp tài khoản ngân hàng đang hiệu lực lúc duyệt.
+- `erp_doc_create`:
+  - Kiểm tra quyền theo bảng quyền.
+  - Đơn mua chỉ nhận HH/NVL, đơn bán chỉ nhận HH/TP.
+  - Không dùng được đối tượng đang khóa, chưa xác nhận hoặc chưa đến ngày hiệu lực.
+  - Nhập NVL ghi Nợ 152.
+- `erp_sync` trả về dữ liệu gốc (chỉ công ty của sinh viên), vai trò, quyền, gói và ma trận xung đột.
+- Giao diện:
+  - Thêm `js/mod-md.js` với 14 T-code: MM01/02/03, XK01/02/03, XD01/02/03, ME11, FS00, ZORG, ZMDA, ZCHG.
+  - Bỏ danh mục cứng (MATS/VENDORS/CUSTS đọc từ máy chủ, danh mục cứng chỉ còn làm dự phòng).
+  - ME51N chỉ cho chọn HH/NVL; VA01 chỉ cho chọn HH/TP; chỉ hiện đối tượng đã xác nhận.
+  - ME21N đề xuất giá từ ME11.
+  - MMBE theo 152/155/156 và đánh dấu dưới mức tồn tối thiểu.
+  - Quyền giao diện đọc từ bảng quyền.
+  - PFCG hiện C/A/V. SU01 có thêm "Áp gói vai trò", sơ đồ tổ chức theo phần việc và cảnh báo phân công theo AP/AR.
+  - Bộ chọn "Thao tác như" có đủ 15 vai trò.
+- Kiểm thử:
+  - `tests/p2_md_test.sql`: 29/29 đạt.
+  - Chạy lại `tests/p1_ledger_test.sql`: 45/45 đạt.
+  - Kiểm thử khói giao diện (dữ liệu giả lập), 45 T-code mở không lỗi và không có lỗi JS:
+    - danh sách chọn trên ME51N/VA01/ME21N lọc đúng;
+    - MM01 và XK02 chỉ gửi trường thay đổi;
+    - quyền từng vai trò khớp ma trận.
+
+## Quyết định đã chọn ở P2
+
+| Mã | Quyết định | Lý do |
+| --- | --- | --- |
+| P2-1 | Giữ vai trò KT (gộp AP + AR) song song với AP, AR tách riêng | Nhóm 5 người như bản 1 vẫn chạy được; gói PK2/PK3 dạy việc tách |
+| P2-2 | Trường nhạy cảm chờ duyệt, trường thường áp dụng ngay | Cân bằng giữa kiểm soát và tốc độ thực hành; vẫn có nhật ký đầy đủ |
+| P2-3 | Đối tượng mới tạo ở trạng thái chờ xác nhận | Mô phỏng kiểm soát chống nhà cung cấp ma |
+| P2-4 | Áp gói khi thiếu người: ghế KTT luôn là ghế chính, các ghế khác ghép vào người có điểm xung đột thấp nhất | Không bao giờ để người duyệt kiêm người lập khi tránh được |
+| P2-5 | Danh mục cứng ở trình duyệt chỉ còn làm dự phòng khi chưa đồng bộ | Nguồn sự thật là máy chủ |
+
 ## Quyết định đã chọn ở P1
 
 | Mã | Quyết định | Lý do |
@@ -61,7 +109,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 ## Giới hạn đã biết
 
 - Chênh lệch giá ở MIRO luôn ghi vào 156 kể cả khi hàng đã bán (SPEC mục 8). Sửa ở P4.
-- Thông báo lỗi trên máy chủ định dạng số có dấu phẩy (4,872,000). Chuyển sang dấu chấm ở P2.
+- Đã thêm `erp_fm` (dấu chấm phân cách nghìn) ở P2; một vài thông báo lỗi cũ của P1 vẫn dùng dấu phẩy, sẽ rà khi viết P3.
 - Màn hình thẻ kho chưa hiện chứng từ mở sổ như một dòng; tồn đầu kỳ hiện ở dòng đầu.
 - Hướng dẫn ZCASE vẫn ghi "VAT 10%" theo bối cảnh cũ ở một số câu hỏi thảo luận. Viết lại ở P12.
 
@@ -70,7 +118,8 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 1. Danh mục tài khoản (SPEC mục 7) lấy từ bản trích Phụ lục II của Kế toán Lê Ánh; cần đối chiếu bản gốc Thông tư 99.
 2. Máy tính, linh kiện có thuộc Phụ lục I, II loại trừ của NĐ 174/2025/NĐ-CP không (quyết định 8% hay 10% trong lab).
 3. Chính sách thuế GTGT từ 01/01/2027.
-4. Duyệt SPEC trước khi sang P2, nhất là 5 quyết định D1–D5.
+4. Giảng viên đã duyệt SPEC (D1–D8).
+5. Danh mục vai trò, ma trận xung đột (SPEC 4.3) và danh sách trường nhạy cảm có phù hợp bài giảng kiểm soát nội bộ không.
 
 ## Câu hỏi cho giảng viên
 

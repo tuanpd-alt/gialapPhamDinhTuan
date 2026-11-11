@@ -3,9 +3,15 @@
 /* ============ GUIDES ============ */
 function scrPFCG(){
   const codes = Object.keys(TC).filter(k=>!TC[k].admin);
-  return `<div class="wrap">${head('PFCG','Ma trận phân quyền','Mỗi vai trò chỉ được thực hiện các giao dịch thuộc trách nhiệm của mình. Ma trận thể hiện nguyên tắc bất kiêm nhiệm trong hai chu trình.')}
-  <div class="tw"><table class="t matrix"><thead><tr><th>Giao dịch</th>${ROLE_ORDER.map(r=>`<th><span class="dot" style="background:var(--r-${r})"></span> ${esc(ROLES[r].n)}</th>`).join('')}</tr></thead><tbody>
-  ${codes.map(k=>`<tr><td><code>${k}</code> ${esc(TC[k].t)}</td>${ROLE_ORDER.map(r=>{const ok=TC[k].r===ALL||TC[k].r.includes(r);return `<td>${ok?(TC[k].r===ALL?'<span class="muted">xem</span>':'<b style="color:var(--ok)">●</b>'):''}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>
+  const P=S.auth&&S.auth.perms; const ACTL={C:'lập',A:'duyệt',V:'xem'};
+  const cell=(k,r)=>{ if(TC[k].r===ALL) return '<span class="muted">xem</span>';
+    const acts=P?[...new Set((P[r]||[]).filter(x=>x.tc===permTc(k)).map(x=>x.a))]:(roleCan([r],k)?['C']:[]);
+    return acts.map(a=>a==='V'?'<span class="muted">xem</span>':`<b style="color:var(--ok)">● ${ACTL[a]}</b>`).join(' '); };
+  const later=ROLE_ORDER.filter(r=>!PFCG_COLS.includes(r)&&r!=='KT');
+  return `<div class="wrap">${head('PFCG','Ma trận phân quyền','Quyền đọc từ bảng erp_role_perm trên máy chủ (C lập/thay đổi, A phê duyệt, V xem); máy chủ kiểm tra lại mọi thao tác. Ma trận thể hiện nguyên tắc bất kiêm nhiệm.')}
+  <div class="tw"><table class="t matrix"><thead><tr><th>Giao dịch</th>${PFCG_COLS.map(r=>`<th><span class="dot" style="background:var(--r-${r})"></span> ${esc(ROLES[r].n)}</th>`).join('')}</tr></thead><tbody>
+  ${codes.map(k=>`<tr><td><code>${k}</code> ${esc(TC[k].t)}</td>${PFCG_COLS.map(r=>`<td class="small">${cell(k,r)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <p class="small muted" style="margin:0">Vai trò <b>${esc(roleName('KT'))}</b> (dùng cho nhóm 5 người như bản 1) có toàn bộ quyền của Kế toán phải trả và Kế toán phải thu. Các vai trò ${later.map(r=>esc(ROLES[r].n)).join(', ')} được mở quyền ở các giai đoạn sau.</p>
   ${pfcgCompany()}
   <div class="panel"><h2>Các xung đột đã được tách</h2><ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
   <li>Người đề nghị mua (Thủ kho) không tự chọn nhà cung cấp và lập đơn mua (Mua hàng).</li>
@@ -55,11 +61,19 @@ function scrCase(){
 function scrUsers(){
   const users = Object.values(S.users).filter(u=>!u.is_admin).sort((a,b)=>String(a.username).localeCompare(String(b.username)));
   const unassigned = users.filter(u=>!u.co||!u.role).length;
-  const grid = COS.map(co=>ROLE_ORDER.map(r=>users.filter(u=>u.co===co&&userRoles(u).includes(r))));
+  const holds = (u,d) => d.c==='KTT' ? (userRoles(u).includes('KTT')||userGrants(u).includes('AP')) : (expandRoles(userRoles(u)).includes(d.c)||d.g.every(g=>userGrants(u).includes(g)));
+  const grid = COS.map(co=>DUTIES.map(d=>users.filter(u=>u.co===co&&holds(u,d))));
+  const packs = (S.auth&&S.auth.packs)||[];
   const warns = COS.map(co=>coWarnings(co, users)).filter(w=>w.items.length);
   const pw = S.lastPw;
   return `<div class="wrap">${head('SU01','Sinh viên & phân quyền',users.length+' tài khoản sinh viên, '+unassigned+' chưa được phân công.',
     `<button class="btn sm pri" data-act="autoAssign">Tự động phân công</button><button class="btn sm" data-act="rotate">Xoay vòng vai trò</button>`)}
+  ${packs.length?`<div class="panel"><h2>Áp gói vai trò</h2><p class="small muted" style="margin-top:0">Gán lại vai trò cho mọi thành viên đã có công ty theo một gói 5 ghế (thứ tự theo MSSV). Nhóm thiếu người: ghế Kế toán trưởng luôn là ghế chính, các ghế còn lại ghép vào người có điểm xung đột thấp nhất; nhóm thừa người: người thứ 6 trở đi giữ vai trò Giám đốc (chỉ xem).</p>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="pk-code" aria-label="Gói vai trò">${packs.map(p=>`<option value="${esc(p.c)}">${esc(p.c)} · ${esc(p.n)}</option>`).join('')}</select>
+   <select id="pk-co" aria-label="Áp cho"><option value="">Cả 8 công ty</option>${COS.map(c=>`<option>${c}</option>`).join('')}</select>
+   <button class="btn sm pri" data-act="applyPack">Áp gói</button></div>
+   <div class="tw" style="margin-top:10px"><table class="t"><thead><tr><th>Gói</th><th>Ghế 1</th><th>Ghế 2</th><th>Ghế 3</th><th>Ghế 4</th><th>Ghế 5</th><th>Dùng cho</th></tr></thead><tbody>
+   ${packs.map(p=>`<tr><td class="mono">${esc(p.c)}</td>${(p.seats||[]).map(st=>`<td class="small">${st.map(r=>esc(roleName(r))).join(' + ')}</td>`).join('')}<td class="small">${esc(p.note||'')}</td></tr>`).join('')}</tbody></table></div></div>`:''}
   ${pw&&pw.length?`<div class="panel" style="border-color:var(--warn)"><h2>Mật khẩu vừa cấp (${pw.length})</h2>
    <p class="small" style="margin-top:0">Mật khẩu chỉ hiện <b>một lần</b>. Tải file CSV hoặc chép bảng này để phát cho sinh viên. Sinh viên sẽ phải đổi mật khẩu ở lần đăng nhập đầu.</p>
    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="btn sm pri" data-act="dlPw">Tải CSV</button><button class="btn sm" data-act="copyPw">Chép bảng</button><button class="btn sm" data-act="clearPw">Ẩn</button></div>
@@ -68,8 +82,8 @@ function scrUsers(){
    <p class="small muted" style="margin:0">Dán từ Excel, mỗi dòng một sinh viên: <code>MSSV</code> · <code>Họ tên</code> · <code>Nhóm (1–8, không bắt buộc)</code>. Cột cách nhau bằng Tab, dấu phẩy hoặc chấm phẩy. MSSV đã có sẽ được bỏ qua.</p>
    <textarea id="i-rows" rows="6" style="font-family:var(--f-mono);font-size:13px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--surface);color:var(--fg)" placeholder="62131001	Nguyễn Văn An	1&#10;62131002	Trần Thị Bình	1"></textarea>
    <div class="form-foot"><span class="small muted" id="i-preview"></span><button class="btn pri">Tạo tài khoản</button></div></form>
-  <div class="panel"><h2>Sơ đồ tổ chức 8 công ty</h2><div class="tw"><table class="t"><thead><tr><th>Công ty</th>${ROLE_ORDER.map(r=>`<th><span class="dot" style="background:var(--r-${r})"></span> ${esc(ROLES[r].n)}</th>`).join('')}</tr></thead><tbody>
-  ${COS.map((co,i)=>`<tr><td class="mono">${co}</td>${grid[i].map((us,ri)=>`<td class="small">${us.length?us.map(u=>esc(u.full_name)+(u.role!==ROLE_ORDER[ri]?' <span class="chip c-info">kiêm</span>':'')).join('<br>'):'<span class="muted">trống</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+  <div class="panel"><h2>Sơ đồ tổ chức 8 công ty (theo phần việc)</h2><div class="tw"><table class="t"><thead><tr><th>Công ty</th>${DUTIES.map(d=>`<th><span class="dot" style="background:var(--r-${d.c})"></span> ${esc(d.n)}</th>`).join('')}</tr></thead><tbody>
+  ${COS.map((co,i)=>`<tr><td class="mono">${co}</td>${grid[i].map((us,ri)=>`<td class="small">${us.length?us.map(u=>esc(u.full_name)+(u.role!==DUTIES[ri].c?' <span class="chip c-info">'+(u.role==='KT'&&(DUTIES[ri].c==='AP'||DUTIES[ri].c==='AR')?'KT':'kiêm')+'</span>':'')).join('<br>'):'<span class="muted">trống</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
   <p class="small muted" style="margin-bottom:0">Nhãn <span class="chip c-info">kiêm</span> là người giữ vai trò đó do được giao kiêm nhiệm. Ô "trống" là chưa ai làm được bước đó, nhóm sẽ tắc ở bước này.</p></div>
   ${warns.length?`<div class="panel" style="border-color:var(--warn)"><h2>Cảnh báo phân công</h2><ul class="small" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${warns.map(w=>w.items.map(x=>`<li><b class="mono">${w.co}</b> · ${x}</li>`).join('')).join('')}</ul></div>`:''}
   ${users.length?`<div class="tw"><table class="t"><thead><tr><th>MSSV</th><th>Họ tên</th><th>Nhóm muốn</th><th>Công ty</th><th>Vai trò chính</th><th>Kiêm nhiệm / giao quyền</th><th>Đăng nhập gần nhất</th><th></th></tr></thead><tbody>
@@ -101,13 +115,11 @@ function extraEditor(u){
 function coWarnings(co, users){
   const mem = users.filter(u=>u.co===co&&u.role); const items=[];
   if(!mem.length) return {co,items};
-  const holders = r => mem.filter(u=>userRoles(u).includes(r)||(r==='KTT'&&userGrants(u).includes('AP')));
-  ROLE_ORDER.forEach(r=>{ if(!holders(r).length){
-    const g = Object.keys(TYPE_ROLE).filter(t=>TYPE_ROLE[t]===r);
-    const covered = r!=='KTT' && g.every(t=>mem.some(u=>userGrants(u).includes(t)));
-    if(!covered) items.push(`Chưa ai giữ vai trò <b>${esc(ROLES[r].n)}</b>${r==='KTT'?' hoặc quyền phê duyệt':''}. Giao kiêm nhiệm cho một thành viên.`); } });
-  const appr = holders('KTT');
-  if(appr.length===1 && !S.cfg.selfApprove){ const a=appr[0]; const creates = ROLE_ORDER.filter(r=>r!=='KTT'&&userRoles(a).includes(r)).length || userGrants(a).some(x=>x!=='AP');
+  const apprs = mem.filter(u=>userRoles(u).includes('KTT')||userGrants(u).includes('AP'));
+  DUTIES.forEach(d=>{ if(d.c==='KTT'){ if(!apprs.length) items.push('Chưa ai giữ vai trò <b>Kế toán trưởng</b> hoặc quyền phê duyệt. Giao kiêm nhiệm cho một thành viên.'); return; }
+    const ok = mem.some(u=>expandRoles(userRoles(u)).includes(d.c)) || d.g.every(g=>mem.some(u=>userGrants(u).includes(g)));
+    if(!ok) items.push(`Chưa ai làm phần việc <b>${esc(d.n)}</b> (${d.g.map(g=>TYPES[g].tc).join(', ')}). Giao kiêm nhiệm cho một thành viên.`); });
+  if(apprs.length===1 && !S.cfg.selfApprove){ const a=apprs[0]; const creates = userRoles(a).some(r=>r!=='KTT'&&r!=='GD'&&r!=='KSNB') || userGrants(a).some(x=>x!=='AP');
     if(creates) items.push(`<b>${esc(a.full_name)}</b> vừa là người duyệt duy nhất vừa lập chứng từ: chứng từ người này lập sẽ không ai duyệt được. Bật "Cho phép tự duyệt khi kiêm nhiệm" trong SPRO, hoặc giao thêm quyền phê duyệt cho người khác.`); }
   mem.forEach(u=>userConflicts(u).filter(x=>x.sc>=3&&!(x.a==='KTT'||x.b==='KTT')).forEach(x=>items.push(`<b>${esc(u.full_name)}</b> kiêm ${esc(roleName(x.a))} và ${esc(roleName(x.b))}: ${esc(conflictWhy(x.a,x.b))}. Nên đổi cách giao nếu nhóm đủ người.`)));
   return {co,items};
@@ -141,13 +153,13 @@ const CALC = {
     f.querySelector('#f-sum').innerHTML=`<span>Giá trị ước tính: <b>${fm(t)}</b></span>`; },
   PO(f){ let n=0; f.querySelectorAll('#polines tr').forEach(tr=>{const v=num(tr.dataset.qty)*num(tr.querySelector('.po-price').value);tr.querySelector('.po-amt').textContent=fm(v);n+=v;});
     const vat=Math.round(n*VATR()); const v=ven(f.querySelector('#f-vendor').value);
-    f.querySelector('#f-sum').innerHTML=`<span>Tiền hàng <b>${fm(n)}</b></span><span>VAT <b>${fm(vat)}</b></span><span>Tổng <b>${fm(n+vat)}</b></span><span>Thanh toán sau <b>${v.terms}</b> ngày</span>`; },
+    f.querySelector('#f-sum').innerHTML=`<span>Tiền hàng <b>${fm(n)}</b></span><span>VAT <b>${fm(vat)}</b></span><span>Tổng <b>${fm(n+vat)}</b></span><span>Thanh toán sau <b>${v?v.terms:'—'}</b> ngày</span>`; },
   IV(f){ let n=0; f.querySelectorAll('.iv-line').forEach(tr=>{const q=num(tr.querySelector('.iv-qty').value),p=num(tr.querySelector('.iv-price').value),pp=num(tr.dataset.po);n+=q*p;const v=pp?(p-pp)/pp*100:0;const el=tr.querySelector('.iv-var');el.textContent=v.toFixed(2)+'%';el.style.color=Math.abs(v)>S.cfg.tol?'var(--bad)':'inherit';});
     n=Math.round(n); const vat=Math.round(n*VATR()), g=num(f.querySelector('#f-gross').value), diff=g-(n+vat);
     f.querySelector('#f-sum').innerHTML=`<span>Tiền hàng <b>${fm(n)}</b></span><span>VAT ${Math.round(VATR()*100)}% <b>${fm(vat)}</b></span><span>Hệ thống tính <b>${fm(n+vat)}</b></span><span>Chênh với HĐ <b style="color:${Math.abs(diff)>1?'var(--bad)':'var(--ok)'}">${fm(diff)}</b></span>`; },
   SO(f){ let n=0; f.querySelectorAll('#lines tr').forEach(tr=>{const q=num(tr.querySelector('.li-qty').value),p=num(tr.querySelector('.li-price').value);tr.querySelector('.li-amt').textContent=fm(q*p);n+=q*p;});
     const vat=Math.round(n*VATR()), tot=n+vat; f.querySelector('#f-sum').innerHTML=`<span>Tiền hàng <b>${fm(n)}</b></span><span>VAT <b>${fm(vat)}</b></span><span>Tổng <b>${fm(tot)}</b></span>`;
-    const cu=f.querySelector('#f-cust').value; const e=calc(S.co).exposure(cu); const lim=cus(cu).lim; const after=e.tot+tot;
+    const cu=f.querySelector('#f-cust').value; const e=calc(S.co).exposure(cu); const lim=(cus(cu)||{lim:0}).lim; const after=e.tot+tot;
     const box=f.querySelector('#f-credit'); box.className='note '+(after>lim&&S.cfg.credit!==false?'warn':'');
     box.innerHTML=`Hạn mức <b class="mono">${fm(lim)}</b> · đang sử dụng <b class="mono">${fm(e.tot)}</b> · sau đơn này <b class="mono">${fm(after)}</b>${after>lim&&S.cfg.credit!==false?' — <b>vượt hạn mức, đơn sẽ bị khóa tín dụng</b>':''}`; }
 };

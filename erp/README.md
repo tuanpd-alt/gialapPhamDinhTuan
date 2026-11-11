@@ -74,3 +74,16 @@ Giảng viên có thể chọn "Thao tác như" một vai trò bất kỳ để 
 - Thuế suất GTGT là tham số SPRO (mặc định 8% theo NĐ 174/2025/NĐ-CP).
 - Số dư đầu kỳ là chứng từ mở sổ của từng công ty; "Làm mới dữ liệu" trả công ty về số dư đầu kỳ.
 - Chạy `setup.sql` trên project đang có dữ liệu bản 1 sẽ tự chuyển dữ liệu (hàm `erp_migrate_v1`).
+
+## Thay đổi chính của ERP Lab 2.0 (P2)
+
+- 15 vai trò theo phòng ban; quyền lưu ở bảng `erp_role_perm`, máy chủ kiểm tra mọi thao tác. Vai trò "Kế toán công nợ" (KT) của bản 1 vẫn dùng được và bằng Kế toán phải trả + Kế toán phải thu.
+- SU01 có "Áp gói vai trò" (PK1–PK5) cho một hoặc cả 8 công ty.
+- Dữ liệu gốc riêng từng công ty:
+  - vật tư (MM01–MM03): hàng hóa, nguyên vật liệu, thành phẩm, dịch vụ;
+  - nhà cung cấp (XK01–XK03), khách hàng (XD01–XD03);
+  - bảng giá mua (ME11);
+  - hệ thống tài khoản (FS00), cơ cấu tổ chức (ZORG).
+- Thay đổi nhạy cảm và nhà cung cấp, khách hàng mới phải được Kế toán trưởng duyệt ở ZMDA. Các thay đổi nhạy cảm gồm tài khoản ngân hàng, hạn thanh toán, hạn mức tín dụng, khóa/mở.
+- Mọi thay đổi ghi vào nhật ký ZCHG.
+- Thứ tự tệp SQL: `001_base`, `002_ledger`, `003_hardening`, `004_masterdata`. Kiểm thử P2: `tests/p2_md_test.sql` (chỉ chạy trên project thử).

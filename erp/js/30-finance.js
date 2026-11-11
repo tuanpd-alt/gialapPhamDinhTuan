@@ -108,10 +108,11 @@ function scrStock(){
     <tr><td></td><td></td><td>Tồn đầu kỳ</td><td></td><td></td><td class="num">${s.oq}</td></tr>
     ${s.mv.slice().sort((a,b)=>String(a.d.at).localeCompare(String(b.d.at))).map(x=>{run+=x.q;return `<tr><td>${vd(x.d.date)}</td><td>${docLink(S.co,x.d)}</td><td>${x.q>0?'Nhập mua từ '+esc(x.d.vendor):'Xuất bán cho '+esc(x.d.cust)}</td><td class="num">${x.q>0?x.q:''}</td><td class="num">${x.q<0?-x.q:''}</td><td class="num">${run}</td></tr>`;}).join('')}
     </tbody></table></div></div>`; }
-  return `<div class="wrap">${head('MMBE','Tồn kho hàng hóa','Giá trị tồn theo TK 156 Hàng hóa, đơn giá bình quân gia quyền di động do máy chủ tính. Bấm vào mã hàng để xem thẻ kho.')}
-  <div class="tw"><table class="t"><thead><tr><th>Mã</th><th>Tên hàng</th><th>ĐVT</th><th class="num">Tồn đầu</th><th class="num">Nhập</th><th class="num">Xuất</th><th class="num">Tồn cuối</th><th class="num">Đơn giá BQ</th><th class="num">Giá trị tồn</th></tr></thead><tbody>
-  ${MATS.map(x=>{const s=c.st[x.c];return `<tr class="click" data-go="MMBE" data-p="${P({mat:x.c})}"><td class="mono">${x.c}</td><td>${esc(x.n)}</td><td>${x.u}</td><td class="num">${s.oq}</td><td class="num">${s.iq}</td><td class="num">${s.xq}</td><td class="num"><b>${s.q}</b></td><td class="num">${fm(s.avg)}</td><td class="num">${fm(s.v)}</td></tr>`;}).join('')}</tbody>
-  <tfoot><tr><td colspan="8">Cộng (khớp số dư TK 156: ${fm(c.bal('156'))})</td><td class="num">${fm(sum(MATS,x=>c.st[x.c].v))}</td></tr></tfoot></table></div></div>`;
+  const sm = MATS.filter(isStock); const tk = INV_ACCS.filter(a=>sm.some(x=>(x.acc||'156')===a));
+  return `<div class="wrap">${head('MMBE','Tồn kho vật tư','Giá trị tồn theo tài khoản tồn kho của từng loại vật tư (152 nguyên vật liệu, 155 thành phẩm, 156 hàng hóa), đơn giá bình quân gia quyền di động do máy chủ tính. Bấm vào mã để xem thẻ kho.')}
+  <div class="tw"><table class="t"><thead><tr><th>Mã</th><th>Tên vật tư</th><th>Loại · TK</th><th>ĐVT</th><th class="num">Tồn đầu</th><th class="num">Nhập</th><th class="num">Xuất</th><th class="num">Tồn cuối</th><th class="num">Tồn tối thiểu</th><th class="num">Đơn giá BQ</th><th class="num">Giá trị tồn</th></tr></thead><tbody>
+  ${sm.map(x=>{const s=c.st[x.c];const low=x.min>0&&s.q<x.min;return `<tr class="click" data-go="MMBE" data-p="${P({mat:x.c})}"><td class="mono">${x.c}</td><td>${esc(x.n)}${x.active===false?' <span class="chip c-rejected">Khóa</span>':''}</td><td class="small">${esc(x.t)} · ${esc(x.acc||'156')}</td><td>${esc(x.u)}</td><td class="num">${s.oq}</td><td class="num">${s.iq}</td><td class="num">${s.xq}</td><td class="num"><b>${s.q}</b>${low?' <span class="chip c-pending">dưới mức</span>':''}</td><td class="num">${x.min||''}</td><td class="num">${fm(s.avg)}</td><td class="num">${fm(s.v)}</td></tr>`;}).join('')}</tbody>
+  <tfoot>${tk.map(a=>`<tr><td colspan="10">Cộng TK ${a} (số dư sổ cái: ${fm(c.bal(a))})</td><td class="num">${fm(sum(sm.filter(x=>(x.acc||'156')===a),x=>c.st[x.c].v))}</td></tr>`).join('')}</tfoot></table></div></div>`;
 }
 function scrAP(){
   const c = calc(S.co);

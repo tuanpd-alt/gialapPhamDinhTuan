@@ -17,7 +17,7 @@ function erpModule(m){
 
 /* ============ STATE ============ */
 const CFG = window.ERP_CONFIG || {};
-const S = {token:null,me:null,uid:null,isAdmin:false,users:{},cfg:{tol:5,poAuto:0,credit:true},docs:{},ver:{},
+const S = {token:null,me:null,uid:null,isAdmin:false,users:{},md:{},auth:null,acct:null,cfg:{tol:5,poAuto:0,credit:true},docs:{},ver:{},
   since:null,epochs:{},metaKey:'',co:null,role:null,screen:'HOME',param:null,stack:[],sideKey:'',lastPw:null,timer:null,online:true};
 const LS = {get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 
@@ -71,23 +71,26 @@ function calc(co){
   const by = {}; L.forEach(d=>by[d.id]=d);
   const kids = (t,f,id) => T[t].filter(x=>x[f]===id&&live(x));
 
-  const st = {}; MATS.forEach(m=>st[m.c]={oq:0,ov:0,iq:0,xq:0,v:0,mv:[]});
-  T.GR.filter(live).forEach(g=>g.items.forEach(it=>{st[it.mat].iq+=it.qty; st[it.mat].mv.push({d:g,q:it.qty});}));
-  T.DL.filter(live).forEach(g=>g.items.forEach(it=>{st[it.mat].xq+=it.qty; st[it.mat].mv.push({d:g,q:-it.qty});}));
+  const st = {}; const S0 = c => st[c] || (st[c]={oq:0,ov:0,iq:0,xq:0,v:0,mv:[]});
+  matsOf(co).forEach(m=>S0(m.c));
+  T.GR.filter(live).forEach(g=>g.items.forEach(it=>{const x=S0(it.mat); x.iq+=it.qty; x.mv.push({d:g,q:it.qty});}));
+  T.DL.filter(live).forEach(g=>g.items.forEach(it=>{const x=S0(it.mat); x.xq+=it.qty; x.mv.push({d:g,q:-it.qty});}));
 
   const acc = {}; Object.keys(ACCS).forEach(a=>acc[a]={o:0,dr:0,cr:0});
-  const ap = {}, ar = {}; VENDORS.forEach(x=>ap[x.c]={dr:0,cr:0}); CUSTS.forEach(x=>ar[x.c]={dr:0,cr:0});
+  const ap = {}, ar = {}; vensOf(co).forEach(x=>ap[x.c]={dr:0,cr:0}); custsOf(co).forEach(x=>ar[x.c]={dr:0,cr:0});
+  const P0 = (o,k) => o[k] || (o[k]={dr:0,cr:0});
   const lines = [];
   L.forEach(d=>{ if(!live(d)||!Array.isArray(d.je)) return; d.je.forEach(j=>{
     const a=acc[j.a]; if(!a) return;
-    if(d.type==='OB'){ a.o+=(j.dr||0)-(j.cr||0); if(j.a==='156'&&j.mat&&st[j.mat]){ st[j.mat].oq+=j.q||0; st[j.mat].ov+=j.dr||0; st[j.mat].v+=j.dr||0; } return; }
+    const inv = INV_ACCS.includes(j.a)&&j.mat;
+    if(d.type==='OB'){ a.o+=(j.dr||0)-(j.cr||0); if(inv){ const x=S0(j.mat); x.oq+=j.q||0; x.ov+=j.dr||0; x.v+=j.dr||0; } return; }
     a.dr+=j.dr||0; a.cr+=j.cr||0;
-    if(j.a==='156'&&j.mat&&st[j.mat]) st[j.mat].v+=(j.dr||0)-(j.cr||0);
-    if(j.a==='331'&&ap[j.p]){ap[j.p].dr+=j.dr||0;ap[j.p].cr+=j.cr||0;}
-    if(j.a==='131'&&ar[j.p]){ar[j.p].dr+=j.dr||0;ar[j.p].cr+=j.cr||0;}
+    if(inv) S0(j.mat).v+=(j.dr||0)-(j.cr||0);
+    if(j.a==='331'&&j.p){const x=P0(ap,j.p); x.dr+=j.dr||0; x.cr+=j.cr||0;}
+    if(j.a==='131'&&j.p){const x=P0(ar,j.p); x.dr+=j.dr||0; x.cr+=j.cr||0;}
     lines.push({d,j}); }); });
-  MATS.forEach(m=>{const s=st[m.c]; s.q=s.oq+s.iq-s.xq; s.avg=s.q>0?s.v/s.q:m.oc;});
-  const bal = a => acc[a].o+acc[a].dr-acc[a].cr;
+  Object.keys(st).forEach(k=>{const s=st[k]; s.q=s.oq+s.iq-s.xq; s.avg=s.q>0?s.v/s.q:(mat(k,co).oc||mat(k,co).bp||0);});
+  const bal = a => acc[a]?acc[a].o+acc[a].dr-acc[a].cr:0;
 
   // P2P open quantities
   const poOpen = po => po.items.map((it,i)=>it.qty-sum(kids('GR','po',po.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
@@ -100,7 +103,7 @@ function calc(co){
   const soBilled = so => so.items.map((it,i)=>sum(kids('BI','so',so.id),g=>sum(g.items.filter(x=>x.line===i),x=>x.qty)));
   const biPaid = bi => sum(T.RC.filter(p=>p.bi===bi.id&&p.status==='posted'),p=>p.amount);
   const biPend = bi => sum(T.RC.filter(p=>p.bi===bi.id&&p.status==='pending'),p=>p.amount);
-  const exposure = c => { const arb=ar[c].dr-ar[c].cr; const openSO=sum(T.SO.filter(s=>s.cust===c&&s.status==='approved'),s=>{const b=soBilled(s);return sum(s.items.map((it,i)=>(it.qty-b[i])*it.price*(1+VATR())));}); return {ar:Math.round(arb),so:Math.round(openSO),tot:Math.round(arb+openSO)}; };
+  const exposure = c => { const r0=P0(ar,c); const arb=r0.dr-r0.cr; const openSO=sum(T.SO.filter(s=>s.cust===c&&s.status==='approved'),s=>{const b=soBilled(s);return sum(s.items.map((it,i)=>(it.qty-b[i])*it.price*(1+VATR())));}); return {ar:Math.round(arb),so:Math.round(openSO),tot:Math.round(arb+openSO)}; };
 
   const Q = {
     prForPO: T.PR.filter(p=>p.status==='approved'&&kids('PO','pr',p.id).length===0),
@@ -140,19 +143,40 @@ function dbErr(e){
 }
 /* ============ AUTHORIZATION ============ */
 const TC_DOC = {'ME51N':'PR','ME21N':'PO','MIGO':'GR','MIRO':'IV','F-53':'PAY','VA01':'SO','VL01N':'DL','VF01':'BI','F-28':'RC'};
-const TYPE_ROLE = {PR:'KHO',GR:'KHO',DL:'KHO',PO:'MH',SO:'KD',IV:'KT',PAY:'KT',BI:'KT',RC:'KT'};
+// Vai trò lập từng loại chứng từ (khớp erp_type_role trên máy chủ). KT = AP + AR.
+const TYPE_ROLE = {PR:'KHO',GR:'KHO',DL:'KHO',PO:'MH',SO:'KD',IV:'AP',PAY:'AP',BI:'AR',RC:'AR'};
 const GRANTS = ['PR','PO','GR','IV','PAY','SO','DL','BI','RC','AP'];
 const grantName = g => g==='AP' ? 'Phê duyệt chứng từ' : TYPES[g].n+' ('+TYPES[g].tc+')';
-// Mức xung đột khi một người giữ cả hai vai trò (0 = chấp nhận được, 3 = nghiêm trọng)
-const CONFLICT = {'KHO|MH':2,'KHO|KT':3,'KHO|KD':1,'MH|KT':2,'KD|KT':2,'MH|KD':0,'KHO|KTT':3,'MH|KTT':3,'KD|KTT':3,'KT|KTT':3};
-const conflictOf = (a,b) => CONFLICT[a+'|'+b] ?? CONFLICT[b+'|'+a] ?? 0;
-const CONFLICT_WHY = {'KHO|MH':'tự đặt mua và tự nhận hàng','KHO|KT':'vừa giữ hàng vừa ghi sổ','KHO|KD':'vừa bán vừa xuất kho','MH|KT':'vừa đặt mua vừa ghi nhận công nợ phải trả','KD|KT':'vừa bán vừa lập hóa đơn, thu tiền','KHO|KTT':'vừa lập vừa duyệt chứng từ kho','MH|KTT':'vừa lập vừa duyệt đơn mua','KD|KTT':'vừa bán vừa gỡ khóa tín dụng','KT|KTT':'vừa lập vừa duyệt phiếu chi, phiếu thu'};
-const conflictWhy = (a,b) => CONFLICT_WHY[a+'|'+b] || CONFLICT_WHY[b+'|'+a] || '';
+// Ma trận xung đột dự phòng; erp_sync (auth.conflict) trả về bảng đầy đủ từ erp_conflict() trên máy chủ (SPEC 4.3).
+const CONFLICT0 = {'KHO|MH':[2,'Tự đặt mua và tự nhận hàng'],'KHO|KT':[3,'Vừa giữ hàng vừa ghi sổ'],'KHO|AP':[3,'Vừa giữ hàng vừa ghi sổ'],'KHO|AR':[3,'Vừa giữ hàng vừa ghi sổ'],
+  'KHO|KD':[1,'Vừa bán vừa xuất kho'],'MH|KT':[2,'Tự đặt mua và tự đề nghị trả tiền'],'MH|AP':[2,'Tự đặt mua và tự đề nghị trả tiền'],'KD|KT':[2,'Tự bán và tự xóa nợ'],'KD|AR':[2,'Tự bán và tự xóa nợ'],
+  'TQ|TH':[3,'Giữ tiền và ghi sổ'],'TQ|AP':[3,'Giữ tiền và ghi sổ'],'TQ|AR':[3,'Giữ tiền và ghi sổ'],'TQ|KT':[3,'Giữ tiền và ghi sổ']};
+function conflictRec(a,b){
+  if(!a||!b||a===b) return null;
+  const C=S.auth&&S.auth.conflict; const k1=a<b?a+'|'+b:b+'|'+a;
+  if(C) return C[k1]?{s:C[k1].s,w:C[k1].w||''}:null;
+  const x=CONFLICT0[a+'|'+b]||CONFLICT0[b+'|'+a]; if(x) return {s:x[0],w:x[1]};
+  if((a==='KTT'||b==='KTT')&&a!=='GD'&&b!=='GD'&&a!=='KSNB'&&b!=='KSNB') return {s:3,w:'Vừa lập vừa phê duyệt'};
+  if((a==='KSNB'||b==='KSNB')&&a!=='GD'&&b!=='GD') return {s:3,w:'Kiểm toán nội bộ phải độc lập với đối tượng được kiểm tra'};
+  return null;
+}
+const conflictOf = (a,b) => (conflictRec(a,b)||{s:0}).s;
+const conflictWhy = (a,b) => (conflictRec(a,b)||{w:''}).w;
 function userRoles(u){ if(!u||!u.role) return []; return [u.role].concat((u.extra||[]).filter(x=>ROLES[x]&&x!==u.role)); }
 function userGrants(u){ return ((u&&u.extra)||[]).filter(x=>x.startsWith('T:')).map(x=>x.slice(2)); }
 function myRoles(){ if(S.isAdmin) return S.role==='GV'?ROLE_ORDER.slice():[S.role]; return userRoles(S.me); }
 function myGrants(){ return S.isAdmin?[]:userGrants(S.me); }
-function canApprove(){ return myRoles().includes('KTT') || myGrants().includes('AP'); }
+// KT (vai trò gộp của bản 1) được hiểu là AP + AR, giống erp_expand() trên máy chủ.
+function expandRoles(rs){ const o=new Set(rs); if(o.has('KT')){ o.add('AP'); o.add('AR'); } return [...o]; }
+const permTc = tc => (TC[tc]&&TC[tc].pm)||tc;
+// Quyền theo bảng erp_role_perm (C = lập/thay đổi, A = phê duyệt, V = xem). Chưa đồng bộ thì dùng danh sách r trong TC.
+function roleCan(roles,tc,act){
+  const P=S.auth&&S.auth.perms; const rs=expandRoles(roles); const k=permTc(tc);
+  if(!P){ const t=TC[tc]; return !!t&&Array.isArray(t.r)&&t.r.some(r=>rs.includes(r)); }
+  return rs.some(r=>(P[r]||[]).some(x=>x.tc===k&&(!act||x.a===act)));
+}
+function can(tc,act){ if(S.isAdmin&&S.role==='GV') return true; return roleCan(myRoles(),tc,act); }
+function canApprove(){ return myGrants().includes('AP') || can('SBWP','A'); }
 function allowed(tc){
   const t = TC[tc]; if(!t) return false;
   if(t.admin) return S.isAdmin;
@@ -160,14 +184,15 @@ function allowed(tc){
   if(t.r===ALL) return true;
   if('ap' in t) return canApprove();
   const dt = TC_DOC[tc];
-  if(dt) return myRoles().includes(TYPE_ROLE[dt]) || myGrants().includes(dt);
-  const rs = myRoles();
-  return Array.isArray(t.r)&&t.r.some(r=>rs.includes(r));
+  if(dt && myGrants().includes(dt)) return true;
+  return can(tc);
 }
 function rolesLabel(u){ const rs=userRoles(u); if(!rs.length) return '—'; const g=userGrants(u);
   return roleName(rs[0]) + (rs.length>1?' · kiêm '+rs.slice(1).map(roleName).join(', '):'') + (g.length?' · được giao: '+g.map(x=>x==='AP'?'phê duyệt':TYPES[x].tc).join(', '):''); }
 function userConflicts(u){ const rs=userRoles(u), out=[]; for(let i=0;i<rs.length;i++) for(let j=i+1;j<rs.length;j++){ const sc=conflictOf(rs[i],rs[j]); if(sc>=2) out.push({a:rs[i],b:rs[j],sc}); } return out; }
-function rolesFor(tc){ const t=TC[tc]; if(!t) return ''; if(t.admin) return 'Giảng viên'; if(t.r===ALL) return 'Tất cả'; return t.r.map(roleName).join(', '); }
+function rolesFor(tc){ const t=TC[tc]; if(!t) return ''; if(t.admin) return 'Giảng viên'; if(t.r===ALL) return 'Tất cả';
+  const rs=ROLE_ORDER.filter(r=>r!=='KT'&&roleCan([r],tc)); if(rs.includes('AP')||rs.includes('AR')) rs.push('KT');
+  return rs.length?rs.map(roleName).join(', '):'Chưa mở ở giai đoạn này'; }
 
 /* ============ STATUS LABELS ============ */
 function stLabel(d){
@@ -206,10 +231,14 @@ async function sync(full){
     const r = await api('erp_sync',{p_token:S.token,p_co:'*',p_since:full?null:S.since});
     const before = S.me?JSON.stringify([S.me.co,S.me.role]):null;
     S.me=r.me; S.uid=r.me.id; S.isAdmin=!!r.me.is_admin;
-    if(r.accts) Object.keys(r.accts).forEach(k=>{ ACCS[k]=r.accts[k].n; });
+    if(r.accts){ S.acct=r.accts; Object.keys(r.accts).forEach(k=>{ ACCS[k]=r.accts[k].n; }); }
+    if(r.auth&&r.auth.perms){ S.auth=r.auth; (r.auth.roles||[]).forEach(x=>{ ROLES[x.c]={n:x.n,d:x.d,dept:x.dept,ph:x.ph}; });
+      ROLE_ORDER.length=0; (r.auth.roles||[]).forEach(x=>ROLE_ORDER.push(x.c)); S.sideKey=''; }
+    let mdChanged=false;
+    if(r.md) Object.keys(r.md).forEach(co=>{ const nv=r.md[co]; if(JSON.stringify(S.md[co])!==JSON.stringify(nv)){ S.md[co]=nv; S.ver[co]=(S.ver[co]||0)+1; mdChanged=true; } });
     const users={}; (r.users||[]).forEach(u=>users[u.id]=u);
     const meta=JSON.stringify([r.me,r.cfg,r.users]);
-    let changed=false;
+    let changed=mdChanged;
     if(meta!==S.metaKey){ S.metaKey=meta; S.users=users; S.cfg=Object.assign({tol:5,poAuto:0,credit:true},r.cfg||{}); S.sideKey=''; changed=true; }
     const ep=r.epochs||{}; let reset=false;
     COS.forEach(co=>{ if((S.epochs[co]||0)!==(ep[co]||0)){ reset=true; } });
@@ -239,7 +268,7 @@ function setOnline(v){ if(S.online!==v){ S.online=v; renderCtx(); } }
 function logout(){
   const t=S.token; clearTimeout(S.timer);
   if(t) api('erp_logout',{p_token:t}).catch(()=>{});
-  LS.del('erp.token'); Object.assign(S,{token:null,me:null,uid:null,isAdmin:false,users:{},docs:{},since:null,epochs:{},metaKey:'',screen:'HOME',param:null,stack:[],sideKey:''});
+  LS.del('erp.token'); Object.assign(S,{token:null,me:null,uid:null,isAdmin:false,users:{},md:{},auth:null,docs:{},since:null,epochs:{},metaKey:'',screen:'HOME',param:null,stack:[],sideKey:''});
   showLogin();
 }
 let rt=null; function schedule(){ if(rt) return; rt=requestAnimationFrame(()=>{rt=null;render(false);}); }
@@ -252,6 +281,7 @@ function isFormScreen(){
   if(['ME21N','MIGO','MIRO','F-53','VL01N','VF01','F-28'].includes(S.screen)&&S.param) return true;
   if(S.screen==='SPRO'||S.screen==='PW') return true;
   if(S.screen==='SU01'&&S.editExtra) return true;
+  if(typeof MD_EDITING==='function'&&MD_EDITING()) return true;
   return false;
 }
 function render(force,keepScroll){
@@ -272,7 +302,7 @@ function renderCtx(){
   let h='';
   if(S.isAdmin){
     h += `<select id="sel-co" data-chg="co" aria-label="Công ty">${COS.map(c=>`<option value="${c}" ${c===S.co?'selected':''}>${c} · Nhóm ${+c.slice(1)}</option>`).join('')}</select>`;
-    h += `<select id="sel-role" data-chg="role" aria-label="Thao tác với vai trò">${['GV',...ROLE_ORDER].map(r=>`<option value="${r}" ${r===S.role?'selected':''}>${r==='GV'?'Giảng viên – toàn quyền':'Thao tác như: '+ROLES[r].n}</option>`).join('')}</select>`;
+    h += `<select id="sel-role" data-chg="role" aria-label="Thao tác với vai trò">${['GV',...ROLE_ORDER].map(r=>`<option value="${r}" ${r===S.role?'selected':''}>${r==='GV'?'Giảng viên – toàn quyền':'Thao tác như: '+ROLES[r].n+(ROLES[r].ph&&ROLES[r].ph>'P2'?' (mở từ '+ROLES[r].ph+')':'')}</option>`).join('')}</select>`;
   } else if(S.co){
     const xr=myRoles().slice(1), xg=myGrants();
     h += `<span class="rolechip"><span class="dot" style="background:var(--r-${S.role})"></span>${esc(roleName(S.role))}${xr.length||xg.length?` <span style="font-weight:500;color:var(--shell-mute)">+ kiêm ${xr.length+xg.length}</span>`:''}</span><span class="who">${esc(S.co)} · ${esc(coName(S.co))}</span>`;
@@ -289,11 +319,12 @@ function renderSide(){
   if(!S.co && !S.isAdmin){ if(S.sideKey!=='none'){ side.innerHTML='<h4>Chưa được phân quyền</h4><p class="small muted" style="padding:0 16px">Menu giao dịch sẽ hiện sau khi giảng viên gán bạn vào công ty và vai trò.</p>'; S.sideKey='none'; } return; }
   const c = calc(S.co);
   const cnt = {'ME21N':c.Q.prForPO.length,'MIGO':c.Q.poForGR.length,'MIRO':c.Q.poForIV.length,'F-53':c.Q.ivForPay.length,'VL01N':c.Q.soForDL.length,'VF01':c.Q.dlForBI.length,'F-28':c.Q.biForRC.length,
-    'SBWP':c.Q.apAll.length,'ME54N':c.Q.ap.PR.length,'ME29N':c.Q.ap.PO.length,'MRBR':c.Q.ap.IV.length,'VKM3':c.Q.ap.SO.length,'ZFAP':c.Q.ap.PAY.length+c.Q.ap.RC.length};
+    'SBWP':c.Q.apAll.length,'ZMDA':typeof mdPendingCount==='function'?mdPendingCount(S.co):0,'ME54N':c.Q.ap.PR.length,'ME29N':c.Q.ap.PO.length,'MRBR':c.Q.ap.IV.length,'VKM3':c.Q.ap.SO.length,'ZFAP':c.Q.ap.PAY.length+c.Q.ap.RC.length};
   const groups = {};
   Object.keys(TC).forEach(k=>{ const t=TC[k]; if(t.admin&&!S.isAdmin) return; (groups[t.m]=groups[t.m]||[]).push(k); });
   let h = `<button class="mi ${S.screen==='HOME'?'on':''}" data-go="HOME"><code>HOME</code><span>Trang làm việc</span><span></span></button>`;
-  Object.keys(groups).forEach(g=>{
+  const GORD=['Mua hàng (MM)','Bán hàng (SD)','Kế toán (FI)','Dữ liệu gốc','Phê duyệt','Kiểm soát','Hướng dẫn','Quản trị (giảng viên)'];
+  Object.keys(groups).sort((a,b)=>{const i=x=>{const k=GORD.indexOf(x);return k<0?99:k;};return i(a)-i(b);}).forEach(g=>{
     h += `<h4>${esc(g)}</h4>`;
     groups[g].forEach(k=>{ const ok=allowed(k); const n=ok?cnt[k]:0;
       h += `<button class="mi ${S.screen===k?'on':''} ${ok?'':'locked'}" data-go="${k}" title="${ok?'':'Không có quyền – vai trò được phép: '+esc(rolesFor(k))}"><code>${k}</code><span>${esc(TC[k].t)}</span>${n?`<span class="badge">${n}</span>`:(ok?'<span></span>':'<span class="lk">khóa</span>')}</button>`; });

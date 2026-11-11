@@ -2,11 +2,11 @@
 /* ERP Lab – Trang làm việc, Mua hàng (MM), Bán hàng (SD), hộp phê duyệt, danh sách. */
 /* ============ SCREEN: HOME ============ */
 const P2P = [['ME51N','KHO','Đề nghị mua',c=>null],['ME54N','KTT','Duyệt đề nghị',c=>c.Q.ap.PR.length],['ME21N','MH','Lập đơn mua',c=>c.Q.prForPO.length],['ME29N','KTT','Duyệt đơn mua',c=>c.Q.ap.PO.length],
-  ['MIGO','KHO','Nhập kho',c=>c.Q.poForGR.length],['MIRO','KT','Đối chiếu hóa đơn',c=>c.Q.poForIV.length],['MRBR','KTT','Gỡ khóa HĐ (nếu có)',c=>c.Q.ap.IV.length],['F-53','KT','Đề nghị chi',c=>c.Q.ivForPay.length],['ZFAP','KTT','Duyệt chi',c=>c.Q.ap.PAY.length]];
-const O2C = [['VA01','KD','Đơn bán hàng',c=>null],['VKM3','KTT','Gỡ khóa tín dụng',c=>c.Q.ap.SO.length],['VL01N','KHO','Xuất kho giao hàng',c=>c.Q.soForDL.length],['VF01','KT','Lập hóa đơn GTGT',c=>c.Q.dlForBI.length],
-  ['F-28','KT','Ghi nhận thu tiền',c=>c.Q.biForRC.length],['ZFAP','KTT','Duyệt thu',c=>c.Q.ap.RC.length]];
+  ['MIGO','KHO','Nhập kho',c=>c.Q.poForGR.length],['MIRO','AP','Đối chiếu hóa đơn',c=>c.Q.poForIV.length],['MRBR','KTT','Gỡ khóa HĐ (nếu có)',c=>c.Q.ap.IV.length],['F-53','AP','Đề nghị chi',c=>c.Q.ivForPay.length],['ZFAP','KTT','Duyệt chi',c=>c.Q.ap.PAY.length]];
+const O2C = [['VA01','KD','Đơn bán hàng',c=>null],['VKM3','KTT','Gỡ khóa tín dụng',c=>c.Q.ap.SO.length],['VL01N','KHO','Xuất kho giao hàng',c=>c.Q.soForDL.length],['VF01','AR','Lập hóa đơn GTGT',c=>c.Q.dlForBI.length],
+  ['F-28','AR','Ghi nhận thu tiền',c=>c.Q.biForRC.length],['ZFAP','KTT','Duyệt thu',c=>c.Q.ap.RC.length]];
 function lane(steps,c){
-  return `<div class="lane">${steps.map((s,i)=>{ const q=s[3](c); const mine=S.role!=='GV'&&(myRoles().includes(s[1])||(s[1]==='KTT'&&canApprove()));
+  return `<div class="lane">${steps.map((s,i)=>{ const q=s[3](c); const mine=S.role!=='GV'&&(expandRoles(myRoles()).includes(s[1])||(s[1]==='KTT'&&canApprove()));
     return (i?'<span class="arrow" aria-hidden="true">→</span>':'')+`<button class="step ${mine?'mine':''}" style="--rc:var(--r-${s[1]})" data-go="${s[0]}">${q!=null?`<span class="q ${q?'has':''}">${q}</span>`:''}<code>${s[0]}</code><span class="s">${esc(s[2])}</span><span class="r">${esc(ROLES[s[1]].n)}</span></button>`; }).join('')}</div>`;
 }
 function scrHome(){
@@ -15,6 +15,7 @@ function scrHome(){
   const tiles = [];
   const T = (tc,n,l) => { if(allowed(tc)) tiles.push(`<button class="tile" data-go="${tc}"><span class="n ${n?'':'zero'}">${n}</span><span class="l">${esc(l)}</span><code>${tc}</code></button>`); };
   T('SBWP',c.Q.apAll.length,'Chứng từ chờ bạn phê duyệt');
+  if(typeof mdPendingCount==='function') T('ZMDA',mdPendingCount(S.co),'Thay đổi dữ liệu gốc chờ duyệt');
   T('ME21N',c.Q.prForPO.length,'Đề nghị mua đã duyệt, chờ lập đơn mua');
   T('MIGO',c.Q.poForGR.length,'Đơn mua đã duyệt, chờ nhập kho');
   T('VL01N',c.Q.soForDL.length,'Đơn bán đã xác nhận, chờ xuất kho');
@@ -37,17 +38,18 @@ function scrHome(){
     <div class="panel"><h2>Số dư nhanh</h2><dl class="kv">
       <dt>TK 112 Tiền gửi</dt><dd class="mono">${fm(c.bal('112'))}</dd>
       <dt>TK 111 Tiền mặt</dt><dd class="mono">${fm(c.bal('111'))}</dd>
-      <dt>TK 156 Hàng hóa</dt><dd class="mono">${fm(c.bal('156'))}</dd>
+      <dt>TK 152, 155, 156 Tồn kho</dt><dd class="mono">${fm(c.bal('152')+c.bal('155')+c.bal('156'))}</dd>
       <dt>TK 131 Phải thu</dt><dd class="mono">${fm(c.bal('131'))}</dd>
       <dt>TK 331 Phải trả</dt><dd class="mono">${fm(-c.bal('331'))}</dd></dl></div>
   </div></div>`;
 }
 
 /* ============ LINE ITEM HELPERS ============ */
-function matOpts(sel,co){ const c=calc(co); return MATS.map(m=>`<option value="${m.c}" ${m.c===sel?'selected':''}>${m.c} · ${esc(m.n)} (tồn ${c.st[m.c].q})</option>`).join(''); }
+const lineMats = (kind,co) => kind==='SO'?sellMats(co):buyMats(co);
+function matOpts(sel,co,kind){ const c=calc(co); return lineMats(kind,co).map(m=>`<option value="${m.c}" ${m.c===sel?'selected':''}>${m.c} · ${esc(m.n)} (tồn ${c.st[m.c]?c.st[m.c].q:0} ${esc(m.u)})</option>`).join(''); }
 function lineRow(kind,co){
-  const m = MATS[0];
-  return `<tr><td><select class="li-mat w-mat" data-chg="linemat" aria-label="Hàng hóa">${matOpts(m.c,co)}</select></td>
+  const m = lineMats(kind,co)[0] || MAT_NONE;
+  return `<tr><td><select class="li-mat w-mat" data-chg="linemat" aria-label="Vật tư">${matOpts(m.c,co,kind)}</select></td>
   <td><input class="li-qty num" type="number" min="1" step="1" value="1" aria-label="Số lượng"></td>
   ${kind==='SO'?`<td><input class="li-price num" type="number" min="0" step="1000" value="${m.sp}" aria-label="Đơn giá"></td>`:`<td class="num li-ref">${fm(m.bp)}</td>`}
   <td class="num li-amt"></td><td><button type="button" class="btn sm" data-act="delLine" aria-label="Xóa dòng">✕</button></td></tr>`;
@@ -82,16 +84,18 @@ function scrPO(){
     ${pickTable(c.Q.prForPO.map(p=>Object.assign({},p,{__act:`<button class="btn sm pri" data-go="ME21N" data-p="${P({pr:p.id})}">Lập đơn mua</button>`})),
       [{h:'Số đề nghị',f:p=>docLink(S.co,p)},{h:'Ngày',f:p=>vd(p.date)},{h:'Lý do',f:p=>esc(p.reason)},{h:'Giá trị ước tính',n:1,f:p=>fm(valueOf(p))}])}</div>`;
   const pr = c.by[S.param.pr]; if(!pr) return `<div class="wrap"><div class="err">Không tìm thấy đề nghị mua.</div></div>`;
-  const v0 = VENDORS[0];
-  return `<div class="wrap">${head('ME21N','Tạo đơn mua hàng','Tham chiếu đề nghị mua '+esc(pr.no)+'. So sánh báo giá ba nhà cung cấp trước khi chọn.')}
-  <div class="panel"><h2>Bảng báo giá nhà cung cấp (đơn giá chưa VAT)</h2><div class="tw"><table class="t"><thead><tr><th>Hàng hóa</th>${VENDORS.map(v=>`<th class="num">${esc(v.c)}<br><span class="small">${v.terms} ngày</span></th>`).join('')}</tr></thead>
-  <tbody>${pr.items.map(it=>`<tr><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td>${VENDORS.map(v=>`<td class="num">${fm(Math.round(mat(it.mat).bp*v.f))}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>
+  const vs = okVens(S.co); const v0 = vs[0] || {c:''};
+  const hid = vensOf(S.co).filter(v=>!vs.includes(v));
+  return `<div class="wrap">${head('ME21N','Tạo đơn mua hàng','Tham chiếu đề nghị mua '+esc(pr.no)+'. So sánh báo giá các nhà cung cấp trước khi chọn. Ô có dấu ● lấy từ bảng giá ME11, còn lại là giá tham khảo.')}
+  <div class="panel"><h2>Bảng báo giá nhà cung cấp (đơn giá chưa VAT)</h2><div class="tw"><table class="t"><thead><tr><th>Vật tư</th>${vs.map(v=>`<th class="num">${esc(v.c)}<br><span class="small">${v.terms} ngày</span></th>`).join('')}</tr></thead>
+  <tbody>${pr.items.map(it=>`<tr><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td>${vs.map(v=>{const q=priceOf(S.co,v.c,it.mat,today());return `<td class="num" title="${esc(q.src)}">${q.src.startsWith('ME11')?'● ':''}${fm(q.p)}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>
+  ${hid.length?`<p class="small muted" style="margin-bottom:0">Không hiện ${hid.length} nhà cung cấp đang khóa hoặc chưa được Kế toán trưởng xác nhận (ZMDA): ${hid.map(v=>esc(v.c)).join(', ')}.</p>`:''}</div>
   <form class="form panel" data-form="PO" data-calc="PO" data-pr="${esc(pr.id)}"><div class="err"></div>
-   <div class="grid3"><label class="field"><span>Nhà cung cấp</span><select id="f-vendor" data-chg="povendor">${VENDORS.map(v=>`<option value="${v.c}">${v.c} · ${esc(v.n)}</option>`).join('')}</select></label>
+   <div class="grid3"><label class="field"><span>Nhà cung cấp</span><select id="f-vendor" data-chg="povendor">${vs.map(v=>`<option value="${v.c}">${v.c} · ${esc(v.n)}</option>`).join('')}</select></label>
    <label class="field"><span>Ngày đặt hàng</span><input type="date" id="f-date" value="${today()}" required></label>
    <label class="field"><span>Ngày giao dự kiến</span><input type="date" id="f-need" value="${esc(pr.need||addDays(today(),7))}" required></label></div>
    <div class="tw"><table class="t"><thead><tr><th>Hàng hóa</th><th class="num">Số lượng</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead><tbody id="polines">
-   ${pr.items.map((it,i)=>`<tr data-i="${i}" data-mat="${esc(it.mat)}" data-qty="${it.qty}"><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td><td class="num">${it.qty}</td><td><input class="po-price num" type="number" min="0" step="1" value="${Math.round(mat(it.mat).bp*v0.f)}" aria-label="Đơn giá"></td><td class="num po-amt"></td></tr>`).join('')}
+   ${pr.items.map((it,i)=>`<tr data-i="${i}" data-mat="${esc(it.mat)}" data-qty="${it.qty}"><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td><td class="num">${it.qty}</td><td><input class="po-price num" type="number" min="0" step="1" value="${priceOf(S.co,v0.c,it.mat,today()).p}" aria-label="Đơn giá"></td><td class="num po-amt"></td></tr>`).join('')}
    </tbody></table></div>
    <label class="field"><span>Ghi chú gửi nhà cung cấp</span><input id="f-note" maxlength="200" placeholder="Điều kiện giao hàng, địa điểm nhận"></label>
    <div class="form-foot"><div class="sum" id="f-sum"></div><button class="btn pri">Lưu đơn mua hàng</button></div></form></div>`;
@@ -111,7 +115,7 @@ function scrGR(){
    <div class="tw"><table class="t"><thead><tr><th>Hàng hóa</th><th class="num">SL đặt</th><th class="num">Đã nhận</th><th class="num">Còn lại</th><th class="num">SL thực nhận</th></tr></thead><tbody>
    ${po.items.map((it,i)=>op[i]>0?`<tr class="gr-line" data-i="${i}"><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td><td class="num">${it.qty}</td><td class="num">${it.qty-op[i]}</td><td class="num">${op[i]}</td><td><input class="gr-qty num" type="number" min="0" max="${op[i]}" step="1" value="${op[i]}" aria-label="Số lượng thực nhận"></td></tr>`:'').join('')}
    </tbody></table></div>
-   <div class="form-foot"><span class="small muted">Bút toán: Nợ TK 156 / Có TK 331 theo giá đơn mua.</span><button class="btn pri">Ghi sổ nhập kho</button></div></form></div>`;
+   <div class="form-foot"><span class="small muted">Bút toán: Nợ TK tồn kho của vật tư (152 hoặc 156) / Có TK 331 theo giá đơn mua.</span><button class="btn pri">Ghi sổ nhập kho</button></div></form></div>`;
 }
 function scrIV(){
   const c = calc(S.co);
@@ -153,7 +157,7 @@ function scrSO(){
   const c = calc(S.co);
   return `<div class="wrap">${head('VA01','Tạo đơn bán hàng','Hệ thống kiểm tra hạn mức tín dụng khi lưu. Đơn vượt hạn mức bị khóa và chuyển Kế toán trưởng xem xét (VKM3).')}
   <form class="form panel" data-form="SO" data-calc="SO"><div class="err"></div>
-   <div class="grid3"><label class="field"><span>Khách hàng</span><select id="f-cust" data-chg="socust">${CUSTS.map(x=>`<option value="${x.c}">${x.c} · ${esc(x.n)}</option>`).join('')}</select></label>
+   <div class="grid3"><label class="field"><span>Khách hàng</span><select id="f-cust" data-chg="socust">${okCusts(S.co).map(x=>`<option value="${x.c}">${x.c} · ${esc(x.n)}</option>`).join('')}</select></label>
    <label class="field"><span>Số đơn đặt hàng của khách</span><input id="f-cpo" required maxlength="30" placeholder="Ví dụ: DH-BX-112"></label>
    <label class="field"><span>Ngày đơn hàng</span><input type="date" id="f-date" value="${today()}" required></label>
    <label class="field"><span>Ngày giao yêu cầu</span><input type="date" id="f-need" value="${addDays(today(),3)}" required></label></div>
@@ -176,7 +180,7 @@ function scrDL(){
    <div class="tw"><table class="t"><thead><tr><th>Hàng hóa</th><th class="num">SL đặt</th><th class="num">Còn phải giao</th><th class="num">Tồn kho</th><th class="num">Giá vốn BQ</th><th class="num">SL thực xuất</th></tr></thead><tbody>
    ${so.items.map((it,i)=>op[i]>0?`<tr class="dl-line" data-i="${i}"><td>${esc(it.mat)} · ${esc(mat(it.mat).n)}</td><td class="num">${it.qty}</td><td class="num">${op[i]}</td><td class="num">${c.st[it.mat].q}</td><td class="num">${fm(c.st[it.mat].avg)}</td><td><input class="dl-qty num" type="number" min="0" step="1" value="${Math.max(0,Math.min(op[i],c.st[it.mat].q))}" aria-label="Số lượng thực xuất"></td></tr>`:'').join('')}
    </tbody></table></div>
-   <div class="form-foot"><span class="small muted">Bút toán: Nợ TK 632 / Có TK 156 theo giá vốn bình quân.</span><button class="btn pri">Ghi sổ xuất kho</button></div></form></div>`;
+   <div class="form-foot"><span class="small muted">Bút toán: Nợ TK 632 / Có TK tồn kho của vật tư (155 hoặc 156) theo giá vốn bình quân.</span><button class="btn pri">Ghi sổ xuất kho</button></div></form></div>`;
 }
 function scrBI(){
   const c = calc(S.co);

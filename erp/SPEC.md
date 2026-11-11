@@ -312,3 +312,4 @@ Hàm `erp_migrate_v1()` (P1): (1) tạo chứng từ mở sổ cho từng công 
 | Ngày | Phiên bản | Nội dung |
 | --- | --- | --- |
 | 11/11/2026 | 1.0 | Bản đầu (P0) |
+| 11/11/2026 | 1.1 | P2: thêm vai trò Giám đốc (GD) và Kiểm toán nội bộ (KSNB) xem báo cáo, ZCHG; KT = AP + AR; ma trận xung đột lưu ở `erp_role_conflict`, KTT và KSNB xung đột mức 3 với vai trò tác nghiệp; trường nhạy cảm của dữ liệu gốc: tài khoản ngân hàng, hạn thanh toán, hạn mức, khóa/mở, tạo mới đối tác; vật tư DV không theo dõi tồn kho; T-code mới MM01–03, XK01–03, XD01–03, ME11, FS00, ZORG, ZMDA, ZCHG |
