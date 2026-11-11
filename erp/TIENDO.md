@@ -9,7 +9,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Chưa | |
+| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Xong trên `erp2` + `erp-lab-dev`; chờ rà soát độc lập | 11/11/2026 |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
 | P6 | Tài sản cố định | Chưa | |
@@ -87,6 +87,50 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
     - MM01 và XK02 chỉ gửi trường thay đổi;
     - quyền từng vai trò khớp ma trận.
 
+## P3 – đã làm
+
+- SQL `sql/005_gl_cash.sql`:
+  - Bảng: `erp_co_state` (ngày làm việc, số kiểm đếm quỹ), `erp_period_close`, `erp_period_log`, `erp_bank_preset`, `erp_bank_line`; cột `cc` (trung tâm chi phí) trên dòng bút toán.
+  - `erp_post`:
+    - Ngày ghi sổ là ngày làm việc của công ty.
+    - Chặn kỳ đã đóng theo nhóm tài khoản (Tất cả, Kho, Phải thu, Phải trả, Tài sản, Sổ cái).
+    - Tài khoản có cờ bắt buộc trung tâm chi phí phải ghi trung tâm chi phí.
+    - TK 141 phải ghi người nhận tạm ứng.
+  - `erp_doc_create`, `erp_doc_decide` chuyển sang 005, thêm các loại:
+    - JE: FB50 bút toán tay, FBS1 trích trước tự đảo ngày đầu kỳ sau, FB08 đảo bút toán (liên kết hai chiều);
+    - CJ: phiếu thu, chi tiền mặt; chi tạm ứng;
+    - CNT: biên bản kiểm kê quỹ;
+    - ADV, ADS: đề nghị tạm ứng và thanh toán tạm ứng.
+  - Bút toán tay chặn tài khoản đối chiếu (131, 331, 15x, 141…), tài khoản không cho ghi tay và tài khoản tiền.
+  - Ngân hàng:
+    - Chi, thu chuyển khoản ghi qua TK 113.
+    - `erp_bank_issue` phát hành sao kê theo ngày làm việc (ngân hàng hạch toán ngày kế tiếp), cộng 3 khoản cài sẵn mỗi tháng: tiền về chưa rõ 15.000.000, phí 55.000, lãi 1.250.000.
+    - `erp_bank_match` ghi chứng từ BS cho từng dòng sao kê.
+  - OB52 `erp_period_set` chỉ Kế toán trưởng được dùng; `erp_admin_set_state` cho giảng viên đặt ngày làm việc, số kiểm đếm quỹ và cài lại khoản sao kê.
+  - Cờ `bankClear` trong SPRO; tắt thì chạy như P1.
+- Giao diện `js/mod-gl.js`, 12 T-code:
+  - FB50, FBS1, FB08, FB03, FAGLL03 (số dư lũy kế, lọc kỳ, đối tượng, TTCP, xuất CSV);
+  - ZSO: Sổ Nhật ký chung, Sổ Cái theo mẫu, in được;
+  - OB52, FBCJ (sổ quỹ), ZKQ, FF67, ZBRR (bảng đối chiếu ngân hàng, in được), ZTU.
+  - F.01 tính theo khoảng kỳ.
+  - Hộp duyệt FBV0. Đầu trang hiện ngày làm việc; ngày mặc định trên mọi chứng từ là ngày làm việc. SPRO có phần ngày làm việc, kiểm quỹ, sao kê.
+- Kiểm thử:
+  - `tests/p3_gl_test.sql` 58/58, gồm 3 kịch bản nghiệm thu: (1) đóng kỳ 11, ghi vào kỳ 11 bị chặn, đảo sang kỳ 12; (2) đối chiếu ngân hàng ra đúng 3 khoản; (3) FB50 ghi vào TK 131 bị chặn.
+  - Chạy lại P1 45/45, P2 29/29: hai bộ này đặt ngày làm việc 30/11/2026 và tắt TK 113.
+  - Kiểm thử khói giao diện: 58 T-code, không có lỗi JS.
+- Lưu ý vận hành: áp SQL bằng `apply_migration` sẽ dừng chờ xác nhận vì có lệnh xóa trong hàm; ở P3 đã áp bằng `execute_sql`.
+
+## Quyết định đã chọn ở P3
+
+| Mã | Quyết định | Lý do |
+| --- | --- | --- |
+| P3-1 | Ngày ghi sổ do máy chủ lấy theo ngày làm việc; ngày chứng từ không được sau ngày làm việc | Mô phỏng thời gian trôi do giảng viên điều khiển; chặn ghi nghiệp vụ tương lai |
+| P3-2 | Chi, thu chuyển khoản qua TK 113 đến khi khớp sao kê | Sinh viên thấy rõ chênh lệch thời điểm và khoản đang chuyển |
+| P3-3 | Khớp sao kê (FF67) do Kế toán tổng hợp làm và ghi sổ ngay, không qua duyệt | Sao kê ngân hàng là chứng từ bên ngoài; Kế toán trưởng kiểm soát qua ZBRR |
+| P3-4 | Chi tạm ứng đã duyệt ghi sổ ngay khi Thủ quỹ chi | Đề nghị tạm ứng đã qua Kế toán trưởng; tránh duyệt hai lần |
+| P3-5 | FBS1 tự đảo bằng chứng từ riêng ghi ngày đầu kỳ sau ngay khi duyệt | Đơn giản, có dấu vết; kỳ sau đóng thì không duyệt được |
+| P3-6 | Gói vai trò cho buổi P3 nên dùng PK3 (TQ, TH, AP, AR, KTT) | PK1 không có Kế toán tổng hợp, Thủ quỹ |
+
 ## Quyết định đã chọn ở P2
 
 | Mã | Quyết định | Lý do |
@@ -120,6 +164,8 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 3. Chính sách thuế GTGT từ 01/01/2027.
 4. Giảng viên đã duyệt SPEC (D1–D8).
 5. Danh mục vai trò, ma trận xung đột (SPEC 4.3) và danh sách trường nhạy cảm có phù hợp bài giảng kiểm soát nội bộ không.
+6. Mẫu sổ S03a-DN, S03b-DN ở ZSO đang theo cách đánh số quen dùng; cần đối chiếu mẫu sổ kèm Thông tư 99/2025/TT-BTC.
+7. Hạch toán phí ngân hàng vào 6427, lãi tiền gửi vào 515, tiền về chưa rõ vào 3388, thiếu quỹ vào 1381, thừa quỹ vào 3381.
 
 ## Câu hỏi cho giảng viên
 

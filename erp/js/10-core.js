@@ -27,7 +27,10 @@ const NF = new Intl.NumberFormat('vi-VN');
 const fm = n => NF.format(Math.round(n||0));
 const pad = (n,l) => String(n).padStart(l,'0');
 const now = () => new Date().toISOString();
-function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2)}
+function realToday(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2)}
+// Từ P3: ngày mặc định trên chứng từ = ngày làm việc của công ty do giảng viên đặt (máy chủ ghi sổ theo ngày này).
+function wdateOf(co){ const m=typeof mdOf==='function'?mdOf(co):null; return (m&&m.state&&m.state.wdate)||realToday(); }
+function today(){ return wdateOf(S.co); }
 function addDays(s,n){const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2)}
 const vd = s => s ? s.split('-').reverse().join('/') : '';
 const vdt = s => { if(!s) return ''; const d=new Date(s); return pad(d.getDate(),2)+'/'+pad(d.getMonth()+1,2)+' '+pad(d.getHours(),2)+':'+pad(d.getMinutes(),2); };
@@ -114,9 +117,11 @@ function calc(co){
     dlForBI: T.DL.filter(d=>d.status==='posted'&&kids('BI','dl',d.id).length===0),
     biForRC: T.BI.filter(b=>b.status==='posted'&&b.total-biPaid(b)-biPend(b)>0.5),
     ap: {PR:T.PR.filter(x=>x.status==='pending'),PO:T.PO.filter(x=>x.status==='pending'),IV:T.IV.filter(x=>x.status==='blocked'),
-         SO:T.SO.filter(x=>x.status==='blocked'),PAY:T.PAY.filter(x=>x.status==='pending'),RC:T.RC.filter(x=>x.status==='pending')}
+         SO:T.SO.filter(x=>x.status==='blocked'),PAY:T.PAY.filter(x=>x.status==='pending'),RC:T.RC.filter(x=>x.status==='pending'),
+         JE:T.JE.filter(x=>x.status==='pending'),CJ:T.CJ.filter(x=>x.status==='pending'),CNT:T.CNT.filter(x=>x.status==='pending'),
+         ADV:T.ADV.filter(x=>x.status==='pending'),ADS:T.ADS.filter(x=>x.status==='pending')}
   };
-  Q.apAll = [].concat(Q.ap.PR,Q.ap.PO,Q.ap.IV,Q.ap.SO,Q.ap.PAY,Q.ap.RC);
+  Q.apAll = [].concat(Q.ap.PR,Q.ap.PO,Q.ap.IV,Q.ap.SO,Q.ap.PAY,Q.ap.RC,Q.ap.JE,Q.ap.CJ,Q.ap.CNT,Q.ap.ADV,Q.ap.ADS);
   const c = {L,T,by,kids,st,acc,ap,ar,lines,bal,poOpen,poUninv,ivPaid,ivPend,soOpen,soDeliv,soBilled,biPaid,biPend,exposure,Q};
   memo[co] = {v,c}; return c;
 }
@@ -144,7 +149,7 @@ function dbErr(e){
 /* ============ AUTHORIZATION ============ */
 const TC_DOC = {'ME51N':'PR','ME21N':'PO','MIGO':'GR','MIRO':'IV','F-53':'PAY','VA01':'SO','VL01N':'DL','VF01':'BI','F-28':'RC'};
 // Vai trò lập từng loại chứng từ (khớp erp_type_role trên máy chủ). KT = AP + AR.
-const TYPE_ROLE = {PR:'KHO',GR:'KHO',DL:'KHO',PO:'MH',SO:'KD',IV:'AP',PAY:'AP',BI:'AR',RC:'AR'};
+const TYPE_ROLE = {PR:'KHO',GR:'KHO',DL:'KHO',PO:'MH',SO:'KD',IV:'AP',PAY:'AP',BI:'AR',RC:'AR',JE:'TH',CJ:'TQ',CNT:'TQ'};
 const GRANTS = ['PR','PO','GR','IV','PAY','SO','DL','BI','RC','AP'];
 const grantName = g => g==='AP' ? 'Phê duyệt chứng từ' : TYPES[g].n+' ('+TYPES[g].tc+')';
 // Ma trận xung đột dự phòng; erp_sync (auth.conflict) trả về bảng đầy đủ từ erp_conflict() trên máy chủ (SPEC 4.3).
@@ -205,13 +210,20 @@ function stLabel(d){
     PAY:{pending:'Chờ duyệt chi',posted:'Đã chi',rejected:'Từ chối'},
     SO:{approved:'Đã xác nhận',blocked:'Khóa tín dụng',rejected:'Từ chối'},
     BI:{posted:'Đã ghi sổ'},
-    RC:{pending:'Chờ duyệt thu',posted:'Đã thu',rejected:'Từ chối'}
+    RC:{pending:'Chờ duyệt thu',posted:'Đã thu',rejected:'Từ chối'},
+    JE:{pending:'Chờ duyệt',posted:'Đã ghi sổ',rejected:'Từ chối'},
+    CJ:{pending:'Chờ duyệt',posted:'Đã ghi sổ',rejected:'Từ chối'},
+    CNT:{pending:'Chờ xử lý chênh lệch',posted:'Đã xử lý',rejected:'Từ chối'},
+    BS:{posted:'Đã ghi sổ'},
+    ADV:{pending:'Chờ duyệt',approved:'Đã duyệt, chờ chi',paid:'Đã chi, chờ quyết toán',settled:'Đã quyết toán',rejected:'Từ chối'},
+    ADS:{pending:'Chờ duyệt',posted:'Đã quyết toán',rejected:'Từ chối'}
   };
   return (map[d.type]&&map[d.type][s])||s;
 }
 const chip = d => `<span class="chip c-${esc(d.status)}">${esc(stLabel(d))}</span>`;
-function partnerOf(d){ if(d.vendor) return ven(d.vendor)?.n||d.vendor; if(d.cust) return cus(d.cust)?.n||d.cust; return '—'; }
+function partnerOf(d){ if(d.vendor) return ven(d.vendor)?.n||d.vendor; if(d.cust) return cus(d.cust)?.n||d.cust; if(d.empName) return d.empName; if(d.person) return d.person; return '—'; }
 function valueOf(d){ if(d.total!=null) return d.total; if(d.amount!=null) return d.amount; if(d.value!=null) return d.value;
+  if(d.type==='ADS') return d.expTotal||0; if(d.type==='CNT') return Math.abs(d.diff||0);
   if(d.type==='PR') return sum(d.items,it=>it.qty*mat(it.mat).bp); if(d.type==='DL') return sum(d.items,it=>it.cost||0); return 0; }
 const docLink = (co,d,label) => `<button class="linkbtn mono" data-go="DOC" data-p="${P({co,id:d.id})}">${esc(label||d.no)}</button>`;
 
@@ -235,6 +247,7 @@ async function sync(full){
     if(r.auth&&r.auth.perms){ S.auth=r.auth; (r.auth.roles||[]).forEach(x=>{ ROLES[x.c]={n:x.n,d:x.d,dept:x.dept,ph:x.ph}; });
       ROLE_ORDER.length=0; (r.auth.roles||[]).forEach(x=>ROLE_ORDER.push(x.c)); S.sideKey=''; }
     let mdChanged=false;
+    if(r.adm&&JSON.stringify(S.adm)!==JSON.stringify(r.adm)){ S.adm=r.adm; mdChanged=true; }
     if(r.md) Object.keys(r.md).forEach(co=>{ const nv=r.md[co]; if(JSON.stringify(S.md[co])!==JSON.stringify(nv)){ S.md[co]=nv; S.ver[co]=(S.ver[co]||0)+1; mdChanged=true; } });
     const users={}; (r.users||[]).forEach(u=>users[u.id]=u);
     const meta=JSON.stringify([r.me,r.cfg,r.users]);
@@ -308,6 +321,7 @@ function renderCtx(){
     h += `<span class="rolechip"><span class="dot" style="background:var(--r-${S.role})"></span>${esc(roleName(S.role))}${xr.length||xg.length?` <span style="font-weight:500;color:var(--shell-mute)">+ kiêm ${xr.length+xg.length}</span>`:''}</span><span class="who">${esc(S.co)} · ${esc(coName(S.co))}</span>`;
   }
   if(CFG.env==='dev') h = `<span class="rolechip" style="background:var(--warn);color:#fff" title="Dữ liệu ở project erp-lab-dev, không phải lớp học">Môi trường thử</span>` + h;
+  if(S.co&&mdOf(S.co)) h += `<span class="rolechip" title="Ngày ghi sổ của mọi chứng từ do giảng viên đặt trong SPRO">Ngày làm việc ${vd(wdateOf(S.co))}</span>`;
   h += `<span class="who"><b>${esc(S.me.full_name)}</b> <span class="mono">${esc(S.me.username)}</span></span>`;
   if(!S.online) h += `<span class="rolechip" style="background:var(--bad)">Mất kết nối</span>`;
   h += `<button class="btn sm" data-go="PW" style="background:var(--shell-2);color:var(--shell-fg);border-color:transparent">Đổi mật khẩu</button><button class="btn sm" data-act="logout" style="background:var(--shell-2);color:var(--shell-fg);border-color:transparent">Đăng xuất</button>`;
@@ -319,11 +333,11 @@ function renderSide(){
   if(!S.co && !S.isAdmin){ if(S.sideKey!=='none'){ side.innerHTML='<h4>Chưa được phân quyền</h4><p class="small muted" style="padding:0 16px">Menu giao dịch sẽ hiện sau khi giảng viên gán bạn vào công ty và vai trò.</p>'; S.sideKey='none'; } return; }
   const c = calc(S.co);
   const cnt = {'ME21N':c.Q.prForPO.length,'MIGO':c.Q.poForGR.length,'MIRO':c.Q.poForIV.length,'F-53':c.Q.ivForPay.length,'VL01N':c.Q.soForDL.length,'VF01':c.Q.dlForBI.length,'F-28':c.Q.biForRC.length,
-    'SBWP':c.Q.apAll.length,'ZMDA':typeof mdPendingCount==='function'?mdPendingCount(S.co):0,'ME54N':c.Q.ap.PR.length,'ME29N':c.Q.ap.PO.length,'MRBR':c.Q.ap.IV.length,'VKM3':c.Q.ap.SO.length,'ZFAP':c.Q.ap.PAY.length+c.Q.ap.RC.length};
+    'SBWP':c.Q.apAll.length,'ZMDA':typeof mdPendingCount==='function'?mdPendingCount(S.co):0,'ME54N':c.Q.ap.PR.length,'ME29N':c.Q.ap.PO.length,'MRBR':c.Q.ap.IV.length,'VKM3':c.Q.ap.SO.length,'ZFAP':c.Q.ap.PAY.length+c.Q.ap.RC.length,'FBV0':c.Q.ap.JE.length+c.Q.ap.CJ.length+c.Q.ap.CNT.length+c.Q.ap.ADV.length+c.Q.ap.ADS.length};
   const groups = {};
   Object.keys(TC).forEach(k=>{ const t=TC[k]; if(t.admin&&!S.isAdmin) return; (groups[t.m]=groups[t.m]||[]).push(k); });
   let h = `<button class="mi ${S.screen==='HOME'?'on':''}" data-go="HOME"><code>HOME</code><span>Trang làm việc</span><span></span></button>`;
-  const GORD=['Mua hàng (MM)','Bán hàng (SD)','Kế toán (FI)','Dữ liệu gốc','Phê duyệt','Kiểm soát','Hướng dẫn','Quản trị (giảng viên)'];
+  const GORD=['Mua hàng (MM)','Bán hàng (SD)','Kế toán (FI)','Tiền & ngân hàng','Dữ liệu gốc','Phê duyệt','Kiểm soát','Hướng dẫn','Quản trị (giảng viên)'];
   Object.keys(groups).sort((a,b)=>{const i=x=>{const k=GORD.indexOf(x);return k<0?99:k;};return i(a)-i(b);}).forEach(g=>{
     h += `<h4>${esc(g)}</h4>`;
     groups[g].forEach(k=>{ const ok=allowed(k); const n=ok?cnt[k]:0;
@@ -356,7 +370,7 @@ function screenHTML(){
   if(s==='DOC') return scrDoc();
   if(TC[s] && !allowed(s)) return scrNoAuth(s);
   const F = {'ME51N':scrPR,'ME21N':scrPO,'MIGO':scrGR,'MIRO':scrIV,'F-53':scrPAY,'VA01':scrSO,'VL01N':scrDL,'VF01':scrBI,'F-28':scrRC,
-    'MMBE':scrStock,'FBL1N':scrAP,'FBL5N':scrAR,'ZNKC':scrNKC,'F.01':scrTB,'ZCASE':scrCase,'PFCG':scrPFCG,'SU01':scrUsers,'ZOVR':scrOverview,'SPRO':scrConfig};
+    'MMBE':scrStock,'FBL1N':scrAP,'FBL5N':scrAR,'ZNKC':scrNKC,'F.01':()=>(globalThis.scrTBp||scrTB)(),'ZCASE':scrCase,'PFCG':scrPFCG,'SU01':scrUsers,'ZOVR':scrOverview,'SPRO':scrConfig};
   if(F[s]) return F[s]();
   if(SCREENS[s]) return SCREENS[s]();
   if(TC[s]&&TC[s].list) return scrList(s);

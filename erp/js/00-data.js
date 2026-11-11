@@ -100,7 +100,13 @@ const TYPES = {
   DL:{n:'Phiếu xuất kho',pre:'800000',tc:'VL01N'},
   BI:{n:'Hóa đơn GTGT bán ra',pre:'900000',tc:'VF01'},
   RC:{n:'Phiếu thu / Giấy báo Có',pre:'140000',tc:'F-28'},
-  OB:{n:'Chứng từ mở sổ (số dư đầu kỳ)',pre:'000000',tc:'ZNKC'}
+  OB:{n:'Chứng từ mở sổ (số dư đầu kỳ)',pre:'000000',tc:'ZNKC'},
+  JE:{n:'Bút toán tổng hợp',pre:'010000',tc:'FB50'},
+  CJ:{n:'Phiếu thu / phiếu chi tiền mặt',pre:'030000',tc:'FBCJ'},
+  CNT:{n:'Biên bản kiểm kê quỹ',pre:'040000',tc:'ZKQ'},
+  BS:{n:'Ghi sổ theo sao kê ngân hàng',pre:'050000',tc:'FF67'},
+  ADV:{n:'Giấy đề nghị tạm ứng',pre:'060000',tc:'ZTU'},
+  ADS:{n:'Giấy thanh toán tiền tạm ứng',pre:'070000',tc:'ZTU'}
 };
 const ALL = 'ALL';
 const TC = {
@@ -122,14 +128,15 @@ const TC = {
   'F-28': {m:'Kế toán (FI)',t:'Ghi nhận thu tiền khách hàng',r:['AR']},
   'FBL1N':{m:'Kế toán (FI)',t:'Công nợ phải trả (TK 331)',r:['MH','KT','KTT']},
   'FBL5N':{m:'Kế toán (FI)',t:'Công nợ phải thu (TK 131)',r:['KD','KT','KTT']},
-  'ZNKC': {m:'Kế toán (FI)',t:'Sổ Nhật ký chung',r:['KT','KTT']},
-  'F.01': {m:'Kế toán (FI)',t:'Bảng cân đối số phát sinh',r:['KT','KTT']},
+  'ZNKC': {m:'Kế toán (FI)',t:'Sổ Nhật ký chung',r:['KT','KTT','TH']},
+  'F.01': {m:'Kế toán (FI)',t:'Bảng cân đối số phát sinh',r:['KT','KTT','TH']},
   'SBWP': {m:'Phê duyệt',t:'Hộp phê duyệt (tất cả)',r:['KTT'],ap:null},
   'ME54N':{m:'Phê duyệt',t:'Duyệt đề nghị mua',r:['KTT'],ap:['PR']},
   'ME29N':{m:'Phê duyệt',t:'Duyệt đơn mua hàng',r:['KTT'],ap:['PO']},
   'MRBR': {m:'Phê duyệt',t:'Gỡ khóa hóa đơn mua',r:['KTT'],ap:['IV']},
   'VKM3': {m:'Phê duyệt',t:'Gỡ khóa tín dụng đơn bán',r:['KTT'],ap:['SO']},
   'ZFAP': {m:'Phê duyệt',t:'Duyệt phiếu chi & phiếu thu',r:['KTT'],ap:['PAY','RC']},
+  'FBV0': {m:'Phê duyệt',t:'Duyệt bút toán, quỹ, tạm ứng',r:['KTT'],ap:['JE','CJ','CNT','ADV','ADS']},
   'ZCASE':{m:'Hướng dẫn',t:'Tình huống thực hành',r:ALL},
   'PFCG': {m:'Hướng dẫn',t:'Ma trận phân quyền',r:ALL},
   'SU01': {m:'Quản trị (giảng viên)',t:'Sinh viên & phân quyền',admin:true},

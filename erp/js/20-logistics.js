@@ -16,6 +16,8 @@ function scrHome(){
   const T = (tc,n,l) => { if(allowed(tc)) tiles.push(`<button class="tile" data-go="${tc}"><span class="n ${n?'':'zero'}">${n}</span><span class="l">${esc(l)}</span><code>${tc}</code></button>`); };
   T('SBWP',c.Q.apAll.length,'Chứng từ chờ bạn phê duyệt');
   if(typeof mdPendingCount==='function') T('ZMDA',mdPendingCount(S.co),'Thay đổi dữ liệu gốc chờ duyệt');
+  T('FBV0',c.Q.ap.JE.length+c.Q.ap.CJ.length+c.Q.ap.CNT.length+c.Q.ap.ADV.length+c.Q.ap.ADS.length,'Bút toán, phiếu quỹ, tạm ứng chờ duyệt');
+  if(TC.FF67&&allowed('FF67')) T('FF67',((mdOf(S.co)||{}).bank||[]).filter(b=>b.st==='open').length,'Dòng sao kê ngân hàng chưa xử lý');
   T('ME21N',c.Q.prForPO.length,'Đề nghị mua đã duyệt, chờ lập đơn mua');
   T('MIGO',c.Q.poForGR.length,'Đơn mua đã duyệt, chờ nhập kho');
   T('VL01N',c.Q.soForDL.length,'Đơn bán đã xác nhận, chờ xuất kho');

@@ -87,3 +87,12 @@ Giảng viên có thể chọn "Thao tác như" một vai trò bất kỳ để 
 - Thay đổi nhạy cảm và nhà cung cấp, khách hàng mới phải được Kế toán trưởng duyệt ở ZMDA. Các thay đổi nhạy cảm gồm tài khoản ngân hàng, hạn thanh toán, hạn mức tín dụng, khóa/mở.
 - Mọi thay đổi ghi vào nhật ký ZCHG.
 - Thứ tự tệp SQL: `001_base`, `002_ledger`, `003_hardening`, `004_masterdata`. Kiểm thử P2: `tests/p2_md_test.sql` (chỉ chạy trên project thử).
+
+## Thay đổi chính của ERP Lab 2.0 (P3)
+
+- Ngày làm việc từng công ty do giảng viên đặt và tua tới (SPRO). Mọi chứng từ ghi sổ theo ngày này.
+- Đóng/mở kỳ theo nhóm tài khoản (OB52). Bút toán tay FB50 qua Kế toán trưởng duyệt, đảo FB08, trích trước tự đảo FBS1.
+- Sổ cái theo tài khoản (FAGLL03, xuất CSV), F.01 theo kỳ, sổ mẫu in được (ZSO).
+- Quỹ tiền mặt (FBCJ), kiểm kê quỹ (ZKQ), tạm ứng và thanh toán tạm ứng (ZTU).
+- Chi, thu chuyển khoản qua TK 113. Sao kê ngân hàng (FF67) và bảng đối chiếu ngân hàng (ZBRR).
+- Thứ tự tệp SQL thêm `005_gl_cash`. Kiểm thử: `tests/p3_gl_test.sql`.

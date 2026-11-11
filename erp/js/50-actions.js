@@ -94,7 +94,7 @@ const FORM = {
   EXTRA(f){ guard(f,async()=>{ const u=S.users[f.dataset.u]; if(!u) return;
     const ex=[...f.querySelectorAll('input[name="xr"]:checked,input[name="xg"]:checked')].map(i=>i.value);
     await api('erp_admin_assign',{p_token:S.token,p_rows:[{id:u.id,co:u.co,role:u.role,extra:ex}]}); S.editExtra=null; await sync(); toast('Đã lưu kiêm nhiệm cho '+u.full_name+'.'); render(true,true); }); },
-  CFG(f){ guard(f,async()=>{ const cfg={tol:Math.max(0,num(val(f,'c-tol'))),poAuto:Math.max(0,num(val(f,'c-po'))),credit:val(f,'c-cr')==='1',selfApprove:val(f,'c-self')==='1',vat:val(f,'c-vat')};
+  CFG(f){ guard(f,async()=>{ const cfg={tol:Math.max(0,num(val(f,'c-tol'))),poAuto:Math.max(0,num(val(f,'c-po'))),credit:val(f,'c-cr')==='1',selfApprove:val(f,'c-self')==='1',vat:val(f,'c-vat'),bankClear:S.cfg.bankClear!==false};
     await api('erp_admin_set_cfg',{p_token:S.token,p_cfg:cfg}); await sync(); toast('Đã lưu tham số.'); }); }
 };
 

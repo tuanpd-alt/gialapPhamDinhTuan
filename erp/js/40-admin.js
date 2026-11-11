@@ -144,7 +144,8 @@ function scrConfig(){
    <div class="form-foot"><span></span><button class="btn pri">Lưu tham số</button></div></form>
   <div class="panel"><h2>Làm mới dữ liệu một công ty</h2><p class="small muted" style="margin-top:0">Xóa toàn bộ chứng từ của công ty được chọn để bắt đầu lại từ số dư đầu kỳ. Không thể hoàn tác.</p>
    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><select id="c-reset" aria-label="Công ty cần làm mới">${COS.map(c=>`<option>${c}</option>`).join('')}</select>
-   <button class="btn badb" data-act="resetAsk">Xóa dữ liệu…</button><span id="reset-confirm"></span></div></div></div>`;
+   <button class="btn badb" data-act="resetAsk">Xóa dữ liệu…</button><span id="reset-confirm"></span></div></div>
+  ${typeof sproGL==='function'?sproGL():''}</div>`;
 }
 
 /* ============ CALC (live form totals) ============ */
