@@ -1,8 +1,19 @@
-# Giả lập tiền số
+# Bảng tổng
+
+Trang chủ https://tuanpd-alt.github.io/gialapPhamDinhTuan/ là Bảng tổng, chỉ gồm hai lĩnh vực: **Tài chính** và **Kế toán**. Mỗi lĩnh vực có hai tab con **Học tập** (lộ trình theo chặng, từ đơn giản đến phức tạp) và **Bài tập**. Mọi trang con có thanh điều hướng chung ở trên cùng (Bảng tổng · Tài chính/Kế toán · Học tập/Bài tập · danh sách bài · Bài trước/Bài tiếp).
+
+Danh mục bài nằm trong một tệp duy nhất `nav.js` (biến `MAP`). Thêm, bớt hay đổi thứ tự bài chỉ cần sửa tệp này.
+
+- Tài chính · Học tập: (1) Tạo lập Blockchain → (2) Khóa và chữ ký → (3) Luồng giao dịch → (4) Đào và đồng thuận → (5) Làng Tiền Số → (6) NFT văn bằng → (7) Token hóa tài sản
+- Tài chính · Bài tập: phiếu Đào và đồng thuận, phiếu NFT văn bằng, phiếu Token hóa tài sản, Bài kiểm tra tổng hợp
+- Kế toán · Học tập: (1) ERP Lab HTTTKT → (2) Sổ cái doanh nghiệp
+- Kế toán · Bài tập: Tình huống thực hành ERP (ZCASE)
+
+# Làng Tiền Số
 
 Mô phỏng lớp học về Bitcoin và Ethereum: ví, giao dịch, đào (PoW), sổ cái, sàn giao dịch, đặt cọc (PoS) và hợp đồng thông minh.
 
-Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/lang-tien-so.html (thêm `#vi`, `#chuyen`, `#dao`, `#socai`, `#pos`, `#san`, `#hd` để vào thẳng từng tab)
 
 Học viên đăng nhập bằng MSSV và mật khẩu do giảng viên cấp. Dữ liệu của làng trên trạm MQTT được mã hóa bằng khóa lớp; tệp `hocvien.json` chỉ chứa khóa lớp đã bọc bằng mật khẩu từng người. Giảng viên cấp, đặt lại, xóa tài khoản trong tab Giảng viên → "Tài khoản học viên", rồi tải tệp `hocvien.json` mới lên kho. Không đưa danh sách mật khẩu lên kho. Sau khi đăng nhập, học viên có thể bấm "Đổi mật khẩu" để tự đặt mật khẩu dễ nhớ: bản mật khẩu mới được ký bằng khóa riêng của tài khoản và lưu trên trạm trung chuyển; giảng viên cấp lại mật khẩu thì bản tự đổi cũ hết hiệu lực.
 
@@ -52,4 +63,4 @@ Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/nft-van-bang.html (t
 
 Mô phỏng ERP (theo luồng SAP) cho hai chu trình Mua hàng – Thanh toán và Bán hàng – Thu tiền, 8 công ty × 5 vai trò, sổ sách theo TT 99/2025.
 
-Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/erp/ — hướng dẫn cài đặt trong [erp/README.md](erp/README.md).
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/erp/ (thêm `#ZCASE` để mở thẳng tình huống thực hành sau khi đăng nhập) — hướng dẫn cài đặt trong [erp/README.md](erp/README.md).

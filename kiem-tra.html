@@ -238,13 +238,13 @@ table.res tr.sel td{background:var(--accent-soft)}
   body{background:#fff;color:#000}.card,.q{break-inside:avoid;border-color:#999}
 }
 </style>
+<script src="./nav.js" defer></script>
 </head>
 <body>
 <header class="top"><div class="wrap">
   <div class="logo" aria-hidden="true">✎</div>
   <div class="ttl"><h1>Bài kiểm tra</h1><div class="sub">Tài sản số · tiền mã hóa · tiền kỹ thuật số · CBDC · ngân hàng số</div></div>
   <div class="sp"></div>
-  <a class="btnlink" href="./index.html">← Làng Tiền Số</a>
   <button class="btnlink" id="gvBtn" type="button">Giảng viên</button>
   <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
 </div></header>
@@ -548,7 +548,7 @@ async function collect(filter,wait){const got=await Promise.all(BROKERS.map(u=>w
 /* ---------- Khóa giảng viên ---------- */
 const EC={name:'ECDSA',namedCurve:'P-256'},SG={name:'ECDSA',hash:'SHA-256'},DH={name:'ECDH',namedCurve:'P-256'};
 const pubXY=()=>{const[x,y]=A.pub.split('.');return{x,y};};
-async function refreshAdmin(){try{const r=await fetch('./index.html?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();
+async function refreshAdmin(){try{const r=await fetch('./lang-tien-so.html?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();
   const m=t.match(/window\.__ADMIN__=(\{[^\n]*?\});/);if(m){const o=JSON.parse(m[1]);if(o&&o.pub&&o.room)A=window.__ADMIN__=o;}}catch(e){}}
 async function verifyCfg(o){try{const{x,y}=pubXY();const pk=await sub.importKey('jwk',{kty:'EC',crv:'P-256',x,y,ext:true},EC,false,['verify']);
   return await sub.verify(SG,pk,ub(o.sig),enc.encode(JSON.stringify(o.c)));}catch(e){return false;}}
