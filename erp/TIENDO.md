@@ -152,7 +152,7 @@ Hoãn sang giai đoạn sau: RV-16 (hạn mức tạm ứng theo người – P9
 
 Trạng thái kiểm thử:
 - Toàn bộ hàm đã áp lên erp-lab-dev; md5 thân hàm trùng tệp nguồn (11 hàm).
-- `tests/p3_gl_test.sql` viết lại cho luồng mới: 85 kiểm tra, thêm kiểm tra cho từng RV.
+- `tests/p3_gl_test.sql` viết lại cho luồng mới: 84 kiểm tra, thêm kiểm tra cho từng RV.
 - **Chưa chạy lại được trên máy chủ**: công cụ SQL yêu cầu giảng viên xác nhận vì bộ kiểm thử có lệnh xóa dữ liệu thử C08, và hộp xác nhận bị tự hủy.
 - Kiểm thử khói giao diện (dữ liệu giả): 58 T-code không lỗi; hàng chờ thủ quỹ, phân bổ 3388, rút tiền gửi, chữ ký Thủ quỹ trên phiếu, FB08 liệt kê chứng từ sao kê đều chạy đúng.
 - Thu hồi quyền lập FBCJ của Thủ quỹ bằng `update` (C → V) thay vì xóa dòng, để không phải chờ xác nhận lệnh xóa.
