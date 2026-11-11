@@ -13,11 +13,14 @@ $$ select t_ok(p_name, p_got = p_exp, 'được ' || coalesce(p_got::text,'null'
 
 do $$
 declare
-  cfg0 jsonb; kho text; mh text; kd text; kt text; ktt text; r jsonb; pr text; po text; gr text; iv text; pay text;
+  cfg0 jsonb; wd0 date; kho text; mh text; kd text; kt text; ktt text; r jsonb; pr text; po text; gr text; iv text; pay text;
   so1 text; so2 text; so3 text; dl text; bi text; rc text;
 begin
   select v into cfg0 from erp_cfg where k = 'main';
-  update erp_cfg set v = v || '{"tol":5,"poAuto":0,"credit":true,"selfApprove":false,"vat":0.08}' where k = 'main';
+  update erp_cfg set v = v || '{"tol":5,"poAuto":0,"credit":true,"selfApprove":false,"vat":0.08,"bankClear":false}' where k = 'main';
+  -- Từ P3: ngày ghi sổ = ngày làm việc; kiểm thử P1/P2 chạy trong tháng 11/2026, ngân hàng ghi thẳng 112 (bankClear = false)
+  select wdate into wd0 from erp_co_state where co = 'C08';
+  update erp_co_state set wdate = '2026-11-30' where co = 'C08';
   perform erp_purge_co('C08');
   delete from erp_user where username like 'tst\_%';
   insert into erp_user(username, full_name, pass_hash, co, role, must_change) values
@@ -182,6 +185,7 @@ begin
   delete from erp_session where user_id in (select id from erp_user where username like 'tst\_%');
   delete from erp_user where username like 'tst\_%';
   update erp_cfg set v = cfg0 where k = 'main';
+  update erp_co_state set wdate = wd0 where co = 'C08';
 end $$;
 
 drop function t_eq(text,numeric,numeric);

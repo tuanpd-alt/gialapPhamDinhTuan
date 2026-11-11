@@ -9,11 +9,14 @@ $$ insert into tst_p2(name, ok, detail) values (p_name, coalesce(p_ok,false), co
 
 do $$
 declare
-  cfg0 jsonb; kho text; mh text; kd text; kt text; ktt text; ap text; r jsonb; m text; vend text; pr text; po text; so text; dl text; iv text; pay text; chg bigint;
+  cfg0 jsonb; wd0 date; kho text; mh text; kd text; kt text; ktt text; ap text; r jsonb; m text; vend text; pr text; po text; so text; dl text; iv text; pay text; chg bigint;
   bank0 text; s jsonb; uids uuid[];
 begin
   select v into cfg0 from erp_cfg where k = 'main';
-  update erp_cfg set v = v || '{"tol":5,"poAuto":0,"credit":true,"selfApprove":false,"vat":0.08}' where k = 'main';
+  update erp_cfg set v = v || '{"tol":5,"poAuto":0,"credit":true,"selfApprove":false,"vat":0.08,"bankClear":false}' where k = 'main';
+  -- Từ P3: ngày ghi sổ = ngày làm việc; kiểm thử P1/P2 chạy trong tháng 11/2026, ngân hàng ghi thẳng 112 (bankClear = false)
+  select wdate into wd0 from erp_co_state where co = 'C08';
+  update erp_co_state set wdate = '2026-11-30' where co = 'C08';
   perform erp_purge_co('C08');
   delete from erp_md_change where co = 'C08';
   delete from erp_price where co = 'C08' and by is not null;
@@ -166,6 +169,7 @@ begin
   update erp_partner set active = true where co = 'C08' and code = 'KH02';
   update erp_partner set terms = 45 where co = 'C08' and code = 'NCC03';
   update erp_cfg set v = cfg0 where k = 'main';
+  update erp_co_state set wdate = wd0 where co = 'C08';
 end $$;
 
 drop function t_ok(text,boolean,text);
