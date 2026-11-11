@@ -59,8 +59,18 @@ Giảng viên có thể chọn "Thao tác như" một vai trò bất kỳ để 
 - **Đổi mật khẩu giảng viên**: chạy lệnh sau trong SQL Editor:
   `select erp_create_admin('gv','MatKhauMoi','Giảng viên');`
 
-## Cấu trúc thư mục
+## Cấu trúc thư mục (ERP Lab 2.0, từ P1)
 
-- `index.html`: giao diện (một file, không cần build).
-- `config.js`: địa chỉ và khóa công khai của Supabase.
-- `setup.sql`: bảng, chính sách bảo mật và các hàm xử lý trên máy chủ.
+- `index.html`: khung trang; `css/erp.css`: giao diện; `js/*.js`: mã theo phân hệ, nạp theo thứ tự số (00 dữ liệu, 10 lõi, 20 mua/bán, 30 kế toán, 40 quản trị, 50 xử lý, 90 khởi động). Phân hệ mới là tệp `js/mod-*.js` gọi `erpModule({...})`.
+- `config.js`: địa chỉ và khóa công khai của Supabase (nhánh `erp2` trỏ về project thử `erp-lab-dev`).
+- `sql/NNN_*.sql`: các bước cài đặt cơ sở dữ liệu; `setup.sql` là tệp gộp sinh bằng `sh erp/tools/build-setup.sh`. Giảng viên vẫn chỉ cần chạy `setup.sql`.
+- `tests/`: kiểm thử. `tests/p1_ledger_test.sql` chỉ chạy trên project thử (xóa dữ liệu C08).
+- `SPEC.md`: đặc tả ERP Lab 2.0. `TIENDO.md`: nhật ký tiến độ.
+
+## Thay đổi chính của ERP Lab 2.0 (P1)
+
+- Mọi bút toán do máy chủ lập; trình duyệt không gửi được dòng Nợ/Có. Bút toán đã ghi không sửa, không xóa.
+- Hệ thống tài khoản theo Phụ lục II Thông tư 99/2025/TT-BTC: 111, 112, 156, 511, 4111 thay cho 1111, 1121, 1561, 5111, 411.
+- Thuế suất GTGT là tham số SPRO (mặc định 8% theo NĐ 174/2025/NĐ-CP).
+- Số dư đầu kỳ là chứng từ mở sổ của từng công ty; "Làm mới dữ liệu" trả công ty về số dư đầu kỳ.
+- Chạy `setup.sql` trên project đang có dữ liệu bản 1 sẽ tự chuyển dữ liệu (hàm `erp_migrate_v1`).
