@@ -9,7 +9,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; **chờ chạy lại kiểm thử SQL** và rà soát lần 2 | 11/11/2026 |
+| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; kiểm thử P1 45/45, P2 29/29, P3 82/84 (2 mục lỗi điều kiện kiểm tra, đã sửa); chờ rà soát độc lập lần 2 | 11/11/2026 |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
 | P6 | Tài sản cố định | Chưa | |
@@ -150,12 +150,14 @@ Rà soát độc lập (prompt 4.17) phát hiện 30 vấn đề: 2 Critical, 9 
 
 Hoãn sang giai đoạn sau: RV-16 (hạn mức tạm ứng theo người – P9), RV-17 (phân bổ một khoản 3388 cho nhiều khách cùng lúc – P5), RV-18 (in ủy nhiệm chi theo mẫu ngân hàng – P10), RV-19 (đối chiếu sao kê nhiều tài khoản ngân hàng – P10), RV-21 (khóa sổ quỹ cuối ngày – P11), RV-24 (lịch sử số kiểm đếm quỹ – P11), RV-25 (cảnh báo tạm ứng quá hạn – P9), RV-27 (bảng chữ số bằng chữ cho số âm – P10), RV-30 (tối ưu `erp_sync` khi nhiều sao kê – P13).
 
-Trạng thái kiểm thử:
+Trạng thái kiểm thử (chạy trên erp-lab-dev ngày 12/11/2026, giảng viên đã cho phép lệnh có xóa dữ liệu thử):
 - Toàn bộ hàm đã áp lên erp-lab-dev; md5 thân hàm trùng tệp nguồn (11 hàm).
-- `tests/p3_gl_test.sql` viết lại cho luồng mới: 84 kiểm tra, thêm kiểm tra cho từng RV.
-- **Chưa chạy lại được trên máy chủ**: công cụ SQL yêu cầu giảng viên xác nhận vì bộ kiểm thử có lệnh xóa dữ liệu thử C08, và hộp xác nhận bị tự hủy.
+- `tests/p3_gl_test.sql`: 82/84 đạt ở lần chạy đầu. Hai mục RV-01, RV-02 thực ra đã chặn đúng; điều kiện kiểm tra tìm chữ "trùng" trong khi thông báo là "Dòng 1 bị lặp…". Đã sửa điều kiện thành `%bị lặp%`.
+- `tests/p1_ledger_test.sql` 45/45, `tests/p2_md_test.sql` 29/29 (chạy lại sau thay đổi P3).
+- Đã xóa ba bảng `tst_p1`–`tst_p3` còn sót ở schema public.
 - Kiểm thử khói giao diện (dữ liệu giả): 58 T-code không lỗi; hàng chờ thủ quỹ, phân bổ 3388, rút tiền gửi, chữ ký Thủ quỹ trên phiếu, FB08 liệt kê chứng từ sao kê đều chạy đúng.
-- Thu hồi quyền lập FBCJ của Thủ quỹ bằng `update` (C → V) thay vì xóa dòng, để không phải chờ xác nhận lệnh xóa.
+- Thu hồi quyền lập FBCJ của Thủ quỹ bằng `update` (C → V) thay vì xóa dòng.
+- Ghi chú RV-13: với ADV do chính Thủ quỹ lập, chốt chặn "người lập không tự chi" bắt trước chốt "Thủ quỹ không tự chi tạm ứng cho mình"; cả hai đều chặn.
 
 ## Quyết định đã chọn ở P3
 

@@ -219,11 +219,11 @@ begin
   perform erp_doc_decide(ktt,'C08',po,true,'','');
   begin perform erp_doc_create(kho,'C08','GR',jsonb_build_object('po',po,'date','2026-12-02','dn','PG0','deliverer','A','items','[{"line":0,"qty":6},{"line":0,"qty":6}]'::jsonb),'','');
     perform pg_temp.t_ok('RV-01: nhập kho chặn dòng trùng (vượt số lượng đặt bằng cách tách dòng)', false);
-  exception when others then perform pg_temp.t_ok('RV-01: nhập kho chặn dòng trùng (vượt số lượng đặt bằng cách tách dòng)', sqlerrm like '%trùng%', sqlerrm); end;
+  exception when others then perform pg_temp.t_ok('RV-01: nhập kho chặn dòng trùng (vượt số lượng đặt bằng cách tách dòng)', sqlerrm like '%bị lặp%', sqlerrm); end;
   perform erp_doc_create(kho,'C08','GR',jsonb_build_object('po',po,'date','2026-12-02','dn','PG1','deliverer','A','items','[{"line":0,"qty":10}]'::jsonb),'','');
   begin perform erp_doc_create(ap,'C08','IV',jsonb_build_object('po',po,'date','2026-12-02','invSym','1C26TSM','invNo','900','items','[{"line":0,"qty":10,"price":290000},{"line":0,"qty":10,"price":290000}]'::jsonb),'','');
     perform pg_temp.t_ok('RV-02: hóa đơn mua chặn dòng trùng (ghi nhận công nợ hai lần)', false);
-  exception when others then perform pg_temp.t_ok('RV-02: hóa đơn mua chặn dòng trùng (ghi nhận công nợ hai lần)', sqlerrm like '%trùng%', sqlerrm); end;
+  exception when others then perform pg_temp.t_ok('RV-02: hóa đơn mua chặn dòng trùng (ghi nhận công nợ hai lần)', sqlerrm like '%bị lặp%', sqlerrm); end;
   r := erp_doc_create(ap,'C08','IV',jsonb_build_object('po',po,'date','2026-12-02','invSym','1C26TSM','invNo','901','items','[{"line":0,"qty":10,"price":290000}]'::jsonb),'',''); iv := r->>'id';
   r := erp_doc_create(ap,'C08','PAY',jsonb_build_object('iv',iv,'date','2026-12-02','acc','112','amount',3132000),'',''); pay := r->>'id';
   update erp_partner set active = false where co = 'C08' and code = 'NCC01';
