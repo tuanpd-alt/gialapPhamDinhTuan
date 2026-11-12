@@ -9,7 +9,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; kiểm thử P1 45/45, P2 29/29, P3 82/84 (2 mục lỗi điều kiện kiểm tra, đã sửa); đã sửa theo rà soát lần 2 (RV2-01 Critical, RV2-02 High và các mục Medium/Low); P3 84/84, P3b 18/18; chờ rà soát xác nhận | 12/11/2026 |
+| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | **Xong** trên `erp2` + `erp-lab-dev`: rà soát xác nhận không còn Critical/High; P1 45/45, P2 29/29, P3 84/84, P3b 18/18 | 12/11/2026 |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
 | P6 | Tài sản cố định | Chưa | |
@@ -180,6 +180,17 @@ Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần).
 - 5 hàm áp lên erp-lab-dev, md5 thân hàm khớp tệp nguồn: `erp_doc_create`, `erp_doc_decide`, `erp_cash_confirm`, `erp_susp_clear`, `erp_cash_return` (mới).
 - Kiểm thử trên erp-lab-dev (12/11/2026): `tests/p3b_rv2_test.sql` 18/18; chạy lại `tests/p3_gl_test.sql` 84/84 sau khi sửa.
 - Kiểm thử khói giao diện: 58 T-code không lỗi.
+
+
+## P3 – rà soát xác nhận (12/11/2026)
+
+- RV2-01 … RV2-10 (trừ RV2-07 đã quyết định ở P3-9) xác nhận đã sửa đúng; md5 5 hàm trên CSDL khớp tệp nguồn. **Không còn Critical/High → đóng P3.**
+- Phát hiện còn lại:
+
+| Mã | Mức | Vấn đề | Xử lý |
+| --- | --- | --- | --- |
+| RV3-01 | Medium | Biên bản kiểm quỹ chờ duyệt vẫn ghi chênh lệch cũ nếu trong lúc chờ Thủ quỹ đã thu, chi | `erp_doc_decide` chặn duyệt khi số dư 111 khác số "theo sổ" lúc lập (md5 `f398abe7…` đã áp). Ca kiểm thử đã thêm vào `p3b_rv2_test.sql`, **chưa chạy** (hộp xác nhận bị tự hủy) |
+| RV3-02 | Low | Dòng đảo FB08 chép `q` không đổi dấu; hiện vô hại vì FB08 không đảo được chứng từ có dòng tồn kho | Hoãn: xử lý khi mở FB08 cho chứng từ kho (P4) |
 
 ## Quyết định đã chọn ở P3
 

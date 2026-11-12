@@ -1020,6 +1020,10 @@ begin
       raise exception 'Không đủ số dư tiền gửi để rút.'; end if;
     ns := 'approved';
   elsif d.type = 'CNT' then
+    -- Sổ quỹ đã thay đổi từ lúc lập biên bản (có phiếu thu, chi xác nhận trong lúc chờ duyệt): chênh lệch không còn đúng
+    if erp_balance(p_co, erp_ad('CASH')) <> (d.data->>'book')::numeric then
+      raise exception 'Số dư sổ quỹ đã thay đổi từ lúc lập biên bản (lúc lập % đồng, hiện % đồng). Từ chối biên bản này và kiểm quỹ lại.',
+        erp_fm((d.data->>'book')::numeric), erp_fm(erp_balance(p_co, erp_ad('CASH'))); end if;
     amt := (d.data->>'diff')::numeric;
     lines := case when amt < 0
       then jsonb_build_array(jsonb_build_object('a',erp_ad('CASH_SHORT'),'dr',-amt), jsonb_build_object('a',erp_ad('CASH'),'cr',-amt))

@@ -117,6 +117,15 @@ begin
     exists (select 1 from erp_je_line l join erp_je j on j.co=l.co and j.id=l.je_id where j.co='C08' and j.doc_id=dep and l.acc='112' and l.dr=5000000)
     and not exists (select 1 from erp_je_line l join erp_je j on j.co=l.co and j.id=l.je_id where j.co='C08' and j.doc_id=dep and l.acc='113'));
 
+  -- RV3-01: biên bản kiểm quỹ chờ duyệt, sổ quỹ thay đổi trong lúc chờ → không duyệt theo chênh lệch cũ
+  perform erp_admin_set_state(gv, 'C08', jsonb_build_object('cashCount', erp_balance('C08','111') - 100000));
+  r := erp_doc_create(tq,'C08','CNT','{"date":"2026-12-02","members":"TQ, KTT","reason":"Thiếu chưa rõ"}','','');
+  w1 := r->>'id';
+  r := erp_doc_create(th,'C08','CJ','{"date":"2026-12-02","dir":"out","acc":"6427","cc":"CC700","amount":50000,"person":"B","reason":"Gửi xe"}','','');
+  perform erp_doc_decide(ktt,'C08',r->>'id',true,'',''); perform erp_cash_confirm(tq,'C08',r->>'id','');
+  begin perform erp_doc_decide(ktt,'C08',w1,true,'',''); perform pg_temp.t_ok('RV3-01: sổ quỹ đổi sau khi lập biên bản kiểm quỹ thì không duyệt biên bản cũ', false);
+  exception when others then perform pg_temp.t_ok('RV3-01: sổ quỹ đổi sau khi lập biên bản kiểm quỹ thì không duyệt biên bản cũ', sqlerrm like 'Số dư sổ quỹ đã thay đổi%', sqlerrm); end;
+
   perform pg_temp.t_ok('Mọi bút toán cân Nợ = Có', not exists (select 1 from erp_je_line where co='C08' group by je_id having sum(dr) <> sum(cr)));
   perform pg_temp.t_ok('Bản sao data.je trùng sổ cái (số dòng)',
     (select count(*) from erp_doc d, jsonb_array_elements(d.data->'je') x where d.co='C08' and jsonb_typeof(d.data->'je')='array')
