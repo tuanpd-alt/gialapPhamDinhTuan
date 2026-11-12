@@ -49,7 +49,7 @@ Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/token-hoa-tai-san.ht
 
 # Bài kiểm tra
 
-Trang làm bài kiểm tra trắc nghiệm về tài sản số, tiền mã hóa, tiền kỹ thuật số, CBDC và ngân hàng số. Học viên đăng nhập bằng MSSV và mật khẩu của Làng Tiền Số; máy sinh đề riêng theo MSSV gồm 40 câu (8 câu mỗi chủ đề, từ ngân hàng 150 câu: khái niệm, phân biệt, tình huống và case study), mỗi câu 0,25 điểm, thang 10. Nộp bài xong hiện điểm ngay kèm giải thích từng câu và điểm theo chủ đề. Bài làm được mã hóa bằng khóa công khai của giảng viên và gửi qua trạm trung chuyển; giảng viên mở khu vực "Giảng viên" để phát cấu hình đợt (mã đợt, thời gian, mở/đóng, có hiện đáp án hay không), nhận bài, điều chỉnh điểm, xuất CSV và xem ngân hàng đề. Phần pháp lý giới hạn ở Luật 71/2025/QH15, NQ 05/2025/NQ-CP, TT 165/2026/TT-BTC và QĐ 1413/QĐ-TTg. Ngân hàng đề nằm trong kiem-tra-de.js (mã hóa nhẹ).
+Trang làm bài kiểm tra trắc nghiệm về tài sản số, tiền mã hóa, tiền kỹ thuật số và CBDC. Học viên đăng nhập bằng MSSV và mật khẩu của Làng Tiền Số; máy sinh đề riêng theo MSSV gồm 40 câu (10 câu mỗi chủ đề × 4 chủ đề, từ ngân hàng 120 câu: khái niệm, phân biệt, tình huống và case study), mỗi câu 0,25 điểm, thang 10. Nộp bài xong hiện điểm ngay kèm giải thích từng câu và điểm theo chủ đề. Bài làm được mã hóa bằng khóa công khai của giảng viên và gửi qua trạm trung chuyển; giảng viên mở khu vực "Giảng viên" để phát cấu hình đợt (mã đợt, thời gian, mở/đóng, có hiện đáp án hay không), nhận bài, điều chỉnh điểm, xuất CSV và xem ngân hàng đề. Phần pháp lý giới hạn ở Luật 71/2025/QH15, NQ 05/2025/NQ-CP, TT 165/2026/TT-BTC và QĐ 1413/QĐ-TTg. Ngân hàng đề nằm trong kiem-tra-de.js (mã hóa nhẹ).
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/kiem-tra.html
 
