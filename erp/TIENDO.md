@@ -9,7 +9,7 @@ Cập nhật cuối mỗi phiên. Nguồn sự thật về thiết kế là `SPE
 | P0 | Khảo sát, đặc tả `SPEC.md` | Xong, giảng viên đã duyệt (D1–D8) | 11/11/2026 |
 | P1 | Tái cấu trúc mã, lõi sổ cái máy chủ, kiểm thử | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
 | P2 | Cấu trúc tổ chức, vai trò mở rộng, dữ liệu gốc | Xong trên `erp2` + `erp-lab-dev` | 11/11/2026 |
-| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; kiểm thử P1 45/45, P2 29/29, P3 82/84 (2 mục lỗi điều kiện kiểm tra, đã sửa); chờ rà soát độc lập lần 2 | 11/11/2026 |
+| P3 | Sổ cái, kỳ kế toán, tiền và ngân hàng | Đã sửa theo rà soát độc lập (RV-01–RV-15, 20, 22, 23, 26, 28, 29) trên `erp2` + `erp-lab-dev`; kiểm thử P1 45/45, P2 29/29, P3 82/84 (2 mục lỗi điều kiện kiểm tra, đã sửa); đã sửa theo rà soát lần 2 (RV2-01 Critical, RV2-02 High và các mục Medium/Low); **chờ chạy `p3b_rv2_test.sql`** | 12/11/2026 |
 | P4 | Mua hàng và kho nâng cao | Chưa | |
 | P5 | Bán hàng nâng cao | Chưa | |
 | P6 | Tài sản cố định | Chưa | |
@@ -158,6 +158,28 @@ Trạng thái kiểm thử (chạy trên erp-lab-dev ngày 12/11/2026, giảng v
 - Kiểm thử khói giao diện (dữ liệu giả): 58 T-code không lỗi; hàng chờ thủ quỹ, phân bổ 3388, rút tiền gửi, chữ ký Thủ quỹ trên phiếu, FB08 liệt kê chứng từ sao kê đều chạy đúng.
 - Thu hồi quyền lập FBCJ của Thủ quỹ bằng `update` (C → V) thay vì xóa dòng.
 - Ghi chú RV-13: với ADV do chính Thủ quỹ lập, chốt chặn "người lập không tự chi" bắt trước chốt "Thủ quỹ không tự chi tạm ứng cho mình"; cả hai đều chặn.
+
+
+## P3 – rà soát độc lập lần 2 (12/11/2026)
+
+Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần). Phát hiện mới:
+
+| Mã | Mức | Vấn đề | Cách sửa | Trạng thái |
+| --- | --- | --- | --- | --- |
+| RV2-01 | Critical | Chốt "khoản treo đã phân bổ" so sánh với trường `id` không tồn tại → đảo được khoản 3388 đã phân bổ, xóa nợ 131 không có tiền | So theo `revOf` và loại `clr`; kiểm tra lại lúc KTT duyệt; `erp_susp_clear` chặn khi đang có đề nghị FB08 chờ duyệt | Đã sửa, đã áp |
+| RV2-02 | High | Bút toán đảo bỏ mất đối tượng công nợ → không duyệt được đảo chứng từ có dòng 131 | Giữ `p`, `mat`, `q` khi dựng dòng đảo | Đã sửa, đã áp |
+| RV2-03 | Medium | Rút tiền gửi chỉ kiểm tra số dư lúc duyệt | Kiểm tra lại 112 + min(0, 113) khi Thủ quỹ xác nhận | Đã sửa, đã áp |
+| RV2-04 | Medium | Người duyệt kiêm Thủ quỹ tự chi tiền | Chặn `decBy` = người xác nhận (trừ giảng viên) | Đã sửa, đã áp |
+| RV2-05 | Medium | Chứng từ chờ thủ quỹ không có đường trả lại | Hàm `erp_cash_return` (Thủ quỹ hoặc KTT, bắt buộc lý do, nhật ký `return`); nút Trả lại ở FBCJ | Đã sửa, đã áp |
+| RV2-06 | Medium | Phân bổ 3388 vượt số dư trên sổ khi 3388 bị ghi tay | Giới hạn thêm theo số dư Có 3388 trên sổ cái | Đã sửa, đã áp |
+| RV2-07 | Medium | Thứ tự bút toán chi chuyển khoản qua 113 khác cách hạch toán Việt Nam (Nợ 113/Có 112 khi chuyển, Nợ 331/Có 113 khi có báo Nợ) | Giữ mô hình kiểu SAP, có thể tắt bằng `bankClear`; CẦN GIẢNG VIÊN KIỂM TRA (mục 8) | Ghi nhận, chờ quyết định |
+| RV2-08 | Low | Nộp tiền vẫn qua 113 khi đã tắt `bankClear` | Theo cờ cấu hình | Đã sửa, đã áp |
+| RV2-09 | Low | Kiểm quỹ không chặn khi còn F-53/F-28 tiền mặt, tạm ứng chờ thủ quỹ | Mở rộng điều kiện chặn | Đã sửa, đã áp |
+| RV2-10 | Low | NCC không tồn tại thì `not pa.active` = null | `if not found or not pa.active` | Đã sửa, đã áp |
+
+- 5 hàm áp lên erp-lab-dev, md5 thân hàm khớp tệp nguồn: `erp_doc_create`, `erp_doc_decide`, `erp_cash_confirm`, `erp_susp_clear`, `erp_cash_return` (mới).
+- Bộ kiểm thử mới `tests/p3b_rv2_test.sql` (17 kiểm tra cho RV2-01 … RV2-09) **chưa chạy được**: hộp xác nhận lệnh có xóa dữ liệu thử bị tự hủy lúc giảng viên vắng mặt.
+- Kiểm thử khói giao diện: 58 T-code không lỗi.
 
 ## Quyết định đã chọn ở P3
 

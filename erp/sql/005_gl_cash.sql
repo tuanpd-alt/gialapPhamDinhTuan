@@ -435,12 +435,13 @@ begin
   if d.status <> 'approved' or d.type not in ('PAY','RC','CJ','ADV','ADS') or (d.type in ('PAY','RC') and d.data->>'acc' <> erp_ad('CASH')) then
     raise exception 'Chứng từ không ở trạng thái chờ thủ quỹ thu, chi.'; end if;
   if d.data->>'by' = u.id::text and not u.is_admin then raise exception 'Vi phạm bất kiêm nhiệm: người lập chứng từ không tự thu, chi tiền.'; end if;
+  if d.data->>'decBy' = u.id::text and not u.is_admin then raise exception 'Vi phạm bất kiêm nhiệm: người đã duyệt chứng từ không tự thu, chi tiền.'; end if;
   if d.type in ('ADV','ADS') and d.data->>'emp' = u.username and not u.is_admin then
     raise exception 'Vi phạm bất kiêm nhiệm: Thủ quỹ không tự chi tạm ứng hoặc tự quyết toán tạm ứng cho chính mình.'; end if;
   amt := (d.data->>'amount')::numeric; nd := d.data;
   if d.type = 'PAY' then
     select * into pa from erp_partner where co = p_co and code = d.data->>'vendor';
-    if not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02): không chi tiền.', pa.code; end if;
+    if not found or not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02) hoặc không tồn tại: không chi tiền.', d.data->>'vendor'; end if;
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('AP'),'dr',amt,'p',d.data->>'vendor'), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
   elsif d.type = 'RC' then
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',erp_ad('AR'),'cr',amt,'p',d.data->>'cust'));
@@ -455,13 +456,19 @@ begin
   elsif d.data->>'dir' = 'in' then
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',d.data->>'acc','cr',amt,'cc',d.data->>'cc'));
   elsif d.data->>'dir' = 'wd' then
-    -- Rút tiền gửi về quỹ: giấy báo Nợ của ngân hàng có ngay → ghi thẳng Có 112
+    -- Rút tiền gửi về quỹ: giấy báo Nợ của ngân hàng có ngay → ghi thẳng Có 112; kiểm tra lại số dư khả dụng lúc chi (RV2-03)
+    if erp_balance(p_co, erp_ad('BANK')) + least(erp_balance(p_co, erp_ad('BANK_CLR')),0) < amt then
+      raise exception 'Không đủ số dư tiền gửi để rút (đã trừ các khoản chi đang chuyển).'; end if;
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('CASH'),'dr',amt), jsonb_build_object('a',erp_ad('BANK'),'cr',amt));
     nd := nd || jsonb_build_object('bankDirect', true);
-  else
+  elsif coalesce((select (v->>'bankClear')::boolean from erp_cfg where k = 'main'), true) then
     -- Nộp tiền mặt vào ngân hàng, chưa có giấy báo Có → TK 113 đến khi có sao kê
     lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK_CLR'),'dr',amt), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
     nd := nd || jsonb_build_object('clr', erp_ad('BANK_CLR'));
+  else
+    -- Tắt TK 113 (SPRO): ghi thẳng Nợ 112 như ủy nhiệm chi (RV2-08)
+    lines := jsonb_build_array(jsonb_build_object('a',erp_ad('BANK'),'dr',amt), jsonb_build_object('a',erp_ad('CASH'),'cr',amt));
+    nd := nd || jsonb_build_object('bankDirect', true);
   end if;
   if exists (select 1 from jsonb_array_elements(lines) x where x->>'a' = erp_ad('CASH') and coalesce((x->>'cr')::numeric,0) > 0)
      and erp_balance(p_co, erp_ad('CASH')) < (select sum(coalesce((x->>'cr')::numeric,0)) from jsonb_array_elements(lines) x where x->>'a' = erp_ad('CASH')) then
@@ -479,6 +486,29 @@ begin
 end $$;
 
 -- Phân bổ khoản tiền về đang treo 3388 cho một hóa đơn bán (RV-06)
+create or replace function erp_cash_return(p_token text, p_co text, p_id text, p_note text, p_act_role text)
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
+-- Trả lại chứng từ đã duyệt nhưng Thủ quỹ chưa thu, chi (RV2-05): ví dụ người nhận không đến, sai số tiền. Không ghi sổ, có lý do và nhật ký.
+declare u erp_user; r text; d erp_doc; ts text := erp_iso();
+begin
+  u := erp_auth(p_token);
+  if not u.is_admin and p_co is distinct from u.co then raise exception 'Không được xử lý chứng từ của công ty khác.'; end if;
+  if not (erp_can(erp_act_roles(u, p_act_role), 'ZTQ', 'C') or (not u.is_admin and erp_can_approve(u)) or u.is_admin) then
+    raise exception 'Chỉ Thủ quỹ hoặc Kế toán trưởng được trả lại chứng từ chờ thu, chi.'; end if;
+  if coalesce(trim(p_note),'') = '' then raise exception 'Hãy ghi lý do trả lại.'; end if;
+  r := case when u.is_admin then coalesce(nullif(p_act_role,''),'GV') when erp_can(erp_act_roles(u, p_act_role), 'ZTQ', 'C') then 'TQ' else 'KTT' end;
+  perform pg_advisory_xact_lock(hashtext('erp:doc:' || p_co));
+  select * into d from erp_doc where co = p_co and id = p_id for update;
+  if not found then raise exception 'Không tìm thấy chứng từ.'; end if;
+  if d.status <> 'approved' or d.type not in ('PAY','RC','CJ','ADV','ADS') or (d.type in ('PAY','RC') and d.data->>'acc' <> erp_ad('CASH')) then
+    raise exception 'Chứng từ không ở trạng thái chờ thủ quỹ thu, chi.'; end if;
+  update erp_doc set status = 'rejected', updated_at = clock_timestamp(),
+    data = data || jsonb_build_object('status','rejected','hist', coalesce(data->'hist','[]'::jsonb) ||
+      jsonb_build_array(jsonb_build_object('at',ts,'by',u.id::text,'role',r,'act','return','note',trim(p_note))))
+   where co = p_co and id = p_id;
+  return jsonb_build_object('status','rejected');
+end $$;
+
 create or replace function erp_susp_clear(p_token text, p_co text, p_bs text, p_bi text, p_amount numeric, p_act_role text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare u erp_user; r text; s jsonb; bi jsonb; rem_s numeric; rem_b numeric; amt numeric := round(coalesce(p_amount,0)); ins jsonb; posted jsonb; ts text := erp_iso(); memo text;
@@ -491,10 +521,14 @@ begin
   s := erp_doc_data(p_co, p_bs);
   if s is null or s->>'type' <> 'BS' or s->>'kind' <> 'unk' or coalesce(s->>'bi','') <> '' or s ? 'revBy' then
     raise exception 'Chỉ phân bổ được khoản tiền về chưa rõ nội dung đang treo TK 3388.'; end if;
+  if exists (select 1 from erp_doc where co = p_co and type = 'JE' and status = 'pending' and data->>'revOf' = p_bs) then
+    raise exception 'Khoản tiền về này đang có đề nghị đảo (FB08) chờ duyệt. Xử lý đề nghị đảo trước khi phân bổ.'; end if;
   bi := erp_doc_data(p_co, p_bi);
   if bi is null or bi->>'type' <> 'BI' or bi->>'status' <> 'posted' then raise exception 'Hóa đơn bán không hợp lệ.'; end if;
   rem_s := abs((s->>'amount')::numeric) - coalesce((select sum((data->>'alloc')::numeric) from erp_doc where co = p_co and type = 'BS' and data->>'ref' = p_bs and status = 'posted' and not (data ? 'revBy')),0);
   rem_b := (bi->>'total')::numeric - erp_kid_amt(p_co,'RC','bi',p_bi) - erp_bs_alloc(p_co, p_bi);
+  -- Không vượt số dư Có TK 3388 trên sổ cái (RV2-06: 3388 còn được ghi tay ở nghiệp vụ khác)
+  rem_s := least(rem_s, greatest(-erp_balance(p_co, erp_ad('SUSPENSE')), 0));
   if amt <= 0 or amt > rem_s or amt > rem_b then
     raise exception 'Số tiền phân bổ phải lớn hơn 0, không vượt phần còn treo (% đồng) và phần còn nợ của hóa đơn (% đồng).', erp_fm(rem_s), erp_fm(rem_b); end if;
   memo := 'Phân bổ tiền về chưa rõ (' || (s->>'no') || ') cho hóa đơn ' || (bi->>'invSym') || ' số ' || (bi->>'invNo');
@@ -755,14 +789,14 @@ begin
       if src is null then raise exception 'Không tìm thấy chứng từ cần đảo.'; end if;
       if src->>'type' not in ('JE','BS') or src->>'kind' in ('rev','doc') or (src->>'type' = 'BS' and coalesce((src->>'auto')::boolean,false)) then
         raise exception 'FB08 chỉ đảo bút toán tổng hợp (FB50, FBS1) và chứng từ ghi sổ theo sao kê (phí, lãi, tiền về). Chứng từ nghiệp vụ được điều chỉnh bằng giao dịch của phân hệ.'; end if;
-      if src->>'type' = 'BS' and exists (select 1 from erp_doc where co = p_co and type = 'BS' and data->>'ref' = src->>'id' and status = 'posted' and not (data ? 'revBy')) then
+      if src->>'type' = 'BS' and exists (select 1 from erp_doc where co = p_co and type = 'BS' and data->>'kind' = 'clr' and data->>'ref' = b->>'revOf' and status = 'posted' and not (data ? 'revBy')) then
         raise exception 'Khoản tiền về này đã được phân bổ cho hóa đơn. Đảo các chứng từ phân bổ trước.'; end if;
       if src->>'status' <> 'posted' then raise exception 'Chỉ đảo được bút toán đã ghi sổ.'; end if;
       if src ? 'revBy' or exists (select 1 from erp_doc where co = p_co and type = 'JE' and status <> 'rejected' and data->>'revOf' = b->>'revOf') then
         raise exception 'Bút toán này đã được đảo hoặc đang có đề nghị đảo.'; end if;
       if coalesce(trim(b->>'reason'),'') = '' then raise exception 'Thiếu lý do đảo.'; end if;
       for it in select * from jsonb_array_elements(src->'je') loop
-        items := items || jsonb_strip_nulls(jsonb_build_object('a',it->>'a','dr',it->'cr','cr',it->'dr','cc',it->>'cc','memo',it->>'memo'));
+        items := items || jsonb_strip_nulls(jsonb_build_object('a',it->>'a','dr',it->'cr','cr',it->'dr','cc',it->>'cc','memo',it->>'memo','p',it->>'p','mat',it->>'mat','q',it->'q'));
         net := net + coalesce(erp_num(it,'dr'),0);
       end loop;
       b := b || jsonb_build_object('lines', items, 'amount', net, 'revNo', src->>'no',
@@ -809,8 +843,11 @@ begin
     select cash_count into amt from erp_co_state where co = p_co;
     if amt is null then raise exception 'Giảng viên chưa nhập số tiền kiểm đếm thực tế (SPRO). Chưa kiểm quỹ được.'; end if;
     if coalesce(trim(b->>'members'),'') = '' then raise exception 'Ghi thành phần ban kiểm kê quỹ.'; end if;
-    if exists (select 1 from erp_doc where co = p_co and type in ('CJ','CNT') and status in ('pending','approved')) then
-      raise exception 'Còn phiếu thu, phiếu chi hoặc biên bản kiểm quỹ chờ duyệt. Xử lý xong mới kiểm quỹ.'; end if;
+    if exists (select 1 from erp_doc where co = p_co and (
+         (type in ('CJ','CNT') and status in ('pending','approved'))
+      or (type in ('PAY','RC') and status in ('pending','approved') and data->>'acc' = erp_ad('CASH'))
+      or (type in ('ADV','ADS') and status = 'approved'))) then
+      raise exception 'Còn chứng từ thu, chi tiền mặt chờ duyệt hoặc chờ thủ quỹ. Xử lý xong mới kiểm quỹ.'; end if;
     if erp_period_closed(p_co, wd, 'GL') then raise exception 'Kỳ %/% đã đóng. Không lập biên bản kiểm kê quỹ vào kỳ đã khóa sổ.', to_char(wd,'MM'), to_char(wd,'YYYY'); end if;
     rem := erp_balance(p_co, erp_ad('CASH'));
     diff := amt - rem;
@@ -915,7 +952,7 @@ begin
     if acc not in (erp_ad('CASH'), erp_ad('BANK')) then raise exception 'Tài khoản tiền không hợp lệ.'; end if;
     if d.type = 'PAY' then
       select * into pa from erp_partner where co = p_co and code = d.data->>'vendor';
-      if not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02): không duyệt chi.', pa.code; end if;
+      if not found or not pa.active then raise exception 'Nhà cung cấp % đang bị khóa (XK02) hoặc không tồn tại: không duyệt chi.', d.data->>'vendor'; end if;
     end if;
     if acc = erp_ad('CASH') then
       -- Tiền mặt: Kế toán trưởng duyệt, Thủ quỹ chi/thu thực tế rồi xác nhận mới ghi TK 111
@@ -945,6 +982,12 @@ begin
     if d.data->>'kind' = 'acc' and to_char(wd,'YYYY-MM') <> left(d.data->>'date',7) then
       raise exception 'Bút toán trích trước lập cho kỳ %, nhưng ngày làm việc đã sang kỳ %: nếu duyệt, chi phí sẽ không nằm đúng kỳ. Từ chối và lập lại, hoặc nhờ giảng viên lùi ngày làm việc.',
         to_char(erp_date(d.data->>'date'),'MM/YYYY'), to_char(wd,'MM/YYYY'); end if;
+    if d.data->>'kind' = 'rev' then
+      -- Kiểm tra lại lúc duyệt (RV2-01): chứng từ gốc chưa bị đảo, khoản treo chưa được phân bổ trong lúc chờ duyệt
+      if erp_doc_data(p_co, d.data->>'revOf') ? 'revBy' then raise exception 'Chứng từ gốc đã được đảo.'; end if;
+      if exists (select 1 from erp_doc where co = p_co and type = 'BS' and data->>'kind' = 'clr' and data->>'ref' = d.data->>'revOf' and status = 'posted' and not (data ? 'revBy')) then
+        raise exception 'Khoản tiền về này đã được phân bổ cho hóa đơn trong lúc chờ duyệt. Từ chối đề nghị đảo này; đảo các chứng từ phân bổ trước rồi lập lại.'; end if;
+    end if;
     posted := erp_post(p_co, d.id, 'JE', null, u.id, d.data->'lines', d.data->>'memo');
     ns := 'posted';
     nd := nd || jsonb_build_object('je', posted->'lines', 'jeNo', posted->>'je', 'pdate', posted->>'date');
@@ -1102,7 +1145,7 @@ begin
   foreach f in array array['erp_doc_create(text,text,text,jsonb,text,text)','erp_doc_decide(text,text,text,boolean,text,text)',
     'erp_sync(text,text,timestamptz)','erp_admin_set_state(text,text,jsonb)','erp_period_set(text,text,integer,integer,text,boolean,text)',
     'erp_bank_match(text,text,text,jsonb,text)','erp_bank_refresh(text,text)','erp_admin_set_cfg(text,jsonb)',
-    'erp_cash_confirm(text,text,text,text)','erp_susp_clear(text,text,text,text,numeric,text)'] loop
+    'erp_cash_confirm(text,text,text,text)','erp_susp_clear(text,text,text,text,numeric,text)','erp_cash_return(text,text,text,text,text)'] loop
     execute 'revoke execute on function ' || f || ' from public';
     if exists (select 1 from pg_roles where rolname='anon') then execute 'grant execute on function ' || f || ' to anon'; end if;
     if exists (select 1 from pg_roles where rolname='authenticated') then execute 'grant execute on function ' || f || ' to authenticated'; end if;

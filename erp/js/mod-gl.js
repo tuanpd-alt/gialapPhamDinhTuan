@@ -219,10 +219,11 @@ function scrFBCJ(){
   <div class="kpis"><div class="kpi"><span>Tồn quỹ theo sổ</span><b class="mono">${fm(cb.close)}</b></div><div class="kpi"><span>Phiếu chờ KTT duyệt</span><b>${pend.length}</b></div><div class="kpi"><span>Chờ thủ quỹ thu, chi</span><b>${q.length}</b></div></div>
   ${closedNote()}
   ${canT?`<div class="panel" style="border-color:var(--warn)"><h2>Chờ thủ quỹ thu, chi</h2>
-   <p class="small muted" style="margin:0 0 8px">Chỉ bấm xác nhận sau khi đã đếm và giao, nhận tiền thực tế. Hệ thống ghi sổ TK 111 vào ngày làm việc ${vd(today())} và ghi tên bạn vào ô chữ ký Thủ quỹ.</p>
+   <p class="small muted" style="margin:0 0 8px">Chỉ bấm xác nhận sau khi đã đếm và giao, nhận tiền thực tế. Không thu, chi được (người nhận không đến, sai số tiền) thì ghi lý do và bấm Trả lại; chứng từ chuyển sang Từ chối, không ghi sổ. Người đã duyệt chứng từ không tự xác nhận thu, chi. Hệ thống ghi sổ TK 111 vào ngày làm việc ${vd(today())} và ghi tên bạn vào ô chữ ký Thủ quỹ.</p>
    ${q.length?`<div class="tw"><table class="t"><thead><tr><th>Chứng từ</th><th>Loại</th><th>Người nộp / nhận</th><th>Nội dung</th><th>Thu/Chi</th><th class="num">Số tiền</th><th></th></tr></thead><tbody>${q.map(d=>{const [k,a]=cashDir(d);
      return `<tr><td>${docLink(S.co,d)}</td><td class="small">${esc(d.type==='CJ'?CJDIR[d.dir]:TYPES[d.type].n)}</td><td>${esc(partnerOf(d))}</td><td class="small">${esc(d.reason||d.purpose||d.memo||'')}</td><td>${k}</td><td class="num">${fm(a)}</td>
-      <td><button class="btn sm pri" data-act="cashOk" data-id="${esc(d.id)}">${k==='Thu'?'Đã thu tiền':'Đã chi tiền'}</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="small muted">Không có chứng từ chờ thu, chi.</p>'}</div>`:''}
+      <td style="white-space:nowrap"><button class="btn sm pri" data-act="cashOk" data-id="${esc(d.id)}">${k==='Thu'?'Đã thu tiền':'Đã chi tiền'}</button>
+       <input id="rt-${esc(d.id)}" placeholder="Lý do trả lại" maxlength="150" style="width:130px" aria-label="Lý do trả lại"> <button class="btn sm" data-act="cashBack" data-id="${esc(d.id)}">Trả lại</button></td></tr>`;}).join('')}</tbody></table></div>`:'<p class="small muted">Không có chứng từ chờ thu, chi.</p>'}</div>`:''}
   ${canC?`<form class="form panel" data-form="CJ" data-calc="CJ"><div class="err"></div><h2 style="margin:0">Lập phiếu</h2>
    <div class="grid3"><label class="field"><span>Loại phiếu</span><select id="f-dir" data-chg="cjdir">${Object.keys(CJDIR).map(k=>`<option value="${k}">${CJDIR[k]}</option>`).join('')}</select></label>
    <label class="field"><span>Ngày</span><input id="f-date" type="date" max="${today()}" value="${today()}" required></label>
@@ -408,6 +409,9 @@ const ACTS = {
   async cashOk(a){ const d=calc(S.co).by[a.dataset.id]; if(!d) return; const [k,amt]=cashDir(d);
     a.disabled=true;
     try{ await api('erp_cash_confirm',{p_token:S.token,p_co:S.co,p_id:d.id,p_act_role:actRole()}); await sync(); toast('Đã ghi sổ quỹ theo '+d.no+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
+  async cashBack(a){ const id=a.dataset.id; const note=(document.getElementById('rt-'+id).value||'').trim();
+    if(!note) return toast('Ghi lý do trả lại (ví dụ người nhận không đến, sai số tiền).'); a.disabled=true;
+    try{ await api('erp_cash_return',{p_token:S.token,p_co:S.co,p_id:id,p_note:note,p_act_role:actRole()}); await sync(); toast('Đã trả lại chứng từ, không ghi sổ.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },
   async suspClear(a){ const id=a.dataset.id; const bi=document.getElementById('sb-'+id).value; const amt=Math.round(num(document.getElementById('sa-'+id).value));
     if(!bi) return toast('Chọn hóa đơn bán cần phân bổ.'); if(!(amt>0)) return toast('Nhập số tiền phân bổ.'); a.disabled=true;
     try{ const r=await api('erp_susp_clear',{p_token:S.token,p_co:S.co,p_bs:id,p_bi:bi,p_amount:amt,p_act_role:actRole()}); await sync(); toast('Đã phân bổ, chứng từ '+r.no+'.'); render(true,true); }catch(e){ toast(dbErr(e)); a.disabled=false; } },

@@ -27,7 +27,7 @@ function jeTable(d){
   ${J.map(j=>`<tr><td class="mono">${esc(j.a)}</td><td>${esc(ACCS[j.a])}</td><td class="small">${esc(j.p||j.mat||'')}</td>${hasCC?`<td class="small mono">${esc(j.cc||'')}</td>`:''}<td class="small">${esc(j.memo||'')}</td><td class="num">${j.dr?fm(j.dr):''}</td><td class="num">${j.cr?fm(j.cr):''}</td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="${hasCC?5:4}">Cộng${d.jeNo?' · Số bút toán '+esc(d.jeNo):''}${d.pdate?' · Ngày ghi sổ '+vd(d.pdate):''}</td><td class="num">${fm(sum(J,j=>j.dr||0))}</td><td class="num">${fm(sum(J,j=>j.cr||0))}</td></tr></tfoot></table></div>`;
 }
-const ACTN = {create:'Lập chứng từ',approve:'Phê duyệt',reject:'Từ chối',cash:'Thủ quỹ xác nhận đã thu/chi'};
+const ACTN = {create:'Lập chứng từ',approve:'Phê duyệt',reject:'Từ chối',cash:'Thủ quỹ xác nhận đã thu/chi',return:'Trả lại (không thu, chi)'};
 function histList(d){ return `<ul class="hist">${(d.hist||[]).map(h=>`<li><time>${vdt(h.at)}</time><div><b>${esc(ACTN[h.act]||h.act)}</b>${h.self?' <span class="chip c-pending">tự duyệt do kiêm nhiệm</span>':''} — ${esc(nameOf(h.by))} <span class="small muted">(${esc(roleName(h.role))})</span>${h.note?`<div class="small">${esc(h.note)}</div>`:''}</div></li>`).join('')}</ul>`; }
 function nextSteps(c,d){
   const b=[]; const B=(tc,p,l)=>{ if(allowed(tc)) b.push(`<button class="btn sm pri" data-go="${tc}" data-p="${P(p)}">${esc(l)} (${tc})</button>`); };
