@@ -189,7 +189,7 @@ Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần).
 
 | Mã | Mức | Vấn đề | Xử lý |
 | --- | --- | --- | --- |
-| RV3-01 | Medium | Biên bản kiểm quỹ chờ duyệt vẫn ghi chênh lệch cũ nếu trong lúc chờ Thủ quỹ đã thu, chi | `erp_doc_decide` chặn duyệt khi số dư 111 khác số "theo sổ" lúc lập (md5 `f398abe7…` đã áp). Ca kiểm thử đã thêm vào `p3b_rv2_test.sql`, **chưa chạy** (hộp xác nhận bị tự hủy) |
+| RV3-01 | Medium | Biên bản kiểm quỹ chờ duyệt vẫn ghi chênh lệch cũ nếu trong lúc chờ Thủ quỹ đã thu, chi | `erp_doc_decide` chặn duyệt khi số dư 111 khác số "theo sổ" lúc lập (md5 `f398abe7…` đã áp). Ca kiểm thử trong `p3b_rv2_test.sql`: P3b 19/19 đạt (12/11/2026) |
 | RV3-02 | Low | Dòng đảo FB08 chép `q` không đổi dấu; hiện vô hại vì FB08 không đảo được chứng từ có dòng tồn kho | Hoãn: xử lý khi mở FB08 cho chứng từ kho (P4) |
 
 ## Quyết định đã chọn ở P3
