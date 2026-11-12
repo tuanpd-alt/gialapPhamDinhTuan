@@ -151,7 +151,7 @@ function scrPAY(){
    <label class="field"><span>Hình thức</span><select id="f-acc"><option value="112">Ủy nhiệm chi – TK 112</option><option value="111">Phiếu chi tiền mặt – TK 111</option></select></label>
    <label class="field"><span>Số tiền</span><input id="f-amt" class="num" type="number" min="1" max="${Math.round(rem)}" step="1" value="${Math.round(rem)}" required></label></div>
    <label class="field"><span>Nội dung</span><input id="f-memo" required maxlength="200" value="Thanh toán hóa đơn ${esc(iv.invSym)} số ${esc(iv.invNo)} cho ${esc(iv.vendor)}"></label>
-   <div class="form-foot"><span class="small muted">${S.cfg.bankClear!==false?'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 113 (tiền đang chuyển), ngân hàng báo Nợ ngày làm việc kế tiếp, khớp ở FF67 thì Nợ 113 / Có 112 (cách tài khoản trung gian kiểu SAP – CẦN GIẢNG VIÊN KIỂM TRA). ':'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 112. '}Tiền mặt: KTT duyệt → Thủ quỹ chi và xác nhận → Nợ 331 / Có 111.</span><button class="btn pri">Gửi duyệt chi</button></div></form></div>`;
+   <div class="form-foot"><span class="small muted">${S.cfg.bankClear!==false?'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 113 (tiền đang chuyển), ngân hàng báo Nợ ngày làm việc kế tiếp, khớp ở FF67 thì Nợ 113 / Có 112 (cách tài khoản trung gian kiểu SAP; kế toán Việt Nam thường ghi Nợ 113 / Có 112 khi chuyển, Nợ 331 / Có 113 khi có giấy báo Nợ – xem ghi chú ở FF67). ':'Ủy nhiệm chi: KTT duyệt → Nợ 331 / Có 112. '}Tiền mặt: KTT duyệt → Thủ quỹ chi và xác nhận → Nợ 331 / Có 111.</span><button class="btn pri">Gửi duyệt chi</button></div></form></div>`;
 }
 
 /* ============ O2C SCREENS ============ */

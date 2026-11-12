@@ -172,7 +172,7 @@ Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần).
 | RV2-04 | Medium | Người duyệt kiêm Thủ quỹ tự chi tiền | Chặn `decBy` = người xác nhận (trừ giảng viên) | Đã sửa, đã áp |
 | RV2-05 | Medium | Chứng từ chờ thủ quỹ không có đường trả lại | Hàm `erp_cash_return` (Thủ quỹ hoặc KTT, bắt buộc lý do, nhật ký `return`); nút Trả lại ở FBCJ | Đã sửa, đã áp |
 | RV2-06 | Medium | Phân bổ 3388 vượt số dư trên sổ khi 3388 bị ghi tay | Giới hạn thêm theo số dư Có 3388 trên sổ cái | Đã sửa, đã áp |
-| RV2-07 | Medium | Thứ tự bút toán chi chuyển khoản qua 113 khác cách hạch toán Việt Nam (Nợ 113/Có 112 khi chuyển, Nợ 331/Có 113 khi có báo Nợ) | Giữ mô hình kiểu SAP, có thể tắt bằng `bankClear`; CẦN GIẢNG VIÊN KIỂM TRA (mục 8) | Ghi nhận, chờ quyết định |
+| RV2-07 | Medium | Thứ tự bút toán chi chuyển khoản qua 113 khác cách hạch toán Việt Nam (Nợ 113/Có 112 khi chuyển, Nợ 331/Có 113 khi có báo Nợ) | Giảng viên quyết định (12/11/2026): giữ mô hình kiểu SAP, ghi chú khác biệt trên FF67, F-53 và trong bài giảng (P3-9) | Đã quyết định |
 | RV2-08 | Low | Nộp tiền vẫn qua 113 khi đã tắt `bankClear` | Theo cờ cấu hình | Đã sửa, đã áp |
 | RV2-09 | Low | Kiểm quỹ không chặn khi còn F-53/F-28 tiền mặt, tạm ứng chờ thủ quỹ | Mở rộng điều kiện chặn | Đã sửa, đã áp |
 | RV2-10 | Low | NCC không tồn tại thì `not pa.active` = null | `if not found or not pa.active` | Đã sửa, đã áp |
@@ -190,6 +190,7 @@ Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần).
 | P3-3 | Khớp sao kê (FF67) do Kế toán tổng hợp làm và ghi sổ ngay, không qua duyệt | Sao kê ngân hàng là chứng từ bên ngoài; Kế toán trưởng kiểm soát qua ZBRR |
 | P3-4 | ~~Chi tạm ứng đã duyệt ghi sổ ngay khi Thủ quỹ chi~~ → thay bằng P3-7 | |
 | P3-7 | Mọi khoản thu, chi tiền mặt (F-53, F-28 tiền mặt, FBCJ, tạm ứng, quyết toán có nộp lại/chi thêm) chỉ ghi TK 111 khi Thủ quỹ xác nhận | Tách người lập – người duyệt – người giữ tiền (RV-11) |
+| P3-9 | Giữ cách tài khoản trung gian kiểu SAP cho ủy nhiệm chi (Nợ 331/Có 113 khi duyệt, Nợ 113/Có 112 khi khớp sao kê); màn hình FF67, F-53 nêu rõ khác biệt với cách hạch toán Việt Nam (Nợ 113/Có 112 khi chuyển, Nợ 331/Có 113 khi có giấy báo Nợ) | Giảng viên chọn ngày 12/11/2026: dùng làm điểm so sánh SAP – Việt Nam trong bài giảng |
 | P3-8 | Thu chuyển khoản ghi thẳng 112; chi chuyển khoản, nộp tiền mặt qua 113 | Thu đã có giấy báo Có; chi và nộp tiền mô phỏng độ trễ ngân hàng (RV-10) |
 | P3-5 | FBS1 tự đảo bằng chứng từ riêng ghi ngày đầu kỳ sau ngay khi duyệt | Đơn giản, có dấu vết; kỳ sau đóng thì không duyệt được |
 | P3-6 | Gói vai trò cho buổi P3 nên dùng PK3 (TQ, TH, AP, AR, KTT) | PK1 không có Kế toán tổng hợp, Thủ quỹ |
@@ -229,7 +230,7 @@ Kết quả: các mục RV lần 1 đã sửa thật (RV-06 sửa một phần).
 5. Danh mục vai trò, ma trận xung đột (SPEC 4.3) và danh sách trường nhạy cảm có phù hợp bài giảng kiểm soát nội bộ không.
 6. Mẫu sổ S03a-DN, S03b-DN ở ZSO đang theo cách đánh số quen dùng; cần đối chiếu mẫu sổ kèm Thông tư 99/2025/TT-BTC.
 7. Hạch toán phí ngân hàng vào 6427, lãi tiền gửi vào 515, tiền về chưa rõ vào 3388, thiếu quỹ vào 1381, thừa quỹ vào 3381.
-8. Dùng TK 113 cho ủy nhiệm chi đã lập nhưng ngân hàng chưa báo Nợ (cách tài khoản trung gian kiểu SAP) có phù hợp Thông tư 99/2025/TT-BTC không; có thể tắt bằng `bankClear` trong SPRO.
+8. ~~Dùng TK 113 cho ủy nhiệm chi kiểu SAP~~ → đã quyết định ở P3-9.
 9. Danh mục TK cho phép trên phiếu thu, phiếu chi, quyết toán tạm ứng (`erp_acc_ok`): chi 6x, 811, 1331, 242, 1381, 1388, 3381, 3388, 334, 335, 338; thu 711, 515, 1381, 1388, 3381, 3388, 338, 344.
 
 ## Câu hỏi cho giảng viên
