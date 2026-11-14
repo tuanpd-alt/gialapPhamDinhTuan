@@ -271,6 +271,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <button role="tab" data-go="6" aria-selected="false"><span class="n">6</span>Dự trữ</button>
   <button role="tab" data-go="7" aria-selected="false"><span class="n">7</span>Gửi về &amp; đốt</button>
   <button role="tab" data-go="8" aria-selected="false"><span class="n">8</span>Rút USD &amp; đối soát</button>
+  <button role="tab" data-go="9" aria-selected="false"><span class="n">9</span>Bài tập</button>
 </nav>
 
 <main class="wrap">
@@ -448,6 +449,39 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <p class="src">Nguồn: Circle (2026), developers.circle.com/circle-mint; thời gian tất toán thật phụ thuộc kênh thanh toán, cần kiểm tra tài liệu hiện hành.</p>
   </div>
   <div class="panel"><div id="c8"></div><div id="a8"></div><div id="r8"></div></div>
+</section>
+
+<!-- ========== BƯỚC 9 ========== -->
+<section class="step" id="s9" hidden>
+  <div class="explain">
+    <h2>Bước 9. Bài tập</h2>
+    <p><b>Phần I</b> ghi kết quả thực hành từ Bước 1–8 (chạy lại mô phỏng nếu cần số liệu). <b>Phần II</b> gồm 12 câu trắc nghiệm, chấm tự động và có giải thích.</p>
+    <p>Làm xong, bấm <b>"Nộp và chấm"</b>, rồi <b>"In / lưu PDF"</b> để nộp cho giảng viên.</p>
+    <h3>Gợi ý cho giảng viên</h3>
+    <ul>
+      <li>Thời lượng: khoảng 45 phút (25 phút thực hành, 20 phút thảo luận).</li>
+      <li>Chia nhóm 3: một người đóng vai Circle, một người là ngân hàng và kiểm toán, một người là người dùng.</li>
+      <li>Câu thảo luận mở: so sánh USDC (pháp định, tập trung) với VNDS trong Làng Tiền Số (thế chấp bằng ETH) về rủi ro, khả năng bị chặn ví và cơ chế duy trì neo giá.</li>
+    </ul>
+    <p class="src">Bài làm chỉ lưu trên trình duyệt của học viên, không gửi đi đâu.</p>
+  </div>
+  <div class="panel">
+    <div class="who">
+      <label class="f">Họ và tên<input type="text" id="stName" autocomplete="name"></label>
+      <label class="f">MSSV<input type="text" id="stId"></label>
+      <label class="f">Lớp / nhóm<input type="text" id="stClass"></label>
+    </div>
+    <h4>Phần I. Kết quả thực hành</h4>
+    <div class="prac" id="pracList"></div>
+    <h4>Phần II. Trắc nghiệm</h4>
+    <div class="quiz" id="quiz"></div>
+    <div class="row noprint">
+      <button class="btn primary" id="grade">Nộp và chấm</button>
+      <button class="btn" id="printBtn">In / lưu PDF</button>
+      <button class="btn" id="clearQuiz">Làm lại</button>
+    </div>
+    <div class="row"><span>Điểm:</span><span class="score" id="scoreOut">–</span><span class="note" id="scoreTime"></span></div>
+  </div>
 </section>
 
 <div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
@@ -825,10 +859,51 @@ const ACT={
   reset:()=>{if(busy)return;if(S.log.length&&!confirm('Xóa toàn bộ tiến trình mô phỏng và làm lại từ đầu?'))return;fresh();['o2','o3','o4','o5','o7','a8'].forEach(i=>$(i).innerHTML='');go(1);}
 };
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)ACT[b.dataset.act](b);});
-const RENDER={1:R1,2:R2,3:R3,4:R4,5:R5,6:R6,7:R7,8:R8};
+const RENDER={1:R1,2:R2,3:R3,4:R4,5:R5,6:R6,7:R7,8:R8,9:()=>{}};
+
+
+/* ========== BƯỚC 9: Bài tập ========== */
+const PRAC=[
+  ['p1','Bước 2–3: Ghi mã tham chiếu và số dư tài khoản thu của Circle ngay sau khi nạp. Với tên người gửi không khớp, điều gì xảy ra với khoản tiền và vì sao Circle làm vậy?'],
+  ['p2','Bước 4: Ghi chuỗi đã chọn, mã giao dịch mint, totalSupply trước và sau. So sánh thời gian một khối và phí mạng giữa ba chuỗi.'],
+  ['p3','Bước 5: Sau khi chặn ví Lan, giao dịch bị hủy với lý do gì? Phí mạng có bị trừ không? Điều này nói gì về mức độ tập trung của USDC?'],
+  ['p4','Bước 6: Ghi tỷ lệ bảo chứng hiện tại. Với kịch bản SVB (tổn thất 100%), tỷ lệ lý thuyết là bao nhiêu và vì sao giá thị trường còn thấp hơn?'],
+  ['p5','Bước 7: Sau lệnh gửi USDC cho Circle nhưng trước khi đốt, totalSupply bằng bao nhiêu? Vì sao?'],
+  ['p6','Bước 8: Đối chiếu số đã đúc, đã đốt, dự trữ và chênh lệch số dư ngân hàng. Mô phỏng đã bỏ qua những khoản phí nào?']
+];
+const QZ=[
+  {q:'Circle Mint cho phép đúc và đổi USDC trực tiếp với Circle. Đối tượng được dùng kênh này là:',o:['Mọi cá nhân có ví tự lưu ký','Tổ chức đã xác minh (KYB); cá nhân mua qua sàn, ví hoặc ngân hàng số','Chỉ các ngân hàng trung ương','Chỉ người đã đào Ethereum'],a:1,e:'Circle Mint dành cho tổ chức đã xác minh; cá nhân tiếp cận USDC qua thị trường thứ cấp.'},
+  {q:'Ngay sau khi lệnh chuyển khoản USD đến tài khoản thu của Circle được ghi có (Bước 2):',o:['USDC đã được đúc vào ví người nạp','Tổng cung USDC trên chuỗi đã tăng','Chưa có USDC nào được tạo; tiền chờ đối chiếu','Tiền đã được tính vào dự trữ'],a:2,e:'Đây là giao dịch ngân hàng; Circle chỉ ghi nhận nghĩa vụ phát hành sau khi đối chiếu đạt.'},
+  {q:'Lệnh chuyển khoản có tên người gửi không khớp chủ tài khoản Circle Mint đã KYB. Trong mô phỏng, kết quả là:',o:['Vẫn đúc bình thường','Đúc một nửa','Khoản tiền bị hoàn trả và không có USDC nào được ghi có','Circle giữ khoản tiền làm phí'],a:2,e:'Kiểm tra khớp tên là một phần của đối chiếu; không đạt thì hoàn trả.'},
+  {q:'USDC có 6 chữ số thập phân. Đúc 1 USDC tương ứng tham số _amount bằng:',o:['1','1.000','1.000.000','1.000.000.000.000.000.000'],a:2,e:'1 USDC = 10^6 đơn vị nhỏ nhất.'},
+  {q:'Điều kiện nào KHÔNG nằm trong kiểm tra của hàm mint trên EVM?',o:['Hợp đồng không bị tạm dừng','Người gọi là minter và còn hạn mức','Người nhận không bị đưa vào danh sách đen','Người nhận phải có ít nhất 1 ETH'],a:3,e:'Hợp đồng không yêu cầu số dư ETH của người nhận; ETH chỉ cần để trả phí khi người nhận gửi giao dịch.'},
+  {q:'Dấu hiệu nhận biết một lần đúc trong nhật ký sự kiện ERC-20 là:',o:['Transfer từ địa chỉ 0x000…0 đến ví nhận','Transfer từ ví nhận đến 0x000…0','Approval từ Circle','Không có sự kiện nào'],a:0,e:'Đúc: Transfer(from = địa chỉ 0). Đốt: Transfer(to = địa chỉ 0).'},
+  {q:'Minh Phát chuyển USDC cho Lan. Điều nào đúng?',o:['Số dư ngân hàng của Minh Phát giảm','Tổng cung USDC giảm','Tổng cung không đổi, số dư ngân hàng không đổi','Dự trữ của Circle tăng'],a:2,e:'Chuyển token chỉ đổi chủ trên sổ cái; không có dòng tiền ngân hàng, cung không đổi.'},
+  {q:'Giao dịch chuyển USDC bị hủy vì ví nằm trong danh sách đen. Người gửi:',o:['Không mất phí mạng','Vẫn mất phí mạng','Được hoàn phí tự động','Mất toàn bộ số USDC'],a:1,e:'Giao dịch bị revert vẫn tiêu tốn tài nguyên và phí mạng.'},
+  {q:'Báo cáo xác nhận (attestation) dự trữ chứng minh điều gì?',o:['Ngân hàng giữ tiền không thể phá sản','Số liệu dự trữ so với lưu hành tại ngày chốt; không đánh giá rủi ro tín dụng của ngân hàng giữ tiền','USDC sẽ không bao giờ lệch giá','Mọi chủ ví đều được hoàn tiền bảo hiểm'],a:1,e:'Vụ SVB 3/2023 cho thấy dự trữ tồn tại vẫn có thể gặp rủi ro ở bên lưu ký.'},
+  {q:'Sau khi người dùng gửi USDC đến địa chỉ nhận đổi của Circle nhưng trước khi Circle đốt:',o:['totalSupply đã giảm','totalSupply chưa đổi; token chỉ đổi chủ','Dự trữ đã giảm','USD đã về ngân hàng'],a:1,e:'Chỉ lệnh burn mới hủy token và làm giảm tổng cung.'},
+  {q:'Bất biến nào phải luôn đúng trong mô phỏng (bỏ qua khoản chờ ở tài khoản thu)?',o:['Dự trữ = tổng cung + số dư Mint chưa rút','Dự trữ = 2 × tổng cung','Tổng cung = số dư ngân hàng','Số dư Mint = tổng phí mạng'],a:0,e:'Mỗi USDC phát hành hoặc đang chờ rút đều có 1 USD dự trữ tương ứng.'},
+  {q:'So với VNDS (thế chấp bằng ETH) trong Làng Tiền Số, rủi ro đặc trưng của USDC là:',o:['Thanh lý két khi giá ETH giảm','Rủi ro tổ chức phát hành, ngân hàng lưu ký và khả năng bị chặn ví','Lỗi oracle giá ETH','Vòng xoáy tử thần giữa hai token'],a:1,e:'USDC dựa vào tài sản ngoài chuỗi do một tổ chức giữ; VNDS dựa vào tài sản thế chấp trên chuỗi và oracle.'}
+];
+const SKEY='stablecoin-usdc-baitap';
+function saveQ(){try{const d={n:$('stName').value,i:$('stId').value,c:$('stClass').value,p:{},q:{}};PRAC.forEach(([k])=>d.p[k]=$(k).value);QZ.forEach((_,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`);if(s)d.q[i]=s.value;});localStorage.setItem(SKEY,JSON.stringify(d));}catch(e){}}
+function buildQuiz(){
+  $('pracList').innerHTML=PRAC.map(([k,t],i)=>`<label class="pi"><span><b>${i+1}.</b> ${esc(t)}</span><textarea id="${k}" rows="2"></textarea></label>`).join('');
+  $('quiz').innerHTML=QZ.map((x,i)=>`<div class="q" id="qq${i}"><div class="lab">Câu ${i+1}</div><p class="qt">${esc(x.q)}</p>${x.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}"><span>${String.fromCharCode(65+j)}. ${esc(o)}</span></label>`).join('')}<div class="fb" hidden></div></div>`).join('');
+  let d=null;try{d=JSON.parse(localStorage.getItem(SKEY)||'null');}catch(e){}
+  if(d){$('stName').value=d.n||'';$('stId').value=d.i||'';$('stClass').value=d.c||'';PRAC.forEach(([k])=>{if(d.p&&d.p[k])$(k).value=d.p[k];});Object.entries(d.q||{}).forEach(([i,v])=>{const r=document.querySelector(`input[name=q${i}][value="${v}"]`);if(r)r.checked=true;});}
+  document.querySelectorAll('#s9 input,#s9 textarea').forEach(el=>el.addEventListener('input',saveQ));}
+$('grade').onclick=()=>{let ok=0,blank=0;QZ.forEach((x,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`),box=$('qq'+i),fb=box.querySelector('.fb');box.classList.remove('right','wrong');
+  if(!s){blank++;fb.hidden=false;fb.textContent='Chưa chọn đáp án.';box.classList.add('wrong');return;}
+  const r=+s.value===x.a;if(r)ok++;box.classList.add(r?'right':'wrong');fb.hidden=false;fb.innerHTML=(r?'<b>Đúng.</b> ':`<b>Chưa đúng.</b> Đáp án: ${String.fromCharCode(65+x.a)}. `)+esc(x.e);});
+  const pt=ok/QZ.length*10;$('scoreOut').textContent=`${ok}/${QZ.length} câu · ${pt.toLocaleString('vi-VN',{maximumFractionDigits:1})} điểm`;
+  $('scoreTime').textContent=`Chấm lúc ${new Date().toLocaleString('vi-VN')}${blank?` · ${blank} câu bỏ trống`:''}`;saveQ();};
+$('printBtn').onclick=()=>window.print();
+$('clearQuiz').onclick=()=>{if(!confirm('Xóa toàn bộ bài làm trên trình duyệt này?'))return;try{localStorage.removeItem(SKEY);}catch(e){}buildQuiz();$('scoreOut').textContent='–';$('scoreTime').textContent='';};
+buildQuiz();
 
 /* ---------- Điều hướng ---------- */
-let cur=1;const NS=8;
+let cur=1;const NS=9;
 function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hidden=i!==cur;
   document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
   $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===NS;
@@ -838,7 +913,7 @@ function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hid
 document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
 $('prevStep').onclick=()=>go(cur-1);$('nextStep').onclick=()=>go(cur+1);
 $('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
-(function(){const rx=/buoc([1-8])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
+(function(){const rx=/buoc([1-9])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
 if(window.__embedded){const fit=()=>{try{window.frameElement.style.height=Math.ceil(document.body.getBoundingClientRect().height)+'px';}catch(e){}};
   try{new ResizeObserver(fit).observe(document.body);}catch(e){setInterval(fit,500);}fit();}
 </script>

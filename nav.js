@@ -57,9 +57,11 @@
       bai: [
         { n: 'BT1', t: 'Phiếu bài tập: Đào và đồng thuận', href: 'dao-va-dong-thuan.html#buoc6', after: '4',
           d: '12 câu tự chấm, in được.' },
-        { n: 'BT2', t: 'Phiếu bài tập: NFT văn bằng', href: 'nft-van-bang.html#buoc9', after: '7',
+        { n: 'BT2', t: 'Phiếu bài tập: Stablecoin USDC', href: 'stablecoin-usdc.html#buoc9', after: '6',
           d: '12 câu tự chấm, in được.' },
-        { n: 'BT3', t: 'Phiếu bài tập: Token hóa tài sản', href: 'token-hoa-tai-san.html#buoc9', after: '8',
+        { n: 'BT3', t: 'Phiếu bài tập: NFT văn bằng', href: 'nft-van-bang.html#buoc9', after: '7',
+          d: '12 câu tự chấm, in được.' },
+        { n: 'BT4', t: 'Phiếu bài tập: Token hóa tài sản', href: 'token-hoa-tai-san.html#buoc9', after: '8',
           d: '13 câu tự chấm, in được.' },
         { n: 'KT', t: 'Bài kiểm tra tổng hợp', href: 'kiem-tra.html', login: true, final: true,
           d: '40 câu trắc nghiệm sinh riêng theo MSSV, 0,25 điểm/câu, chấm ngay khi nộp.' }
