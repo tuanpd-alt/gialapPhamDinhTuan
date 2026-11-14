@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stablecoin USDC: đúc và đốt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:16px}
+
+/* ===== Trang Token hóa tài sản ===== */
+:root{--deed:#f7e1e1;--deed-ink:#8a1c1c;--deed-line:#d9a3a3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}}
+:root[data-theme="dark"]{--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.checks{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li .m{flex:none;width:18px;font-weight:700}
+.checks li.p .m{color:var(--ok)}.checks li.f .m{color:var(--bad)}.checks li.s .m{color:var(--muted)}
+.log{font:12.5px var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:220px;overflow:auto;display:grid;gap:2px}
+pre.json{font:12px/1.5 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px;margin:0;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-all}
+
+/* Giấy chứng nhận */
+.scanwrap{position:relative;border-radius:12px;overflow:hidden}
+.deed{background:var(--deed);border:2px solid var(--deed-line);border-radius:12px;padding:14px 16px;color:var(--ink);display:grid;gap:8px;font-size:13px}
+.deed .hd{text-align:center;color:var(--deed-ink);line-height:1.35}
+.deed .hd b{display:block;font-size:12px;letter-spacing:.04em}
+.deed .hd .t{font:700 15px var(--f-display);margin-top:4px;text-wrap:balance}
+.deed .body{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:start}
+.deed dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px}
+.deed dt{color:var(--muted);font-size:12px}
+.deed dd{margin:0;font-weight:500}
+.deed dd.tamper{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(189,52,52,.16) 3px 6px);border-radius:3px}
+.deed .qr{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--muted);text-align:center}
+.deed .qr svg{width:104px;height:104px;background:#fff;border-radius:4px;padding:4px}
+@media (max-width:560px){.deed .body{grid-template-columns:minmax(0,1fr)}.deed dl{grid-template-columns:minmax(0,1fr)}.deed dt{margin-top:4px}.deed .qr{justify-items:start;text-align:left}}
+.deed .ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--deed-ink);border-top:1px dashed var(--deed-line);padding-top:6px}
+.laser{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 14px 4px rgba(34,211,238,.55);top:0;opacity:0;pointer-events:none}
+.scanwrap.scanning .laser{opacity:1;animation:sweep 1.6s ease-in-out infinite alternate}
+.scanwrap.scanning::after{content:"";position:absolute;inset:0;background:rgba(34,211,238,.06);pointer-events:none}
+@keyframes sweep{from{top:0}to{top:calc(100% - 3px)}}
+@media (prefers-reduced-motion:reduce){.scanwrap.scanning .laser{animation:none;top:50%}}
+.ocr{display:grid;gap:4px}
+.ocr .r{display:grid;grid-template-columns:150px minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px}
+.ocr .r input{padding:5px 8px;font-size:13px}
+.ocr .r .cf{font:12px var(--f-mono);text-align:right;color:var(--muted)}
+.ocr .r .cf.lo{color:var(--bad);font-weight:600}
+.ocr .r.diff input{border-color:var(--bad);background:var(--bad-bg)}
+@media (max-width:560px){.ocr .r{grid-template-columns:minmax(0,1fr) 58px}.ocr .r>span:first-child{grid-column:1/-1}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+
+/* Dòng thời gian SPV */
+.tl{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;opacity:.45;transition:opacity .3s}
+.tl li.on{opacity:1}
+.tl li .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font:600 13px var(--f-mono)}
+.tl li.on .n{background:var(--ok);color:#fff}
+.tl li b{display:block}
+.tl li .hash{margin-top:4px;padding:4px 8px;font-size:12px}
+
+/* Cây Merkle */
+.mtree{display:grid;gap:6px;overflow-x:auto}
+.mtree .lv{display:flex;gap:6px;justify-content:center}
+.mtree .nd{flex:0 0 auto;border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:11.5px var(--f-mono);background:var(--surface);text-align:center;min-width:86px}
+.mtree .nd small{display:block;font-family:var(--f-body);color:var(--muted);font-size:10.5px;max-width:110px;white-space:normal}
+.mtree .nd.root{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+
+/* Phân bổ */
+.alloc{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--sunk);font:600 12px var(--f-body);color:#fff}
+.alloc span{display:grid;place-items:center;white-space:nowrap;overflow:hidden;transition:width .3s}
+.a1{background:#1d5cf0}.a2{background:#11805a}.a3{background:#c8770a}.a4{background:#7c3aed}
+.vault{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.vault .box{border:2px dashed var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;font-size:13px;min-width:180px}
+.vault .box.locked{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.vault .ar{color:var(--muted);font-size:20px}
+
+/* Chuỗi khối */
+.chainv{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 0}
+.blk{flex:0 0 auto;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface);min-width:150px;max-width:190px;display:grid;gap:2px}
+.blk b{font-family:var(--f-mono);font-size:13px}
+.blk .h{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.blk.new{border-color:var(--ok);background:var(--ok-bg)}
+.chainv .ar{flex:0 0 22px;align-self:center;text-align:center;color:var(--muted)}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.val{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.val.off{opacity:.55;border-style:dashed}
+.val.signed{border-color:var(--ok)}
+.val label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.txc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.txc.ok{border-color:var(--ok)}.txc.bad{border-color:var(--bad)}
+.txc .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.txlist{display:grid;gap:8px}
+.gate{display:none}
+.locked-step .gate{display:block}
+td input[type=number]{width:96px;padding:5px 8px}
+td input[type=checkbox]{width:16px;height:16px}
+.pill{display:inline-block;font:600 11.5px var(--f-body);padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--zero-bg);color:var(--zero-ink)}
+
+/* Bài tập */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.q p.qt{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}
+.q label input{margin-top:4px}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.q.right .fb{background:var(--ok-bg)}.q.wrong .fb{background:var(--bad-bg)}
+.q .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.score{font:700 26px var(--f-mono)}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.prac{display:grid;gap:10px}
+.prac .pi{display:grid;gap:5px;font-size:14px}
+@media print{
+  header.top,nav.steps,.navbtns,.foot,.noprint{display:none!important}
+  .step{display:block!important}.step[hidden]{display:none!important}
+  body{background:#fff;color:#000}.q,.panel{break-inside:avoid;border-color:#999}
+}
+
+
+/* ===== Trang Stablecoin USDC ===== */
+.parties{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.party{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);display:grid;gap:3px;font-size:13px}
+.party b{font-size:14px}
+.party .r{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ta{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);min-width:0}
+.ta h5{margin:0;padding:8px 12px;background:var(--sunk);font-size:13px}
+.ta table td,.ta table th{white-space:normal}
+.ta .tot td{font-weight:700;border-top:2px solid var(--line)}
+.neg{color:var(--bad)}.pos{color:var(--ok)}
+.bar{height:24px;border-radius:7px;overflow:hidden;background:var(--sunk);display:flex}
+.bar span{display:grid;place-items:center;color:#fff;font:600 11.5px var(--f-body);overflow:hidden;white-space:nowrap;transition:width .3s}
+.b1{background:#1d5cf0}.b2{background:#11805a}.b3{background:#c8770a}.b4{background:#7c3aed}
+.code{font:12px/1.6 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px 12px;white-space:pre-wrap;word-break:break-all;margin:0}
+.code .k{color:var(--accent);font-weight:600}.code .c{color:var(--muted)}
+.dg{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px;margin:0}
+.dg dt{color:var(--muted)}.dg dd{margin:0;font-family:var(--f-mono);font-size:12.5px;word-break:break-all}
+.tx{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);display:grid;gap:6px;font-size:13px}
+.tx.ok{border-color:var(--ok)}.tx.bad{border-color:var(--bad)}
+.tx .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ba{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.ba .ar{color:var(--muted);font-size:18px}
+@media (max-width:560px){.ba{grid-template-columns:minmax(0,1fr)}.ba .ar{display:none}}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sp2{height:2px}
+.big{font:700 22px var(--f-mono)}
+</style>
+<script src="./nav.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo" aria-hidden="true">$</div>
+  <div class="ttl"><h1>Stablecoin USDC: đúc và đốt</h1><div class="sub">KYB và ví · nạp USD · đối chiếu · đúc trên blockchain · lưu thông · dự trữ · đốt · rút USD</div></div>
+  <div class="sp"></div>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<nav class="steps wrap" role="tablist" aria-label="Các bước">
+  <button role="tab" data-go="1" aria-selected="true"><span class="n">1</span>Các bên &amp; ví</button>
+  <button role="tab" data-go="2" aria-selected="false"><span class="n">2</span>Nạp USD</button>
+  <button role="tab" data-go="3" aria-selected="false"><span class="n">3</span>Đối chiếu &amp; ghi có</button>
+  <button role="tab" data-go="4" aria-selected="false"><span class="n">4</span>Đúc on-chain</button>
+  <button role="tab" data-go="5" aria-selected="false"><span class="n">5</span>Lưu thông</button>
+  <button role="tab" data-go="6" aria-selected="false"><span class="n">6</span>Dự trữ</button>
+  <button role="tab" data-go="7" aria-selected="false"><span class="n">7</span>Gửi về &amp; đốt</button>
+  <button role="tab" data-go="8" aria-selected="false"><span class="n">8</span>Rút USD &amp; đối soát</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ========== BƯỚC 1 ========== -->
+<section class="step" id="s1">
+  <div class="explain">
+    <h2>Bước 1. Các bên tham gia, blockchain và điều kiện để được đúc</h2>
+    <p>Stablecoin pháp định (<i>fiat-collateralized</i>) như USDC là token đại diện quyền được đổi lại 1 USD với tổ chức phát hành, được bảo chứng bằng tiền mặt và tín phiếu kho bạc ngắn hạn (Circle, 2026). Vòng đời gồm hai nửa đối xứng: <b>đúc</b> (<i>mint</i>) khi tiền đi vào, <b>đốt</b> (<i>burn</i>) khi tiền đi ra. Cung USDC chỉ đổi khi một trong hai việc này xảy ra.</p>
+    <p>Lưu ý thực tế: kênh đúc và đổi trực tiếp với Circle (Circle Mint) dành cho tổ chức đã xác minh, không mở cho cá nhân; cá nhân mua USDC qua sàn, ví hoặc ngân hàng số (Circle, 2026). Mô phỏng vì thế đặt người nạp là một doanh nghiệp, <b>Công ty Minh Phát</b>, để bám sát quy trình thật.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn blockchain nhận USDC (Ethereum, Base hoặc Solana).</li>
+      <li>Nhập số USD muốn nạp (mặc định 1 USD).</li>
+      <li>Bấm <b>Hoàn tất KYB và đăng ký ví</b>.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Cùng một đồng USDC phát hành <b>gốc (native)</b> trên nhiều chuỗi, mỗi chuỗi có hợp đồng riêng; cần đối chiếu địa chỉ tại tài liệu của Circle trước khi dùng thật.</li>
+      <li>USDC có <b>6 chữ số thập phân</b>: 1 USDC = 1.000.000 đơn vị nhỏ nhất trong sổ cái.</li>
+      <li>Ví tự lưu ký do người dùng giữ khóa riêng (xem bài Khóa và chữ ký); Circle chỉ cần biết địa chỉ công khai.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), circle.com/usdc và developers.circle.com/circle-mint; địa chỉ hợp đồng: developers.circle.com/stablecoins/usdc-contract-addresses.</p>
+  </div>
+  <div class="panel"><div id="c1"></div></div>
+</section>
+
+<!-- ========== BƯỚC 2 ========== -->
+<section class="step" id="s2" hidden>
+  <div class="explain">
+    <h2>Bước 2. Nạp USD vào ngân hàng</h2>
+    <p>Công ty Minh Phát ra lệnh chuyển khoản (<i>wire</i>) từ ngân hàng của mình đến tài khoản thu của Circle, kèm <b>mã tham chiếu</b> do Circle cấp. Đây là giao dịch ngân hàng thuần túy qua hệ thống thanh toán liên ngân hàng; <b>blockchain chưa tham gia và chưa có USDC nào được tạo</b>.</p>
+    <p>Thời gian bút toán phụ thuộc kênh (Fedwire, SWIFT, SEPA…) và giờ chốt của ngân hàng; mô phỏng xét trường hợp tiền về trong ngày.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn tên người gửi: khớp hoặc không khớp tên chủ tài khoản (dùng cho Bước 3).</li>
+      <li>Bấm <b>Gửi lệnh chuyển khoản</b> và theo dõi hai sao kê.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Số dư ngân hàng của Minh Phát giảm đúng số tiền nạp; số dư tài khoản thu của Circle tăng tương ứng.</li>
+      <li>Khoản tiền nằm ở <b>tài khoản thu</b>, chưa được tính là dự trữ cho đến khi đối chiếu xong.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), tài liệu Circle Mint về nạp tiền pháp định; số dư, tên ngân hàng và mã tham chiếu trong mô phỏng là giả định.</p>
+  </div>
+  <div class="panel"><div id="c2"></div><div id="o2"></div></div>
+</section>
+
+<!-- ========== BƯỚC 3 ========== -->
+<section class="step" id="s3" hidden>
+  <div class="explain">
+    <h2>Bước 3. Đối chiếu, ghi có số dư USDC và điều phối dự trữ</h2>
+    <p>Circle chỉ ghi nhận nghĩa vụ phát hành sau khi tiền đã về và qua kiểm tra: khớp mã tham chiếu, khớp số tiền, khớp tên người gửi với chủ tài khoản đã KYB, sàng lọc chống rửa tiền và danh sách trừng phạt.</p>
+    <p>Nếu hợp lệ, Circle <b>ghi có số dư USDC trong sổ riêng của Circle Mint</b> (bút toán ngoài chuỗi), đồng thời chuyển tiền vào kho dự trữ. Nếu không, khoản tiền bị hoàn trả.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>Chạy đối chiếu</b>.</li>
+      <li>Thử cả hai tình huống: quay lại Bước 2, chọn tên người gửi không khớp.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Bảng cân đối của Circle xuất hiện: <b>tài sản</b> (tiền gửi, cổ phần quỹ dự trữ) bằng <b>nghĩa vụ</b> (USDC phải hoàn trả).</li>
+      <li>Tỷ lệ chia giữa tiền gửi và quỹ dự trữ trong mô phỏng là giả định (80/20), theo mức công bố gần đây; tỷ lệ thật thay đổi theo kỳ.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), Circle Reserve Fund và trang minh bạch dự trữ; quy tắc hoàn trả bên thứ ba trong mô phỏng là minh họa.</p>
+  </div>
+  <div class="panel"><div id="c3"></div><div id="o3"></div></div>
+</section>
+
+<!-- ========== BƯỚC 4 ========== -->
+<section class="step" id="s4" hidden>
+  <div class="explain">
+    <h2>Bước 4. Đúc USDC trên blockchain</h2>
+    <p>Khi Minh Phát rút USDC ra ví, Circle ký một lệnh <b>mint</b> bằng khóa của mình. Hợp đồng token kiểm tra quyền và hạn mức rồi cùng lúc <b>tăng tổng cung</b> và <b>ghi có số dư</b> cho ví nhận. Trên EVM đó là hàm <code>mint(address,uint256)</code> của hợp đồng USDC (qua proxy); trên Solana là lệnh <code>MintTo</code> của chương trình SPL Token.</p>
+    <p>Giao dịch được đưa vào một khối; sau vài khối kế tiếp mới coi là đủ chắc chắn. Theo tài liệu Circle, việc đúc trên chuỗi thường hoàn tất trong khoảng 15 phút kể từ khi tiền pháp định được ghi có.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn số USDC rút ra (tối đa bằng số dư Mint).</li>
+      <li>Bấm <b>Rút ra ví và đúc</b>, đọc từng kiểm tra và lệnh gọi hợp đồng.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Chỉ người có quyền <i>minter</i> và còn hạn mức mới đúc được; hạn mức do <i>masterMinter</i> cấu hình.</li>
+      <li><code>totalSupply</code> tăng đúng bằng số đã đúc; số dư Mint ngoài chuỗi giảm tương ứng.</li>
+      <li>Sự kiện <code>Transfer</code> từ địa chỉ 0x000…0 là dấu hiệu nhận biết một lần đúc.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), developers.circle.com; mã số khối, mã giao dịch và phí là minh họa (mã giao dịch dùng SHA-256, không phải keccak-256 của Ethereum).</p>
+  </div>
+  <div class="panel"><div id="c4"></div><div id="o4"></div></div>
+</section>
+
+<!-- ========== BƯỚC 5 ========== -->
+<section class="step" id="s5" hidden>
+  <div class="explain">
+    <h2>Bước 5. Lưu thông: chuyển USDC giữa các ví</h2>
+    <p>Sau khi đúc, USDC lưu thông như một token thông thường: chuyển ví-ví bằng lệnh <code>transfer</code>, người gửi trả phí mạng bằng token gốc của chuỗi (ETH hoặc SOL), không cần ngân hàng.</p>
+    <p>Tuy nhiên USDC không phải tiền “không thể bị chặn”: hợp đồng cho phép Circle đưa địa chỉ vào <b>danh sách đen</b> (EVM) hoặc đóng băng tài khoản token (Solana). Ví bị chặn không gửi hoặc nhận được USDC.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chuyển một phần USDC từ ví Minh Phát sang ví của Lan.</li>
+      <li>Bấm <b>Chặn ví Lan</b>, thử chuyển lại và quan sát giao dịch bị hủy.</li>
+      <li>Bỏ chặn, rồi chuyển USDC từ Lan về Minh Phát để chuẩn bị Bước 7.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li><b>Tổng cung không đổi</b> và <b>số dư ngân hàng không đổi</b> khi token đổi chủ: chuyển token không phải chuyển tiền ngân hàng.</li>
+      <li>Giao dịch bị hủy vẫn mất phí mạng.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), developers.circle.com; phí mạng là giá trị minh họa và biến động theo thời điểm.</p>
+  </div>
+  <div class="panel"><div id="c5"></div><div id="o5"></div></div>
+</section>
+
+<!-- ========== BƯỚC 6 ========== -->
+<section class="step" id="s6" hidden>
+  <div class="explain">
+    <h2>Bước 6. Dự trữ, minh bạch và rủi ro ngân hàng lưu ký</h2>
+    <p>Niềm tin vào 1 USDC = 1 USD dựa trên bất đẳng thức <b>dự trữ ≥ USDC đang lưu hành</b>. Circle công bố cơ cấu dự trữ và có báo cáo xác nhận định kỳ của kiểm toán độc lập; phần lớn dự trữ nằm trong Circle Reserve Fund (quỹ thị trường tiền tệ đăng ký tại Mỹ, do BlackRock quản lý, BNY lưu ký), phần còn lại là tiền gửi tại các ngân hàng lớn (Circle, 2026).</p>
+    <p>Đạo luật GENIUS (ký ngày 18/7/2025) đặt khung liên bang cho stablecoin thanh toán, trong đó có yêu cầu dự trữ thanh khoản tương xứng 1:1 và công bố định kỳ.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Xem bảng cân đối hiện tại và tỷ lệ bảo chứng.</li>
+      <li>Bấm <b>Tạo báo cáo xác nhận giả định</b>.</li>
+      <li>Kéo thanh trượt tổn thất để chạy lại kịch bản SVB (tháng 3/2023).</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Báo cáo xác nhận chứng minh tài sản có tồn tại, nhưng không đánh giá rủi ro tín dụng của ngân hàng giữ tiền.</li>
+      <li>Tháng 3/2023 một phần dự trữ nằm tại Silicon Valley Bank; USDC từng xuống khoảng 0,87 USD trước khi phục hồi sau khi chính phủ Mỹ bảo đảm tiền gửi (Spark, 2026).</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), circle.com/genius-act; Spark (2026), <i>Stablecoin Reserve Transparency</i>. Con số 3,3 tỷ USD trên tổng cung khoảng 40 tỷ USD là số công bố của Circle tháng 3/2023, cần kiểm tra lại trước khi trích trong bài báo.</p>
+  </div>
+  <div class="panel"><div id="c6"></div></div>
+</section>
+
+<!-- ========== BƯỚC 7 ========== -->
+<section class="step" id="s7" hidden>
+  <div class="explain">
+    <h2>Bước 7. Gửi USDC về Circle và đốt</h2>
+    <p>Rút tiền gồm hai giao dịch trên chuỗi. <b>(1)</b> Minh Phát chuyển USDC đến địa chỉ nhận đổi của Circle: lúc này token chỉ đổi chủ, <b>tổng cung chưa giảm</b>. <b>(2)</b> Circle xác nhận rồi gọi <code>burn</code> trên địa chỉ có quyền đốt: token bị hủy khỏi sổ cái, tổng cung giảm, và Circle ghi có số dư USD trong sổ Circle Mint.</p>
+    <p>Cơ chế đốt cũng là nền của chuyển USDC giữa các chuỗi bằng CCTP: đốt ở chuỗi nguồn, đúc tương ứng ở chuỗi đích, nên cung toàn hệ thống không đổi.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn số USDC muốn đổi (tối đa bằng số dư ví Minh Phát).</li>
+      <li>Bấm <b>Gửi USDC cho Circle</b>, kiểm tra tổng cung chưa đổi.</li>
+      <li>Bấm <b>Circle xác nhận và đốt</b>.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Chỉ số dư trong ví Minh Phát mới đổi được; USDC đang ở ví Lan phải chuyển về trước (Bước 5).</li>
+      <li>Sự kiện <code>Burn</code> và <code>Transfer</code> đến 0x000…0 là dấu hiệu nhận biết một lần đốt.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), developers.circle.com (Circle Mint, CCTP).</p>
+  </div>
+  <div class="panel"><div id="c7"></div><div id="o7"></div></div>
+</section>
+
+<!-- ========== BƯỚC 8 ========== -->
+<section class="step" id="s8" hidden>
+  <div class="explain">
+    <h2>Bước 8. Rút USD về ngân hàng và đối soát toàn vòng đời</h2>
+    <p>Circle bán bớt tài sản dự trữ tương ứng (rút cổ phần quỹ và dùng tiền gửi), rồi chuyển USD về tài khoản ngân hàng đã liên kết. Theo tài liệu Circle Mint, khoản rút thường tất toán vào ngày làm việc kế tiếp.</p>
+    <p>Cuối vòng đời, ba đại lượng phải khớp: <b>tổng USDC đã đúc − đã đốt = tổng cung</b>; <b>dự trữ = tổng cung + số dư Mint chưa rút</b>; và <b>nhật ký kiểm toán</b> toàn bộ sự kiện được nối bằng mã băm nên không thể sửa lặng lẽ.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>Rút USD về ngân hàng</b>.</li>
+      <li>Đọc phần đối soát và bấm <b>Kiểm tra chuỗi băm</b>.</li>
+      <li>Thử sửa số liệu: bấm <b>Làm lại từ đầu</b> và chạy kịch bản khác (chain khác, số tiền khác).</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Số dư ngân hàng của Minh Phát trở về mức ban đầu (mô phỏng bỏ qua phí ngân hàng và phí mạng).</li>
+      <li>Dự trữ về 0 cùng với tổng cung: vòng đời đóng kín.</li>
+    </ul>
+    <p class="src">Nguồn: Circle (2026), developers.circle.com/circle-mint; thời gian tất toán thật phụ thuộc kênh thanh toán, cần kiểm tra tài liệu hiện hành.</p>
+  </div>
+  <div class="panel"><div id="c8"></div><div id="a8"></div><div id="r8"></div></div>
+</section>
+
+<div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
+</main>
+<footer class="wrap foot">Mô phỏng chạy hoàn toàn trong trình duyệt, dùng SHA-256 thật cho mã giao dịch và nhật ký. Ngân hàng, số dư, mã tham chiếu, ví, số khối và phí mạng là giả định để quan sát; hợp đồng và số liệu dự trữ lấy từ công bố của Circle và cần đối chiếu lại trước khi trích dẫn. Đây là mô phỏng giảng dạy, không phải hướng dẫn giao dịch. Tài liệu: Circle (2026) <i>USDC</i>, circle.com/usdc; Circle (2026) <i>Circle Mint</i>, developers.circle.com/circle-mint; Circle (2026) <i>USDC contract addresses</i>, developers.circle.com/stablecoins/usdc-contract-addresses; Circle (2026) <i>The GENIUS Act is now US law</i>, circle.com/genius-act; Spark (2026) <i>Stablecoin Reserve Transparency</i>, spark.money.</footer>
+<script>
+/* ---------- SHA-256 (FIPS 180-4) ---------- */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const ENC=new TextEncoder();const W=new Uint32Array(64);
+function sha256(str){const m=ENC.encode(str),l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+for(let t=0;t<64;t++){const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));const mj=(a&b)^(a&c)^(b&c);const t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;}
+return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches||window.__NOWAIT;
+const wait=ms=>sleep(RM?0:ms);
+const short=h=>h.length>16?h.slice(0,10)+'…'+h.slice(-4):h;
+const M=1e6;
+const U=x=>(x/M).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2});
+const U6=x=>(x/M).toLocaleString('vi-VN',{minimumFractionDigits:6,maximumFractionDigits:6});
+const PC=x=>(x*100).toLocaleString('vi-VN',{maximumFractionDigits:2})+'%';
+const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function b58(hex){let n=BigInt('0x'+hex),s='';while(n>0n){s=B58[Number(n%58n)]+s;n/=58n;}return s;}
+
+/* ---------- Dữ liệu chuỗi ---------- */
+const CH={
+  eth:{name:'Ethereum',kind:'evm',std:'ERC-20 (qua proxy)',native:'ETH',addr:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',bt:12,fee:0.40,blk0:24300000,unit:'khối'},
+  base:{name:'Base (L2)',kind:'evm',std:'ERC-20 (qua proxy)',native:'ETH',addr:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',bt:2,fee:0.002,blk0:38000000,unit:'khối'},
+  sol:{name:'Solana',kind:'sol',std:'SPL Token',native:'SOL',addr:'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',bt:0.4,fee:0.0004,blk0:400000000,unit:'slot'}
+};
+const FUND_SHARE=0.8;          /* giả định: ~80% quỹ dự trữ, ~20% tiền gửi */
+const NCONF=3;                 /* ngưỡng xác nhận dùng trong mô phỏng */
+const C=()=>CH[S.chain];
+const addrOf=who=>C().kind==='evm'?'0x'+sha256('addr|'+S.chain+'|'+who).slice(0,40):b58(sha256('addr|'+S.chain+'|'+who));
+const txHash=seed=>C().kind==='evm'?'0x'+sha256(seed):b58(sha256(seed+'a')+sha256(seed+'b'));
+const ZERO=()=>C().kind==='evm'?'0x0000…0000':'(không có chủ: tài khoản bị hủy)';
+
+/* ---------- Trạng thái ---------- */
+let S,busy=false;
+function fresh(){
+  S={chain:'eth',kyb:false,amt:1*M,sender:'ok',bank:100*M,bank0:100*M,
+     wire:null,collect:0,credited:0,cashRes:0,fundRes:0,supply:0,minted:0,burned:0,
+     bal:{minh:0,lan:0},bl:{lan:false},pend:0,blk:0,fees:0,t:0,log:[],att:null,out:null,usdOut:0,refund:false,
+     wallets:null,sa:[],sb:[],ck3:null};
+}
+fresh();
+const clk=()=>{const m=540+S.t,d=1+Math.floor(m/1440),r=m%1440;return 'Ngày '+d+' · '+String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');};
+function rec(step,msg,data){
+  const prev=S.log.length?S.log[S.log.length-1].h:'0'.repeat(64);
+  const e={n:S.log.length+1,step,t:clk(),msg,data:data||null,prev};
+  e.h=sha256(JSON.stringify([e.n,e.step,e.t,e.msg,e.data,e.prev]));S.log.push(e);return e;
+}
+const reserves=()=>S.cashRes+S.fundRes;
+const liabs=()=>S.supply+S.credited;
+function gate(id,msg,n){$(id).innerHTML=`<div class="callout warn">${msg} <button class="btn sm" data-act="go" data-v="${n}">Về Bước ${n}</button></div>`;}
+function nextBlk(){S.blk+=3;return C().blk0+S.blk;}
+
+/* ---------- Tiện ích hiển thị ---------- */
+async function runChecks(id,items){
+  const box=$(id);box.innerHTML='';
+  for(const [t,ok] of items){box.insertAdjacentHTML('beforeend',`<li class="${ok?'p':'f'}"><span class="m">${ok?'✓':'✗'}</span><span>${t}</span></li>`);await wait(320);}
+}
+async function confirmAnim(id,b0,hash){
+  const el=$(id),c=C();
+  for(let i=0;i<=NCONF;i++){
+    const cells=[];for(let j=0;j<=i;j++)cells.push(`<div class="blk${j===0?' new':''}"><b>#${(b0+j).toLocaleString('vi-VN')}</b><span class="h">${j===0?'chứa '+short(hash):c.unit+' kế tiếp'}</span></div>`);
+    el.innerHTML=`<div class="chainv">${cells.join('<span class="ar">→</span>')}</div><div class="note">Xác nhận ${i}/${NCONF} · khoảng ${(c.bt*i).toLocaleString('vi-VN',{maximumFractionDigits:1})} giây${i===NCONF?' · <b class="pos">đủ chắc chắn</b>':''}</div>`;
+    await wait(420);
+  }
+}
+const stat=(l,v)=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+function txCard(ok,title,hash,lines){return `<div class="tx ${ok?'ok':'bad'}"><div class="hd"><b>${esc(title)}</b><span class="chip ${ok?'ok':'bad'}">${ok?'Thành công':'Bị hủy (revert)'}</span></div><dl class="dg"><dt>Mã giao dịch</dt><dd>${esc(hash)}</dd>${lines.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`;}
+
+/* ========== BƯỚC 1 ========== */
+function R1(){
+  const c=C(),lock=!!S.wire||S.credited>0||S.supply>0;
+  const w=S.wallets;
+  $('c1').innerHTML=`
+  <h4>Blockchain nhận USDC</h4>
+  <div class="seg">${Object.entries(CH).map(([k,v])=>`<button data-act="chain" data-v="${k}" aria-pressed="${S.chain===k}" ${lock?'disabled':''}>${v.name}</button>`).join('')}</div>
+  <dl class="dg"><dt>Chuẩn token</dt><dd>${c.std}, 6 chữ số thập phân</dd><dt>Hợp đồng / mint chính thức</dt><dd>${c.addr}</dd><dt>Thời gian mỗi ${c.unit}</dt><dd>khoảng ${c.bt} giây</dd><dt>Phí mạng (minh họa)</dt><dd>khoảng ${c.fee.toLocaleString('vi-VN')} USD, trả bằng ${c.native}</dd></dl>
+  <div class="note">Địa chỉ trên là địa chỉ USDC chính thức theo tài liệu Circle; vẫn cần đối chiếu lại trước khi dùng thật.</div>
+  <h4>Các bên tham gia</h4>
+  <div class="parties">
+    <div class="party"><span class="r">Người nạp</span><b>Công ty Minh Phát</b>Khách hàng Circle Mint đã KYB, giữ ví tự lưu ký.</div>
+    <div class="party"><span class="r">Ngân hàng 1</span><b>Ngân hàng của Minh Phát</b>Giữ USD của doanh nghiệp.</div>
+    <div class="party"><span class="r">Tổ chức phát hành</span><b>Circle</b>Ghi sổ, ký lệnh mint và burn, giữ dự trữ.</div>
+    <div class="party"><span class="r">Kho dự trữ</span><b>Ngân hàng + quỹ dự trữ</b>Tiền gửi và Circle Reserve Fund (BlackRock quản lý, BNY lưu ký).</div>
+    <div class="party"><span class="r">Sổ cái</span><b>Hợp đồng USDC</b>Giữ số dư, tổng cung, danh sách đen.</div>
+    <div class="party"><span class="r">Người dùng cuối</span><b>Lan</b>Nhận USDC qua ví; không mở được tài khoản Circle Mint.</div>
+  </div>
+  <h4>Số tiền nạp</h4>
+  <div class="row"><label class="f" style="max-width:220px">Số USD nạp<input id="amt" inputmode="decimal" value="${(S.amt/M).toString().replace('.',',')}" ${lock||S.kyb?'disabled':''}></label>
+  <div class="stat"><b>${U(S.bank)}</b><span>Số dư ngân hàng Minh Phát (USD)</span></div></div>
+  <div class="row"><button class="btn primary" data-act="kyb" ${S.kyb?'disabled':''}>${S.kyb?'Đã hoàn tất':'Hoàn tất KYB và đăng ký ví'}</button>
+  <button class="btn" data-act="reset">Làm lại từ đầu</button></div>
+  ${S.kyb?`<ul class="checks"><li class="p"><span class="m">✓</span><span>KYB: pháp nhân Công ty Minh Phát được xác minh (giả định).</span></li>
+  <li class="p"><span class="m">✓</span><span>Ngân hàng nguồn đã liên kết, mã tham chiếu nạp tiền sẽ được cấp ở Bước 2.</span></li>
+  <li class="p"><span class="m">✓</span><span>Địa chỉ ví nhận trên ${c.name} đã đăng ký: <span class="mono">${w.minh}</span></span></li></ul>
+  <div class="callout ok">Thực hành của Circle Mint yêu cầu đăng ký trước địa chỉ nhận trên chuỗi (cần kiểm tra tài liệu hiện hành). Sang Bước 2 để nạp USD.</div>`:''}`;
+}
+function parseAmt(v){const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:NaN;}
+
+/* ========== BƯỚC 2 ========== */
+function stmtTable(title,open,rows,closeLbl,close){
+  return `<div class="ta"><h5>${title}</h5><table><tr><td>Số dư đầu kỳ</td><td class="num">${U(open)}</td></tr>${rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="num ${r[1]<0?'neg':'pos'}">${r[1]<0?'−':'+'}${U(Math.abs(r[1]))}</td></tr>`).join('')}<tr class="tot"><td>${closeLbl}</td><td class="num">${U(close)}</td></tr></table></div>`;
+}
+function stmts(){return `<div class="two">${stmtTable('Sao kê: Ngân hàng của Minh Phát',S.bank0,S.sa,'Số dư cuối (USD)',S.bank)}${stmtTable('Sao kê: Tài khoản thu của Circle',0,S.sb,'Số dư tài khoản thu (USD)',S.collect)}</div>`;}
+function R2(){
+  if(!S.kyb){gate('c2','Cần hoàn tất KYB và đăng ký ví trước.',1);$('o2').innerHTML='';return;}
+  const done=!!S.wire;
+  $('c2').innerHTML=`
+  <h4>Lệnh chuyển khoản</h4>
+  <dl class="dg"><dt>Từ</dt><dd>Ngân hàng của Minh Phát</dd><dt>Đến</dt><dd>Tài khoản thu của Circle (tên giả định)</dd><dt>Số tiền</dt><dd>${U(S.amt)} USD</dd><dt>Mã tham chiếu</dt><dd>${S.wire?S.wire.ref:'(cấp khi gửi lệnh)'}</dd></dl>
+  <label class="f">Tên người gửi ghi trên lệnh
+    <select id="sender" ${done?'disabled':''}><option value="ok" ${S.sender==='ok'?'selected':''}>Công ty TNHH Minh Phát (khớp tên chủ tài khoản Circle Mint)</option><option value="bad" ${S.sender==='bad'?'selected':''}>Nguyễn Văn B (bên thứ ba, không khớp)</option></select></label>
+  <div class="row"><button class="btn primary" data-act="wire" ${done?'disabled':''}>Gửi lệnh chuyển khoản</button></div>
+  <ol class="tl" id="tl2">${['Minh Phát gửi lệnh kèm mã tham chiếu','Ngân hàng chuyển qua hệ thống thanh toán liên ngân hàng','Ngân hàng nhận ghi có tài khoản thu của Circle','Circle thấy khoản tiền, chờ đối chiếu'].map((t,i)=>`<li class="${done?'on':''}"><span class="n">${i+1}</span><div>${t}</div></li>`).join('')}</ol>`;
+  $('o2').innerHTML=stmts()+(done?`<div class="callout">Tiền mới nằm ở <b>tài khoản thu</b>. Chưa có USDC nào được tạo và chưa có thay đổi gì trên blockchain.</div>`:(S.refund?`<div class="callout bad">Lệnh trước đã bị Circle hoàn trả vì tên người gửi không khớp. Chọn lại tên người gửi rồi gửi lệnh mới.</div>`:''));
+}
+async function doWire(){
+  if(busy||S.wire)return;busy=true;S.sender=$('sender').value;
+  const ref='CIR'+sha256('ref|'+S.amt+'|'+S.log.length).slice(0,7).toUpperCase();
+  const lis=[...$('tl2').children];for(const li of lis){li.classList.add('on');await wait(450);}
+  S.bank-=S.amt;S.collect+=S.amt;S.wire={ref,amt:S.amt,sender:S.sender};S.t+=30;S.refund=false;
+  S.sa.push(['Chuyển khoản đến Circle · '+ref,-S.amt]);S.sb.push(['Ghi có từ '+(S.sender==='ok'?'Công ty Minh Phát':'Nguyễn Văn B'),S.amt]);
+  rec(2,`Wire ${U(S.amt)} USD từ Ngân hàng Minh Phát đến tài khoản thu Circle, tham chiếu ${ref}`,{amt:S.amt,ref});
+  busy=false;R2();
+}
+
+/* ========== BƯỚC 3 ========== */
+function bsheet(){
+  const a=reserves(),l=liabs(),tot=Math.max(a,1);
+  return `<div class="two">
+   <div class="ta"><h5>Tài sản dự trữ của Circle (USD)</h5><table><tr><td>Tiền gửi ngân hàng</td><td class="num">${U(S.cashRes)}</td></tr><tr><td>Cổ phần Circle Reserve Fund</td><td class="num">${U(S.fundRes)}</td></tr><tr class="tot"><td>Tổng</td><td class="num">${U(a)}</td></tr></table></div>
+   <div class="ta"><h5>Nghĩa vụ của Circle (USDC)</h5><table><tr><td>USDC đang lưu hành (tổng cung)</td><td class="num">${U(S.supply)}</td></tr><tr><td>Số dư Circle Mint chưa rút ra chuỗi</td><td class="num">${U(S.credited)}</td></tr><tr class="tot"><td>Tổng</td><td class="num">${U(l)}</td></tr></table></div></div>
+   <div class="bar" aria-label="Cơ cấu dự trữ"><span class="b1" style="width:${S.fundRes/tot*100}%">${S.fundRes?'Quỹ dự trữ '+PC(S.fundRes/tot):''}</span><span class="b3" style="width:${S.cashRes/tot*100}%">${S.cashRes?'Tiền gửi '+PC(S.cashRes/tot):''}</span></div>`;
+}
+function R3(){
+  if(!S.wire&&!S.refund&&!S.log.some(e=>e.step===3)){gate('c3','Cần gửi lệnh chuyển khoản ở Bước 2 trước.',2);return;}
+  const pending=!!S.wire&&S.collect>0;
+  $('c3').innerHTML=`<h4>Đối chiếu khoản tiền</h4>
+  <ul class="checks" id="ck3">${(S.ck3||[]).map(([t,ok])=>`<li class="${ok?'p':'f'}"><span class="m">${ok?'✓':'✗'}</span><span>${t}</span></li>`).join('')}</ul>
+  <div class="row"><button class="btn primary" data-act="recon" ${pending?'':'disabled'}>Chạy đối chiếu</button></div>
+  <div id="m3">${S.refund?'<div class="callout bad">Khoản tiền đã bị hoàn trả. Quay lại Bước 2 chọn tên người gửi khớp.</div>':''}${S.log.some(e=>e.step===3&&e.data&&e.data.credited)?'<div class="callout ok">Đã ghi có. Số dư Circle Mint hiện tại: <b>'+U(S.credited)+' USDC</b>. Sang Bước 4 để rút ra chuỗi.</div>':''}</div>
+  <h4>Bảng cân đối của Circle</h4>${bsheet()}
+  <div class="note">Giả định: ${PC(FUND_SHARE)} dự trữ vào quỹ, phần còn lại giữ tiền gửi. Cuối mỗi bước cần có: tài sản dự trữ = nghĩa vụ.</div>`;
+}
+async function doRecon(){
+  if(busy||!S.wire||!S.collect)return;busy=true;
+  const w=S.wire,okName=w.sender==='ok';
+  S.ck3=[[`Mã tham chiếu ${w.ref} khớp lệnh nạp`,true],[`Số tiền nhận ${U(S.collect)} USD khớp số tiền ghi trên lệnh`,true],[okName?'Tên người gửi khớp tên chủ tài khoản Circle Mint (đã KYB)':'Tên người gửi “Nguyễn Văn B” không khớp chủ tài khoản đã KYB',okName],['Sàng lọc chống rửa tiền và danh sách trừng phạt: không có cảnh báo',true]];
+  await runChecks('ck3',S.ck3);
+  S.t+=20;
+  if(!okName){
+    S.sa.push(['Hoàn trả từ Circle',S.collect]);S.sb.push(['Hoàn trả cho người gửi',-S.collect]);S.bank+=S.collect;S.collect=0;S.wire=null;S.refund=true;
+    rec(3,'Đối chiếu thất bại (tên người gửi không khớp): hoàn trả USD về ngân hàng nguồn',{amt:w.amt});
+    busy=false;R3();R2();return;
+  }
+  const fund=Math.round(S.collect*FUND_SHARE/1e4)*1e4,cash=S.collect-fund;
+  S.sb.push(['Chuyển vào kho dự trữ',-S.collect]);S.fundRes+=fund;S.cashRes+=cash;S.credited+=S.collect;S.collect=0;S.wire=null;S.refund=false;
+  rec(3,`Đối chiếu đạt: ghi có ${U(S.credited)} USDC (Mint, ngoài chuỗi); dự trữ: quỹ ${U(fund)}, tiền gửi ${U(cash)}`,{credited:S.credited,fund,cash});
+  busy=false;R3();R2();
+}
+
+/* ========== BƯỚC 4 ========== */
+function mintCode(to,a){
+  const c=C();
+  if(c.kind==='evm')return `<span class="c">// FiatTokenProxy → FiatTokenV2_2 tại ${c.addr}</span>
+<span class="k">function</span> mint(address _to, uint256 _amount) external
+    whenNotPaused onlyMinters notBlacklisted(msg.sender) notBlacklisted(_to) returns (bool)
+
+<span class="c">// Lệnh do khóa minter của Circle ký</span>
+mint(_to = ${to},
+     _amount = ${a})   <span class="c">// ${U6(a)} USDC (6 chữ số thập phân)</span>`;
+  return `<span class="c">// Chương trình SPL Token · mint USDC ${c.addr}</span>
+<span class="k">MintTo</span> {
+  mint: ${short(c.addr)},
+  account: <span class="c">// tài khoản token của ví nhận</span> ${short(to)},
+  authority: <span class="c">// mint authority của Circle ký</span>,
+  amount: ${a}   <span class="c">// ${U6(a)} USDC</span>
+}`;
+}
+function R4(){
+  if(S.minted===0&&S.credited<=0){gate('c4','Cần có số dư USDC trong Circle Mint (Bước 3).',3);$('o4').innerHTML='';return;}
+  const w=S.wallets;
+  $('c4').innerHTML=`<h4>Rút USDC ra ví on-chain</h4>
+  <div class="stats">${stat('Số dư Circle Mint (USDC)',U(S.credited))}${stat('USDC trong ví Minh Phát',U(S.bal.minh))}${stat('Tổng cung totalSupply',U(S.supply))}</div>
+  <dl class="dg"><dt>Ví nhận (đã đăng ký)</dt><dd>${w.minh}</dd><dt>Chuỗi</dt><dd>${C().name}</dd></dl>
+  <div class="row"><label class="f" style="max-width:220px">Số USDC rút ra<input id="mAmt" inputmode="decimal" value="${(S.credited/M).toString().replace('.',',')}" ${S.credited<=0?'disabled':''}></label>
+  <button class="btn primary" data-act="mint" ${S.credited<=0?'disabled':''}>Rút ra ví và đúc</button></div>`;
+}
+async function doMint(){
+  if(busy||S.credited<=0)return;
+  let v=parseAmt($('mAmt').value);if(!(v>0)){$('mAmt').focus();return;}
+  let a=Math.min(S.credited,Math.round(v*100)*1e4);if(a<=0)return;busy=true;
+  const c=C(),to=S.wallets.minh,sup0=S.supply,bal0=S.bal.minh,cr0=S.credited;
+  $('o4').innerHTML=`<h4>Kiểm tra của hợp đồng</h4><ul class="checks" id="ck4"></ul><div id="cd4"></div><div id="tx4"></div><div id="cf4"></div><div id="st4"></div>`;
+  const evm=c.kind==='evm';
+  await runChecks('ck4',evm?[['Hợp đồng không bị tạm dừng (whenNotPaused)',true],['Người gọi nằm trong danh sách minter (onlyMinters)',true],['minterAllowance của Circle ≥ số lượng cần đúc (do masterMinter cấu hình)',true],['Người gọi và ví nhận không nằm trong danh sách đen (notBlacklisted)',true],['Số lượng > 0',true]]:[['Mint authority của Circle ký giao dịch',true],['Tài khoản token đúng mint USDC',true],['Tài khoản token không bị đóng băng (freeze authority)',true],['Số lượng > 0',true]]);
+  $('cd4').innerHTML=`<h4>Lệnh gọi hợp đồng</h4><pre class="code">${mintCode(to,a)}</pre>`;
+  await wait(500);
+  S.t+=15;S.credited-=a;S.supply+=a;S.bal.minh+=a;S.minted+=a;S.fees+=c.fee;
+  const b0=nextBlk(),h=txHash('mint|'+S.log.length+'|'+a+'|'+to);
+  rec(4,`Mint ${U(a)} USDC tới ví Minh Phát trên ${c.name}, tx ${short(h)}, khối ${b0}`,{a,h,b0});
+  $('tx4').innerHTML=`<h4>Giao dịch</h4>`+txCard(true,'mint · Circle ký',h,[['Khối / slot',b0.toLocaleString('vi-VN')+' (minh họa)'],['Phí mạng (minh họa)',c.fee.toLocaleString('vi-VN')+' USD'],...(evm?[['Sự kiện 1','Mint(minter=Circle, to='+short(to)+', amount='+a+')'],['Sự kiện 2','Transfer(from='+ZERO()+', to='+short(to)+', value='+a+')']]:[['Nhật ký chương trình','Program log: Instruction: MintTo · amount='+a]])]);
+  await confirmAnim('cf4',b0,h);
+  $('st4').innerHTML=`<h4>Thay đổi trạng thái</h4><div class="scroll"><table><tr><th>Đại lượng</th><th class="num">Trước (USDC)</th><th class="num">Sau (USDC)</th></tr>
+   <tr><td>totalSupply (tổng cung trên chuỗi)</td><td class="num">${U6(sup0)}</td><td class="num pos">${U6(S.supply)}</td></tr>
+   <tr><td>Số dư ví Minh Phát</td><td class="num">${U6(bal0)}</td><td class="num pos">${U6(S.bal.minh)}</td></tr>
+   <tr><td>Số dư Circle Mint (ngoài chuỗi)</td><td class="num">${U6(cr0)}</td><td class="num neg">${U6(S.credited)}</td></tr></table></div>
+   <div class="callout ok">Cung tăng đúng <b>${U(a)} USDC</b>; dự trữ vẫn ${U(reserves())} USD, tức tỷ lệ bảo chứng ${PC(reserves()/Math.max(liabs(),1))}.</div>`;
+  busy=false;R4();
+}
+
+/* ========== BƯỚC 5 ========== */
+function R5(){
+  if(S.minted===0){gate('c5','Cần có USDC trên chuỗi (Bước 4).',4);$('o5').innerHTML='';return;}
+  const w=S.wallets,c=C(),evm=c.kind==='evm';
+  $('c5').innerHTML=`<h4>Số dư các ví (${c.name})</h4>
+  <div class="stats">${stat('Ví Minh Phát (USDC)',U(S.bal.minh))}${stat('Ví Lan (USDC)',U(S.bal.lan))}${stat('totalSupply (USDC)',U(S.supply))}${stat('Số dư ngân hàng Minh Phát (USD)',U(S.bank))}</div>
+  <div class="row">${S.bl.lan?'<span class="chip bad">Ví Lan đang bị '+(evm?'đưa vào danh sách đen':'đóng băng')+'</span>':'<span class="chip ok">Ví Lan hoạt động bình thường</span>'}<button class="btn sm" data-act="bl">${S.bl.lan?'Bỏ chặn ví Lan':'Chặn ví Lan (vai trò Circle)'}</button></div>
+  <h4>Chuyển USDC</h4>
+  <div class="grid2f"><label class="f">Từ<select id="tFrom"><option value="minh">Minh Phát (${short(w.minh)})</option><option value="lan">Lan (${short(w.lan)})</option></select></label>
+  <label class="f">Số USDC<input id="tAmt" inputmode="decimal" value="0,4"></label></div>
+  <div class="row"><button class="btn primary" data-act="xfer">Chuyển cho bên còn lại</button></div>
+  <div class="note">Người gửi trả phí mạng bằng ${c.native} (khoảng ${c.fee.toLocaleString('vi-VN')} USD, minh họa). Tổng phí mạng đã phát sinh: ${S.fees.toLocaleString('vi-VN',{maximumFractionDigits:4})} USD.</div>`;
+}
+const xferLog=[];
+function doXfer(){
+  if(S.supply===0)return;const c=C(),evm=c.kind==='evm';
+  const from=$('tFrom').value,to=from==='minh'?'lan':'minh',v=parseAmt($('tAmt').value);
+  if(!(v>0)){$('tAmt').focus();return;}
+  const a=Math.round(v*100)*1e4,fa=S.wallets[from],ta=S.wallets[to],nm={minh:'Minh Phát',lan:'Lan'};
+  const h=txHash('xfer|'+S.log.length+'|'+from+'|'+a);S.t+=1;S.fees+=c.fee;let ok=true,why='';
+  if(S.bl[from]||S.bl[to]){ok=false;why=evm?'Blacklistable: account is blacklisted':'Account is frozen';}
+  else if(a>S.bal[from]){ok=false;why=evm?'ERC20: transfer amount exceeds balance':'Insufficient funds';}
+  if(ok){S.bal[from]-=a;S.bal[to]+=a;}
+  const b=nextBlk();
+  rec(5,`${ok?'Chuyển':'Chuyển (bị hủy: '+why+')'} ${U(a)} USDC từ ${nm[from]} đến ${nm[to]}, tx ${short(h)}`,{ok,a,h});
+  const card=txCard(ok,'transfer · '+nm[from]+' → '+nm[to],h,[['Khối / slot',b.toLocaleString('vi-VN')+' (minh họa)'],['Số lượng',U6(a)+' USDC'],ok?['Kết quả',evm?'Transfer(from='+short(fa)+', to='+short(ta)+', value='+a+')':'Program log: Instruction: Transfer']:['Lý do hủy',esc(why)],['Phí mạng',c.fee.toLocaleString('vi-VN')+' USD (vẫn bị trừ)']]);
+  $('o5').insertAdjacentHTML('afterbegin',card+'<div class="sp2"></div>');
+  R5();
+}
+function doBl(){S.bl.lan=!S.bl.lan;const e=C().kind==='evm';rec(5,`Circle ${S.bl.lan?(e?'đưa ví Lan vào danh sách đen':'đóng băng tài khoản token của Lan'):(e?'gỡ ví Lan khỏi danh sách đen':'mở băng tài khoản token của Lan')}`,{bl:S.bl.lan});R5();}
+
+/* ========== BƯỚC 6 ========== */
+function R6(){
+  const a=reserves(),l=liabs(),r=l?a/l:1;
+  $('c6').innerHTML=`<h4>Bảng cân đối hiện tại</h4>${bsheet()}
+  <div class="stats">${stat('Tỷ lệ bảo chứng',PC(r))}${stat('Dự trữ (USD)',U(a))}${stat('Nghĩa vụ (USDC)',U(l))}</div>
+  <div class="callout ${a>=l?'ok':'bad'}">${a>=l?'Dự trữ ≥ nghĩa vụ: điều kiện 1:1 được thỏa.':'Dự trữ thấp hơn nghĩa vụ.'}</div>
+  <div class="row"><button class="btn" data-act="att">Tạo báo cáo xác nhận giả định</button></div>
+  <div id="att6">${S.att?attHtml():''}</div>
+  <h4>Kịch bản SVB (tháng 3/2023)</h4>
+  <div class="grid2f"><label class="f">Tổng cung lúc đó (tỷ USD)<input id="sv1" type="number" step="0.1" value="40" oninput="stress()"></label>
+  <label class="f">Dự trữ gửi tại ngân hàng sụp đổ (tỷ USD)<input id="sv2" type="number" step="0.1" value="3.3" oninput="stress()"></label></div>
+  <label class="f">Mức tổn thất trên số tiền gửi đó: <b id="sv3v">100%</b><input id="sv3" type="range" min="0" max="100" value="100" oninput="stress()"></label>
+  <div id="sres"></div>`;
+  stress();
+}
+function attHtml(){const x=S.att;return `<div class="tx ok"><div class="hd"><b>Báo cáo xác nhận (giả định)</b><span class="chip ok">${x.ok?'Dự trữ ≥ lưu hành':'Thiếu hụt'}</span></div><dl class="dg"><dt>Ngày chốt</dt><dd>${x.t}</dd><dt>Dự trữ</dt><dd>${U(x.a)} USD</dd><dt>USDC lưu hành + Mint</dt><dd>${U(x.l)}</dd><dt>Mã băm báo cáo</dt><dd>${x.h}</dd></dl><div class="note">Báo cáo xác nhận chỉ chứng minh số liệu tại ngày chốt, không đánh giá rủi ro tín dụng của ngân hàng giữ tiền.</div></div>`;}
+function doAtt(){const a=reserves(),l=liabs();S.att={t:clk(),a,l,ok:a>=l,h:sha256(JSON.stringify(['att',clk(),a,l]))};rec(6,`Báo cáo xác nhận giả định: dự trữ ${U(a)} ≥ lưu hành ${U(l)} = ${a>=l}`,{a,l});$('att6').innerHTML=attHtml();}
+function stress(){
+  const s=parseFloat($('sv1').value)||0,e=parseFloat($('sv2').value)||0,p=+$('sv3').value;$('sv3v').textContent=p+'%';
+  const loss=e*p/100,back=s?(s-loss)/s:1;
+  $('sres').innerHTML=`<div class="stats">${stat('Thiệt hại tiềm tàng (tỷ USD)',loss.toLocaleString('vi-VN',{maximumFractionDigits:2}))}${stat('Tỷ lệ bảo chứng lý thuyết',PC(back))}</div>
+  <div class="note">${p>=100?'Với toàn bộ khoản gửi bị mất, bảo chứng lý thuyết khoảng 91,75%; giá thị trường thực tế có lúc thấp hơn (khoảng 0,87 USD) vì hoảng loạn và thanh khoản cạn, vượt xa thiệt hại tính toán.':'Ở mức tổn thất này, tỷ lệ bảo chứng lý thuyết vẫn thấp hơn 100% nếu có khoản tiền chưa lấy lại được; giá thị trường thường phản ứng sớm hơn và mạnh hơn.'}</div>`;
+}
+
+/* ========== BƯỚC 7 ========== */
+function burnCode(a){
+  const c=C();
+  if(c.kind==='evm')return `<span class="c">// Circle gom USDC về địa chỉ có quyền đốt rồi gọi</span>
+<span class="k">function</span> burn(uint256 _amount) external
+    whenNotPaused onlyMinters notBlacklisted(msg.sender)
+
+burn(_amount = ${a})   <span class="c">// ${U6(a)} USDC bị hủy từ số dư của msg.sender</span>`;
+  return `<span class="k">Burn</span> {
+  account: <span class="c">// tài khoản token do Circle kiểm soát</span>,
+  mint: ${short(c.addr)},
+  amount: ${a}   <span class="c">// ${U6(a)} USDC</span>
+}`;
+}
+function R7(){
+  if(S.minted===0){gate('c7','Cần có USDC trên chuỗi (Bước 4).',4);$('o7').innerHTML='';return;}
+  const noMinh=S.bal.minh<=0&&S.pend===0;
+  $('c7').innerHTML=`<h4>Đổi USDC lấy USD</h4>
+  <div class="stats">${stat('Ví Minh Phát (USDC)',U(S.bal.minh))}${stat('Đã gửi Circle, chờ đốt (USDC)',U(S.pend))}${stat('totalSupply (USDC)',U(S.supply))}${stat('Số dư Circle Mint (USDC)',U(S.credited))}</div>
+  ${noMinh&&S.bal.lan>0?'<div class="callout warn">Ví Minh Phát hết USDC; còn '+U(S.bal.lan)+' USDC ở ví Lan. Về Bước 5 để chuyển lại cho Minh Phát. <button class="btn sm" data-act="go" data-v="5">Về Bước 5</button></div>':''}
+  <div class="row"><label class="f" style="max-width:220px">Số USDC muốn đổi<input id="rAmt" inputmode="decimal" value="${(S.bal.minh/M).toString().replace('.',',')}" ${S.bal.minh<=0?'disabled':''}></label>
+  <button class="btn primary" data-act="send" ${S.bal.minh<=0?'disabled':''}>Gửi USDC cho Circle</button>
+  <button class="btn primary" data-act="burn" ${S.pend>0?'':'disabled'}>Circle xác nhận và đốt</button></div>`;
+}
+function doSend(){
+  if(busy||S.bal.minh<=0)return;const c=C(),v=parseAmt($('rAmt').value);if(!(v>0)){$('rAmt').focus();return;}
+  const a=Math.min(S.bal.minh,Math.round(v*100)*1e4);if(a<=0)return;
+  const to=addrOf('circle-redeem'),h=txHash('send|'+S.log.length+'|'+a),sup=S.supply;S.t+=1;S.fees+=c.fee;
+  S.bal.minh-=a;S.pend+=a;const b=nextBlk();
+  rec(7,`Minh Phát gửi ${U(a)} USDC đến địa chỉ nhận đổi của Circle, tx ${short(h)}`,{a,h});
+  $('o7').innerHTML=`<h4>Giao dịch 1: gửi USDC</h4>`+txCard(true,'transfer · Minh Phát → địa chỉ nhận đổi của Circle',h,[['Khối / slot',b.toLocaleString('vi-VN')+' (minh họa)'],['Đến',to],['Số lượng',U6(a)+' USDC']])+
+   `<div class="callout">Tổng cung vẫn là <b>${U(sup)} USDC</b>: token chỉ đổi chủ, chưa bị hủy. Circle còn phải xác nhận và đốt.</div>`;
+  R7();
+}
+async function doBurn(){
+  if(busy||S.pend<=0)return;busy=true;const c=C(),evm=c.kind==='evm',a=S.pend,sup0=S.supply,cr0=S.credited;
+  $('o7').insertAdjacentHTML('beforeend','<h4>Giao dịch 2: đốt</h4><ul class="checks" id="ck7"></ul><div id="cd7"></div><div id="tx7"></div><div id="cf7"></div><div id="st7"></div>');
+  await runChecks('ck7',[['Số USDC nhận được khớp lệnh đổi của Minh Phát',true],['Tài khoản Mint của Minh Phát đủ điều kiện nhận ghi có USD (đã KYB)',true],evm?['Địa chỉ đốt có quyền minter và không nằm trong danh sách đen',true]:['Tài khoản token do Circle kiểm soát và không bị đóng băng',true]]);
+  $('cd7').innerHTML=`<h4>Lệnh gọi hợp đồng</h4><pre class="code">${burnCode(a)}</pre>`;
+  await wait(500);
+  S.t+=15;S.supply-=a;S.pend=0;S.credited+=a;S.burned+=a;S.fees+=c.fee;
+  const b0=nextBlk(),h=txHash('burn|'+S.log.length+'|'+a);
+  rec(7,`Burn ${U(a)} USDC trên ${c.name}, tx ${short(h)}; ghi có ${U(a)} vào số dư Mint`,{a,h});
+  $('tx7').innerHTML=txCard(true,'burn · Circle ký',h,[['Khối / slot',b0.toLocaleString('vi-VN')+' (minh họa)'],...(evm?[['Sự kiện 1','Burn(burner=Circle, amount='+a+')'],['Sự kiện 2','Transfer(from=địa chỉ đốt, to='+ZERO()+', value='+a+')']]:[['Nhật ký chương trình','Program log: Instruction: Burn · amount='+a]])]);
+  await confirmAnim('cf7',b0,h);
+  $('st7').innerHTML=`<h4>Thay đổi trạng thái</h4><div class="scroll"><table><tr><th>Đại lượng</th><th class="num">Trước (USDC)</th><th class="num">Sau (USDC)</th></tr>
+   <tr><td>totalSupply</td><td class="num">${U6(sup0)}</td><td class="num neg">${U6(S.supply)}</td></tr>
+   <tr><td>Số dư Circle Mint (ghi có USD ngoài chuỗi)</td><td class="num">${U6(cr0)}</td><td class="num pos">${U6(S.credited)}</td></tr></table></div>
+   <div class="callout ok">Cung giảm đúng <b>${U(a)} USDC</b>. Bước kế tiếp: rút USD về ngân hàng.</div>`;
+  busy=false;R7();
+}
+
+/* ========== BƯỚC 8 ========== */
+function R8(){
+  const can=S.credited>0;
+  $('c8').innerHTML=`<h4>Rút USD về ngân hàng</h4>
+  <div class="stats">${stat('Số dư Circle Mint (USDC)',U(S.credited))}${stat('Dự trữ hiện có (USD)',U(reserves()))}${stat('Số dư ngân hàng Minh Phát (USD)',U(S.bank))}</div>
+  ${!can&&!S.usdOut?'<div class="callout warn">Chưa có số dư để rút. Hoàn tất Bước 7 (gửi và đốt) trước. <button class="btn sm" data-act="go" data-v="7">Về Bước 7</button></div>':''}
+  <div class="row"><button class="btn primary" data-act="cashout" ${can?'':'disabled'}>Rút USD về ngân hàng</button><button class="btn" data-act="reset">Làm lại từ đầu</button></div>`;
+  $('r8').innerHTML=reconHtml();
+}
+async function doCash(){
+  if(busy||S.credited<=0)return;busy=true;
+  const a=S.credited,r=reserves();let f=Math.min(S.fundRes,Math.round(a*S.fundRes/r/1e4)*1e4),k=a-f;if(k>S.cashRes){k=S.cashRes;f=a-k;}
+  $('a8').innerHTML='<h4>Thanh khoản dự trữ và chuyển USD</h4><ol class="tl" id="tl8"></ol>';
+  const steps=[`Circle bán ${U(f)} USD cổ phần Circle Reserve Fund`,`Circle rút ${U(k)} USD từ tiền gửi dự trữ`,`Circle lập lệnh chuyển ${U(a)} USD về ngân hàng đã liên kết`,`Ngày làm việc kế tiếp: ngân hàng của Minh Phát ghi có ${U(a)} USD`];
+  for(let i=0;i<steps.length;i++){if(i===3)S.t+=24*60-35;$('tl8').insertAdjacentHTML('beforeend',`<li class="on"><span class="n">${i+1}</span><div>${steps[i]}</div></li>`);await wait(500);}
+  S.fundRes-=f;S.cashRes-=k;S.credited=0;S.bank+=a;S.usdOut+=a;S.sa.push(['Nhận USD từ Circle',a]);
+  rec(8,`Rút ${U(a)} USD: bán quỹ ${U(f)}, rút tiền gửi ${U(k)}; ngân hàng Minh Phát ghi có`,{a,f,k});
+  busy=false;R8();
+}
+function reconHtml(){
+  const a=reserves(),l=liabs(),net=S.bank-S.bank0;
+  const chk=[
+   ['Tổng đã đúc − tổng đã đốt = tổng cung',S.minted-S.burned===S.supply,`${U(S.minted)} − ${U(S.burned)} = ${U(S.minted-S.burned)} so với totalSupply ${U(S.supply)}`],
+   ['Dự trữ = tổng cung + số dư Mint chưa rút',a===l,`${U(a)} USD so với ${U(l)} USDC`],
+   ['Không còn khoản chờ ở tài khoản thu',S.collect===0?true:null,S.collect===0?'0,00 USD':`${U(S.collect)} USD đang chờ đối chiếu (Bước 3)`]];
+  const mark=v=>v===true?['p','✓']:v===false?['f','✗']:['s','…'];
+  const closed=S.usdOut>0&&S.supply===0&&S.credited===0;
+  return `<h4>Đối soát toàn vòng đời</h4>
+   <ul class="checks">${chk.map(x=>{const m=mark(x[1]);return `<li class="${m[0]}"><span class="m">${m[1]}</span><span>${x[0]}<br><span class="note">${x[2]}</span></span></li>`;}).join('')}</ul>
+   <div class="stats">${stat('Đã đúc (USDC)',U(S.minted))}${stat('Đã đốt (USDC)',U(S.burned))}${stat('Tổng cung còn lại',U(S.supply))}${stat('Chênh lệch ngân hàng (USD)',(net>0?'+':net<0?'−':'')+U(Math.abs(net)))}</div>
+   ${closed?'<div class="callout ok">Vòng đời đóng kín: USDC đã được đốt hết, dự trữ về 0 và Minh Phát nhận lại đủ USD (mô phỏng bỏ qua phí ngân hàng và phí mạng).</div>':''}
+   <h4>Sao kê ngân hàng Minh Phát</h4>${stmtTable('Ngân hàng của Minh Phát',S.bank0,S.sa,'Số dư cuối (USD)',S.bank)}
+   <h4>Nhật ký kiểm toán nối băm (${S.log.length} sự kiện)</h4>
+   <div class="scroll"><table><tr><th>#</th><th>Bước</th><th>Thời điểm (giả định)</th><th>Sự kiện</th><th>Mã băm</th></tr>${S.log.map(e=>`<tr><td>${e.n}</td><td>${e.step}</td><td>${e.t}</td><td style="white-space:normal;min-width:260px">${esc(e.msg)}</td><td class="mono">${short(e.h)}</td></tr>`).join('')||'<tr><td colspan="5">Chưa có sự kiện.</td></tr>'}</table></div>
+   <div class="row"><button class="btn" data-act="verify">Kiểm tra chuỗi băm</button><span id="vres" class="note"></span></div>`;
+}
+function doVerify(){let prev='0'.repeat(64),ok=true,bad=0;for(const e of S.log){const h=sha256(JSON.stringify([e.n,e.step,e.t,e.msg,e.data,prev]));if(h!==e.h||e.prev!==prev){ok=false;bad=e.n;break;}prev=e.h;}
+  $('vres').innerHTML=ok?`<span class="chip ok">Chuỗi nguyên vẹn (${S.log.length} mắt xích)</span>`:`<span class="chip bad">Phát hiện sai lệch tại sự kiện #${bad}</span>`;}
+
+/* ---------- Điều khiển ---------- */
+const ACT={
+  go:b=>go(+b.dataset.v),
+  chain:b=>{S.chain=b.dataset.v;if(S.kyb)S.wallets={minh:addrOf('minh'),lan:addrOf('lan')};R1();},
+  kyb:()=>{const v=parseAmt($('amt').value);if(!(v>=0.01&&v<=S.bank/M)){$('amt').focus();$('amt').select();return;}S.amt=Math.round(v*100)*1e4;S.kyb=true;S.wallets={minh:addrOf('minh'),lan:addrOf('lan')};
+    rec(1,`KYB đạt; đăng ký ví nhận trên ${C().name}: ${short(S.wallets.minh)}; dự kiến nạp ${U(S.amt)} USD`,{chain:S.chain,amt:S.amt});R1();},
+  wire:doWire,recon:doRecon,mint:doMint,xfer:doXfer,bl:doBl,att:doAtt,send:doSend,burn:doBurn,cashout:doCash,verify:doVerify,
+  reset:()=>{if(busy)return;if(S.log.length&&!confirm('Xóa toàn bộ tiến trình mô phỏng và làm lại từ đầu?'))return;fresh();['o2','o3','o4','o5','o7','a8'].forEach(i=>$(i).innerHTML='');go(1);}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled)ACT[b.dataset.act](b);});
+const RENDER={1:R1,2:R2,3:R3,4:R4,5:R5,6:R6,7:R7,8:R8};
+
+/* ---------- Điều hướng ---------- */
+let cur=1;const NS=8;
+function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hidden=i!==cur;
+  document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
+  $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===NS;
+  RENDER[cur]();
+  if(!window.__embedded){try{history.replaceState(null,'','#buoc'+cur)}catch(e){}}
+  window.scrollTo({top:0});}
+document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('prevStep').onclick=()=>go(cur-1);$('nextStep').onclick=()=>go(cur+1);
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+(function(){const rx=/buoc([1-8])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
+if(window.__embedded){const fit=()=>{try{window.frameElement.style.height=Math.ceil(document.body.getBoundingClientRect().height)+'px';}catch(e){}};
+  try{new ResizeObserver(fit).observe(document.body);}catch(e){setInterval(fit,500);}fit();}
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ Trang chủ https://tuanpd-alt.github.io/gialapPhamDinhTuan/ là Bảng tổng, 
 
 Danh mục bài nằm trong một tệp duy nhất `nav.js` (biến `MAP`). Thêm, bớt hay đổi thứ tự bài chỉ cần sửa tệp này.
 
-- Tài chính · Học tập: (1) Tạo lập Blockchain → (2) Khóa và chữ ký → (3) Luồng giao dịch → (4) Đào và đồng thuận → (5) Làng Tiền Số → (6) NFT văn bằng → (7) Token hóa tài sản
+- Tài chính · Học tập: (1) Tạo lập Blockchain → (2) Khóa và chữ ký → (3) Luồng giao dịch → (4) Đào và đồng thuận → (5) Làng Tiền Số → (6) Stablecoin USDC → (7) NFT văn bằng → (8) Token hóa tài sản
 - Tài chính · Bài tập: phiếu Đào và đồng thuận, phiếu NFT văn bằng, phiếu Token hóa tài sản, Bài kiểm tra tổng hợp
 - Kế toán · Học tập: (1) ERP Lab HTTTKT → (2) Sổ cái doanh nghiệp
 - Kế toán · Bài tập: Tình huống thực hành ERP (ZCASE)
@@ -40,6 +40,12 @@ Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/luong-giao-dich.html
 Mô phỏng tình huống ba người đào A, B, C cạnh tranh khối 900.001: mỗi người tự lập khối ứng viên, cuộc đua Proof-of-Work theo sức băm, lan truyền gossip và kiểm tra độc lập ở từng nút (kể cả khi có nút bị sửa phần mềm), rẽ nhánh tạm thời và quy tắc coinbase phải chờ 100 khối. Có phiếu bài tập 12 câu tự chấm và in được.
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/dao-va-dong-thuan.html (thêm `#buoc6` để vào thẳng phần bài tập)
+
+# Stablecoin USDC
+
+Mô phỏng vòng đời một stablecoin pháp định qua 8 bước, bám quy trình Circle Mint: chọn blockchain (Ethereum, Base, Solana), KYB và đăng ký ví; nạp USD qua chuyển khoản ngân hàng vào tài khoản thu (kèm tình huống sai tên người gửi bị hoàn trả); đối chiếu, ghi có số dư USDC ngoài chuỗi và điều phối dự trữ; rút ra ví và đúc trên chuỗi (kiểm tra `mint` của hợp đồng hoặc lệnh `MintTo` của SPL Token, sự kiện, xác nhận khối, totalSupply tăng); lưu thông ví-ví, phí mạng, danh sách đen/đóng băng; bảng cân đối dự trữ, báo cáo xác nhận giả định và kịch bản SVB 3/2023; gửi USDC về Circle rồi đốt (`burn`), rút USD về ngân hàng, đối soát và nhật ký kiểm toán nối băm SHA-256. Có kiểm tra bất biến dự trữ = tổng cung + số dư Mint ở mọi bước. Ngân hàng, số dư, ví, số khối và phí là giả định; địa chỉ hợp đồng và cơ cấu dự trữ theo công bố của Circle (cần đối chiếu lại trước khi trích dẫn).
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/stablecoin-usdc.html (thêm `#buoc2` … `#buoc8` để vào thẳng từng bước)
 
 # Token hóa tài sản
 
