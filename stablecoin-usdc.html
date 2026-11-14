@@ -251,6 +251,12 @@ td input[type=checkbox]{width:16px;height:16px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .sp2{height:2px}
 .big{font:700 22px var(--f-mono)}
+.panel>div,.panel>div>div{min-width:0}
+.panel>div:not(:empty){display:grid;gap:12px}
+.panel>div>div:not(:empty){display:grid;gap:10px}
+.tl li{opacity:1}
+.checks .mono,.callout .mono{word-break:break-all}
+.ta{overflow-x:auto}
 </style>
 <script src="./nav.js" defer></script>
 </head>
@@ -508,6 +514,7 @@ const short=h=>h.length>16?h.slice(0,10)+'…'+h.slice(-4):h;
 const M=1e6;
 const U=x=>(x/M).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2});
 const U6=x=>(x/M).toLocaleString('vi-VN',{minimumFractionDigits:6,maximumFractionDigits:6});
+const FEE=x=>x.toLocaleString('vi-VN',{maximumFractionDigits:4});
 const PC=x=>(x*100).toLocaleString('vi-VN',{maximumFractionDigits:2})+'%';
 const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 function b58(hex){let n=BigInt('0x'+hex),s='';while(n>0n){s=B58[Number(n%58n)]+s;n/=58n;}return s;}
@@ -563,13 +570,13 @@ function txCard(ok,title,hash,lines){return `<div class="tx ${ok?'ok':'bad'}"><d
 
 /* ========== BƯỚC 1 ========== */
 function R1(){
-  const c=C(),lock=!!S.wire||S.credited>0||S.supply>0;
+  const c=C(),lock=S.kyb;
   const w=S.wallets;
   $('c1').innerHTML=`
   <h4>Blockchain nhận USDC</h4>
   <div class="seg">${Object.entries(CH).map(([k,v])=>`<button data-act="chain" data-v="${k}" aria-pressed="${S.chain===k}" ${lock?'disabled':''}>${v.name}</button>`).join('')}</div>
-  <dl class="dg"><dt>Chuẩn token</dt><dd>${c.std}, 6 chữ số thập phân</dd><dt>Hợp đồng / mint chính thức</dt><dd>${c.addr}</dd><dt>Thời gian mỗi ${c.unit}</dt><dd>khoảng ${c.bt} giây</dd><dt>Phí mạng (minh họa)</dt><dd>khoảng ${c.fee.toLocaleString('vi-VN')} USD, trả bằng ${c.native}</dd></dl>
-  <div class="note">Địa chỉ trên là địa chỉ USDC chính thức theo tài liệu Circle; vẫn cần đối chiếu lại trước khi dùng thật.</div>
+  <dl class="dg"><dt>Chuẩn token</dt><dd>${c.std}, 6 chữ số thập phân</dd><dt>Hợp đồng / mint chính thức</dt><dd>${c.addr}</dd><dt>Thời gian mỗi ${c.unit}</dt><dd>khoảng ${c.bt} giây</dd><dt>Phí mạng (minh họa)</dt><dd>khoảng ${FEE(c.fee)} USD, trả bằng ${c.native}</dd></dl>
+  <div class="note">${S.kyb?'Chuỗi đã khóa sau khi đăng ký ví; bấm “Làm lại từ đầu” để chọn chuỗi khác. ':''}Địa chỉ trên là địa chỉ USDC chính thức theo tài liệu Circle; vẫn cần đối chiếu lại trước khi dùng thật.</div>
   <h4>Các bên tham gia</h4>
   <div class="parties">
     <div class="party"><span class="r">Người nạp</span><b>Công ty Minh Phát</b>Khách hàng Circle Mint đã KYB, giữ ví tự lưu ký.</div>
@@ -589,6 +596,7 @@ function R1(){
   <li class="p"><span class="m">✓</span><span>Địa chỉ ví nhận trên ${c.name} đã đăng ký: <span class="mono">${w.minh}</span></span></li></ul>
   <div class="callout ok">Thực hành của Circle Mint yêu cầu đăng ký trước địa chỉ nhận trên chuỗi (cần kiểm tra tài liệu hiện hành). Sang Bước 2 để nạp USD.</div>`:''}`;
 }
+function alertMsg(id,t){const el=$(id);el.querySelector('.callout.bad.tmp')?.remove();el.insertAdjacentHTML('beforeend',`<div class="callout bad tmp">${esc(t)}</div>`);}
 function parseAmt(v){const x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:NaN;}
 
 /* ========== BƯỚC 2 ========== */
@@ -612,7 +620,7 @@ async function doWire(){
   if(busy||S.wire)return;busy=true;S.sender=$('sender').value;
   const ref='CIR'+sha256('ref|'+S.amt+'|'+S.log.length).slice(0,7).toUpperCase();
   const lis=[...$('tl2').children];for(const li of lis){li.classList.add('on');await wait(450);}
-  S.bank-=S.amt;S.collect+=S.amt;S.wire={ref,amt:S.amt,sender:S.sender};S.t+=30;S.refund=false;
+  S.bank-=S.amt;S.collect+=S.amt;S.wire={ref,amt:S.amt,sender:S.sender};S.t+=30;S.refund=false;S.ck3=null;
   S.sa.push(['Chuyển khoản đến Circle · '+ref,-S.amt]);S.sb.push(['Ghi có từ '+(S.sender==='ok'?'Công ty Minh Phát':'Nguyễn Văn B'),S.amt]);
   rec(2,`Wire ${U(S.amt)} USD từ Ngân hàng Minh Phát đến tài khoản thu Circle, tham chiếu ${ref}`,{amt:S.amt,ref});
   busy=false;R2();
@@ -682,7 +690,7 @@ function R4(){
 }
 async function doMint(){
   if(busy||S.credited<=0)return;
-  let v=parseAmt($('mAmt').value);if(!(v>0)){$('mAmt').focus();return;}
+  let v=parseAmt($('mAmt').value);if(!(v>0)){alertMsg('c4','Nhập số USDC lớn hơn 0.');return;}
   let a=Math.min(S.credited,Math.round(v*100)*1e4);if(a<=0)return;busy=true;
   const c=C(),to=S.wallets.minh,sup0=S.supply,bal0=S.bal.minh,cr0=S.credited;
   $('o4').innerHTML=`<h4>Kiểm tra của hợp đồng</h4><ul class="checks" id="ck4"></ul><div id="cd4"></div><div id="tx4"></div><div id="cf4"></div><div id="st4"></div>`;
@@ -693,7 +701,7 @@ async function doMint(){
   S.t+=15;S.credited-=a;S.supply+=a;S.bal.minh+=a;S.minted+=a;S.fees+=c.fee;
   const b0=nextBlk(),h=txHash('mint|'+S.log.length+'|'+a+'|'+to);
   rec(4,`Mint ${U(a)} USDC tới ví Minh Phát trên ${c.name}, tx ${short(h)}, khối ${b0}`,{a,h,b0});
-  $('tx4').innerHTML=`<h4>Giao dịch</h4>`+txCard(true,'mint · Circle ký',h,[['Khối / slot',b0.toLocaleString('vi-VN')+' (minh họa)'],['Phí mạng (minh họa)',c.fee.toLocaleString('vi-VN')+' USD'],...(evm?[['Sự kiện 1','Mint(minter=Circle, to='+short(to)+', amount='+a+')'],['Sự kiện 2','Transfer(from='+ZERO()+', to='+short(to)+', value='+a+')']]:[['Nhật ký chương trình','Program log: Instruction: MintTo · amount='+a]])]);
+  $('tx4').innerHTML=`<h4>Giao dịch</h4>`+txCard(true,'mint · Circle ký',h,[['Khối / slot',b0.toLocaleString('vi-VN')+' (minh họa)'],['Phí mạng (minh họa)',FEE(c.fee)+' USD'],...(evm?[['Sự kiện 1','Mint(minter=Circle, to='+short(to)+', amount='+a+')'],['Sự kiện 2','Transfer(from='+ZERO()+', to='+short(to)+', value='+a+')']]:[['Nhật ký chương trình','Program log: Instruction: MintTo · amount='+a]])]);
   await confirmAnim('cf4',b0,h);
   $('st4').innerHTML=`<h4>Thay đổi trạng thái</h4><div class="scroll"><table><tr><th>Đại lượng</th><th class="num">Trước (USDC)</th><th class="num">Sau (USDC)</th></tr>
    <tr><td>totalSupply (tổng cung trên chuỗi)</td><td class="num">${U6(sup0)}</td><td class="num pos">${U6(S.supply)}</td></tr>
@@ -714,13 +722,13 @@ function R5(){
   <div class="grid2f"><label class="f">Từ<select id="tFrom"><option value="minh">Minh Phát (${short(w.minh)})</option><option value="lan">Lan (${short(w.lan)})</option></select></label>
   <label class="f">Số USDC<input id="tAmt" inputmode="decimal" value="0,4"></label></div>
   <div class="row"><button class="btn primary" data-act="xfer">Chuyển cho bên còn lại</button></div>
-  <div class="note">Người gửi trả phí mạng bằng ${c.native} (khoảng ${c.fee.toLocaleString('vi-VN')} USD, minh họa). Tổng phí mạng đã phát sinh: ${S.fees.toLocaleString('vi-VN',{maximumFractionDigits:4})} USD.</div>`;
+  <div class="note">Người gửi trả phí mạng bằng ${c.native} (khoảng ${FEE(c.fee)} USD, minh họa). Tổng phí mạng đã phát sinh: ${S.fees.toLocaleString('vi-VN',{maximumFractionDigits:4})} USD.</div>`;
 }
 const xferLog=[];
 function doXfer(){
   if(S.supply===0)return;const c=C(),evm=c.kind==='evm';
   const from=$('tFrom').value,to=from==='minh'?'lan':'minh',v=parseAmt($('tAmt').value);
-  if(!(v>0)){$('tAmt').focus();return;}
+  if(!(v>0)){alertMsg('c5','Nhập số USDC lớn hơn 0.');return;}
   const a=Math.round(v*100)*1e4,fa=S.wallets[from],ta=S.wallets[to],nm={minh:'Minh Phát',lan:'Lan'};
   const h=txHash('xfer|'+S.log.length+'|'+from+'|'+a);S.t+=1;S.fees+=c.fee;let ok=true,why='';
   if(S.bl[from]||S.bl[to]){ok=false;why=evm?'Blacklistable: account is blacklisted':'Account is frozen';}
@@ -728,7 +736,7 @@ function doXfer(){
   if(ok){S.bal[from]-=a;S.bal[to]+=a;}
   const b=nextBlk();
   rec(5,`${ok?'Chuyển':'Chuyển (bị hủy: '+why+')'} ${U(a)} USDC từ ${nm[from]} đến ${nm[to]}, tx ${short(h)}`,{ok,a,h});
-  const card=txCard(ok,'transfer · '+nm[from]+' → '+nm[to],h,[['Khối / slot',b.toLocaleString('vi-VN')+' (minh họa)'],['Số lượng',U6(a)+' USDC'],ok?['Kết quả',evm?'Transfer(from='+short(fa)+', to='+short(ta)+', value='+a+')':'Program log: Instruction: Transfer']:['Lý do hủy',esc(why)],['Phí mạng',c.fee.toLocaleString('vi-VN')+' USD (vẫn bị trừ)']]);
+  const card=txCard(ok,'transfer · '+nm[from]+' → '+nm[to],h,[['Khối / slot',b.toLocaleString('vi-VN')+' (minh họa)'],['Số lượng',U6(a)+' USDC'],ok?['Kết quả',evm?'Transfer(from='+short(fa)+', to='+short(ta)+', value='+a+')':'Program log: Instruction: Transfer']:['Lý do hủy',esc(why)],['Phí mạng',FEE(c.fee)+' USD (vẫn bị trừ)']]);
   $('o5').insertAdjacentHTML('afterbegin',card+'<div class="sp2"></div>');
   R5();
 }
@@ -750,12 +758,12 @@ function R6(){
   stress();
 }
 function attHtml(){const x=S.att;return `<div class="tx ok"><div class="hd"><b>Báo cáo xác nhận (giả định)</b><span class="chip ok">${x.ok?'Dự trữ ≥ lưu hành':'Thiếu hụt'}</span></div><dl class="dg"><dt>Ngày chốt</dt><dd>${x.t}</dd><dt>Dự trữ</dt><dd>${U(x.a)} USD</dd><dt>USDC lưu hành + Mint</dt><dd>${U(x.l)}</dd><dt>Mã băm báo cáo</dt><dd>${x.h}</dd></dl><div class="note">Báo cáo xác nhận chỉ chứng minh số liệu tại ngày chốt, không đánh giá rủi ro tín dụng của ngân hàng giữ tiền.</div></div>`;}
-function doAtt(){const a=reserves(),l=liabs();S.att={t:clk(),a,l,ok:a>=l,h:sha256(JSON.stringify(['att',clk(),a,l]))};rec(6,`Báo cáo xác nhận giả định: dự trữ ${U(a)} ≥ lưu hành ${U(l)} = ${a>=l}`,{a,l});$('att6').innerHTML=attHtml();}
+function doAtt(){const a=reserves(),l=liabs();S.att={t:clk(),a,l,ok:a>=l,h:sha256(JSON.stringify(['att',clk(),a,l]))};rec(6,`Báo cáo xác nhận giả định: dự trữ ${U(a)} USD, lưu hành và số dư Mint ${U(l)} USDC → ${a>=l?'đạt':'thiếu hụt'}`,{a,l});$('att6').innerHTML=attHtml();}
 function stress(){
   const s=parseFloat($('sv1').value)||0,e=parseFloat($('sv2').value)||0,p=+$('sv3').value;$('sv3v').textContent=p+'%';
-  const loss=e*p/100,back=s?(s-loss)/s:1;
+  const loss=Math.min(e,s)*p/100,back=s>0?Math.max(0,(s-loss)/s):1;
   $('sres').innerHTML=`<div class="stats">${stat('Thiệt hại tiềm tàng (tỷ USD)',loss.toLocaleString('vi-VN',{maximumFractionDigits:2}))}${stat('Tỷ lệ bảo chứng lý thuyết',PC(back))}</div>
-  <div class="note">${p>=100?'Với toàn bộ khoản gửi bị mất, bảo chứng lý thuyết khoảng 91,75%; giá thị trường thực tế có lúc thấp hơn (khoảng 0,87 USD) vì hoảng loạn và thanh khoản cạn, vượt xa thiệt hại tính toán.':'Ở mức tổn thất này, tỷ lệ bảo chứng lý thuyết vẫn thấp hơn 100% nếu có khoản tiền chưa lấy lại được; giá thị trường thường phản ứng sớm hơn và mạnh hơn.'}</div>`;
+  <div class="note">Mỗi USDC còn được bảo chứng khoảng ${back.toLocaleString('vi-VN',{maximumFractionDigits:4})} USD. ${loss>0?'Tháng 3/2023 giá thị trường có lúc xuống khoảng 0,87 USD, thấp hơn mức bảo chứng tính toán (khoảng 0,92 USD với số liệu mặc định) vì hoảng loạn và thanh khoản cạn.':'Không có tổn thất: bảo chứng giữ 1:1.'}</div>`;
 }
 
 /* ========== BƯỚC 7 ========== */
@@ -783,7 +791,7 @@ function R7(){
   <button class="btn primary" data-act="burn" ${S.pend>0?'':'disabled'}>Circle xác nhận và đốt</button></div>`;
 }
 function doSend(){
-  if(busy||S.bal.minh<=0)return;const c=C(),v=parseAmt($('rAmt').value);if(!(v>0)){$('rAmt').focus();return;}
+  if(busy||S.bal.minh<=0)return;const c=C(),v=parseAmt($('rAmt').value);if(!(v>0)){alertMsg('c7','Nhập số USDC lớn hơn 0.');return;}
   const a=Math.min(S.bal.minh,Math.round(v*100)*1e4);if(a<=0)return;
   const to=addrOf('circle-redeem'),h=txHash('send|'+S.log.length+'|'+a),sup=S.supply;S.t+=1;S.fees+=c.fee;
   S.bal.minh-=a;S.pend+=a;const b=nextBlk();
@@ -852,8 +860,8 @@ function doVerify(){let prev='0'.repeat(64),ok=true,bad=0;for(const e of S.log){
 /* ---------- Điều khiển ---------- */
 const ACT={
   go:b=>go(+b.dataset.v),
-  chain:b=>{S.chain=b.dataset.v;if(S.kyb)S.wallets={minh:addrOf('minh'),lan:addrOf('lan')};R1();},
-  kyb:()=>{const v=parseAmt($('amt').value);if(!(v>=0.01&&v<=S.bank/M)){$('amt').focus();$('amt').select();return;}S.amt=Math.round(v*100)*1e4;S.kyb=true;S.wallets={minh:addrOf('minh'),lan:addrOf('lan')};
+  chain:b=>{if(S.kyb)return;S.chain=b.dataset.v;R1();},
+  kyb:()=>{const v=parseAmt($('amt').value);if(!(v>=0.01&&v<=S.bank/M)){alertMsg('c1','Số USD nạp phải từ 0,01 đến '+U(S.bank)+'.');$('amt').focus();return;}S.amt=Math.round(v*100)*1e4;S.kyb=true;S.wallets={minh:addrOf('minh'),lan:addrOf('lan')};
     rec(1,`KYB đạt; đăng ký ví nhận trên ${C().name}: ${short(S.wallets.minh)}; dự kiến nạp ${U(S.amt)} USD`,{chain:S.chain,amt:S.amt});R1();},
   wire:doWire,recon:doRecon,mint:doMint,xfer:doXfer,bl:doBl,att:doAtt,send:doSend,burn:doBurn,cashout:doCash,verify:doVerify,
   reset:()=>{if(busy)return;if(S.log.length&&!confirm('Xóa toàn bộ tiến trình mô phỏng và làm lại từ đầu?'))return;fresh();['o2','o3','o4','o5','o7','a8'].forEach(i=>$(i).innerHTML='');go(1);}
