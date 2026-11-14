@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>mBridge: thanh toán e-VND ↔ e-CNY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+/* Đồng bộ giao diện sáng/tối với trang Làng Tiền Số và tự co giãn khi được nhúng */
+(function(){var R=document.documentElement,emb=false;
+try{emb=window.self!==window.top&&!!window.frameElement;}catch(e){}
+if(emb)R.classList.add('embedded');
+function sync(){var t=null;try{if(emb)t=window.parent.document.documentElement.dataset.theme||null;}catch(e){}
+  if(!t){try{t=localStorage.getItem('ltso-theme');}catch(e){}}
+  if(t==='dark'||t==='light')R.dataset.theme=t;else delete R.dataset.theme;}
+sync();
+if(emb){try{new MutationObserver(sync).observe(window.parent.document.documentElement,{attributes:true,attributeFilter:['data-theme']});}catch(e){}}
+window.__embedded=emb;})();
+</script>
+<style>
+
+:root{
+  --bg:#f4f5f9;--surface:#ffffff;--sunk:#eef0f6;--ink:#131a2c;--muted:#5a6380;--line:#dde2ee;
+  --accent:#1d5cf0;--accent-soft:#e3ebff;--on-accent:#ffffff;
+  --zero-bg:#fcf0dd;--zero-ink:#c8770a;--proof:#f5d28c;
+  --ok:#11805a;--ok-bg:#dff3ea;--bad:#bd3434;--bad-bg:#fbe5e5;
+  --f-display:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0a0f1e;--surface:#111a2e;--sunk:#17213a;--ink:#e7ebf7;--muted:#95a0bf;--line:#243150;
+  --accent:#7aa2ff;--accent-soft:rgba(122,162,255,.14);--on-accent:#0a0f1e;
+  --zero-bg:rgba(245,165,36,.16);--zero-ink:#f5a524;--proof:#6b4f14;
+  --ok:#3fcf92;--ok-bg:rgba(63,207,146,.12);--bad:#ff6f6f;--bad-bg:rgba(255,111,111,.12);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{border-bottom:1px solid var(--line);background:var(--surface)}
+header.top .wrap{padding-block:22px 18px;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+h1{font-family:var(--f-display);font-size:clamp(24px,3.4vw,32px);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.course{color:var(--muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+nav.steps{display:flex;gap:8px;overflow-x:auto;padding-block:16px 4px}
+nav.steps button{flex:0 0 auto;display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px 7px 7px;font:500 14px var(--f-body);cursor:pointer}
+nav.steps button .n{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--sunk);font:600 13px var(--f-mono)}
+nav.steps button[aria-selected="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+nav.steps button[aria-selected="true"] .n{background:var(--on-accent);color:var(--accent)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:16px 40px}
+.step{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.step{grid-template-columns:minmax(0,1fr)}}
+.explain h2{font-family:var(--f-display);font-size:22px;margin:4px 0 10px;text-wrap:balance}
+.explain p{margin:0 0 12px;color:var(--ink)}
+.explain h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 8px}
+.explain ol,.explain ul{margin:0;padding-left:20px;display:grid;gap:6px}
+.explain .src{font-size:12.5px;color:var(--muted);margin-top:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.panel h4{margin:0;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+label.f{display:grid;gap:5px;font-size:13px;color:var(--muted);font-weight:500}
+input[type=text],input[type=number],textarea,select{width:100%;font:14px var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{resize:vertical;min-height:64px}
+.mono,.mono input,input.mono,textarea.mono{font-family:var(--f-mono);font-size:13px}
+.hash{font-family:var(--f-mono);font-size:13px;word-break:break-all;background:var(--sunk);border-radius:8px;padding:8px 10px;line-height:1.5}
+.z{background:var(--zero-bg);color:var(--zero-ink);border-radius:3px;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.grid2f{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.btn{font:600 14px var(--f-body);border-radius:8px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--f-body);padding:3px 10px;border-radius:999px}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.stat{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.stat b{display:block;font:600 18px var(--f-mono);font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;max-width:420px}
+.bits i{aspect-ratio:1;border-radius:2px;background:var(--sunk)}
+.bits i.d{background:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+td.num,th.num{text-align:right}
+header.top{background:none;border-bottom:0}
+header.top .wrap{padding-block:16px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-start}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1d5cf0,#c8770a);display:grid;place-items:center;color:#fff;font:700 18px var(--f-mono);flex:none}
+.ttl{min-width:0}
+h1{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.btnlink{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+@media (max-width:560px){.sub{display:none}}
+html.embedded header.top .wrap,html.embedded nav.steps,html.embedded main,html.embedded .foot{padding-left:0;padding-right:0}
+html.embedded header.top .wrap{padding-block:2px 0}
+.foot{color:var(--muted);font-size:12.5px;padding-block:0 28px}
+.navbtns{display:flex;justify-content:space-between;gap:8px;margin-top:16px}
+
+/* ===== Trang Token hóa tài sản ===== */
+:root{--deed:#f7e1e1;--deed-ink:#8a1c1c;--deed-line:#d9a3a3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}}
+:root[data-theme="dark"]{--deed:#3a1d22;--deed-ink:#ffb3b3;--deed-line:#6b3a40}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px}
+.callout.warn{border-color:var(--zero-ink);background:var(--zero-bg)}
+.callout.bad{border-color:var(--bad);background:var(--bad-bg)}
+.callout.ok{border-color:var(--ok);background:var(--ok-bg)}
+.checks{display:grid;gap:4px;font-size:13px;margin:0;padding:0;list-style:none}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li .m{flex:none;width:18px;font-weight:700}
+.checks li.p .m{color:var(--ok)}.checks li.f .m{color:var(--bad)}.checks li.s .m{color:var(--muted)}
+.log{font:12.5px var(--f-mono);background:var(--sunk);border-radius:8px;padding:8px 10px;max-height:220px;overflow:auto;display:grid;gap:2px}
+pre.json{font:12px/1.5 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px;margin:0;overflow:auto;max-height:340px;white-space:pre-wrap;word-break:break-all}
+
+/* Giấy chứng nhận */
+.scanwrap{position:relative;border-radius:12px;overflow:hidden}
+.deed{background:var(--deed);border:2px solid var(--deed-line);border-radius:12px;padding:14px 16px;color:var(--ink);display:grid;gap:8px;font-size:13px}
+.deed .hd{text-align:center;color:var(--deed-ink);line-height:1.35}
+.deed .hd b{display:block;font-size:12px;letter-spacing:.04em}
+.deed .hd .t{font:700 15px var(--f-display);margin-top:4px;text-wrap:balance}
+.deed .body{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:start}
+.deed dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px}
+.deed dt{color:var(--muted);font-size:12px}
+.deed dd{margin:0;font-weight:500}
+.deed dd.tamper{background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(189,52,52,.16) 3px 6px);border-radius:3px}
+.deed .qr{display:grid;gap:4px;justify-items:center;font-size:10.5px;color:var(--muted);text-align:center}
+.deed .qr svg{width:104px;height:104px;background:#fff;border-radius:4px;padding:4px}
+@media (max-width:560px){.deed .body{grid-template-columns:minmax(0,1fr)}.deed dl{grid-template-columns:minmax(0,1fr)}.deed dt{margin-top:4px}.deed .qr{justify-items:start;text-align:left}}
+.deed .ft{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--deed-ink);border-top:1px dashed var(--deed-line);padding-top:6px}
+.laser{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#22d3ee,transparent);box-shadow:0 0 14px 4px rgba(34,211,238,.55);top:0;opacity:0;pointer-events:none}
+.scanwrap.scanning .laser{opacity:1;animation:sweep 1.6s ease-in-out infinite alternate}
+.scanwrap.scanning::after{content:"";position:absolute;inset:0;background:rgba(34,211,238,.06);pointer-events:none}
+@keyframes sweep{from{top:0}to{top:calc(100% - 3px)}}
+@media (prefers-reduced-motion:reduce){.scanwrap.scanning .laser{animation:none;top:50%}}
+.ocr{display:grid;gap:4px}
+.ocr .r{display:grid;grid-template-columns:150px minmax(0,1fr) 58px;gap:8px;align-items:center;font-size:13px}
+.ocr .r input{padding:5px 8px;font-size:13px}
+.ocr .r .cf{font:12px var(--f-mono);text-align:right;color:var(--muted)}
+.ocr .r .cf.lo{color:var(--bad);font-weight:600}
+.ocr .r.diff input{border-color:var(--bad);background:var(--bad-bg)}
+@media (max-width:560px){.ocr .r{grid-template-columns:minmax(0,1fr) 58px}.ocr .r>span:first-child{grid-column:1/-1}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:500 13px var(--f-body);padding:7px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+
+/* Dòng thời gian SPV */
+.tl{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.tl li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;opacity:.45;transition:opacity .3s}
+.tl li.on{opacity:1}
+.tl li .n{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);font:600 13px var(--f-mono)}
+.tl li.on .n{background:var(--ok);color:#fff}
+.tl li b{display:block}
+.tl li .hash{margin-top:4px;padding:4px 8px;font-size:12px}
+
+/* Cây Merkle */
+.mtree{display:grid;gap:6px;overflow-x:auto}
+.mtree .lv{display:flex;gap:6px;justify-content:center}
+.mtree .nd{flex:0 0 auto;border:1px solid var(--line);border-radius:6px;padding:4px 7px;font:11.5px var(--f-mono);background:var(--surface);text-align:center;min-width:86px}
+.mtree .nd small{display:block;font-family:var(--f-body);color:var(--muted);font-size:10.5px;max-width:110px;white-space:normal}
+.mtree .nd.root{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+
+/* Phân bổ */
+.alloc{display:flex;height:26px;border-radius:7px;overflow:hidden;background:var(--sunk);font:600 12px var(--f-body);color:#fff}
+.alloc span{display:grid;place-items:center;white-space:nowrap;overflow:hidden;transition:width .3s}
+.a1{background:#1d5cf0}.a2{background:#11805a}.a3{background:#c8770a}.a4{background:#7c3aed}
+.vault{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.vault .box{border:2px dashed var(--line);border-radius:10px;padding:10px 14px;display:grid;gap:3px;font-size:13px;min-width:180px}
+.vault .box.locked{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.vault .ar{color:var(--muted);font-size:20px}
+
+/* Chuỗi khối */
+.chainv{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:4px 0}
+.blk{flex:0 0 auto;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--surface);min-width:150px;max-width:190px;display:grid;gap:2px}
+.blk b{font-family:var(--f-mono);font-size:13px}
+.blk .h{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.blk.new{border-color:var(--ok);background:var(--ok-bg)}
+.chainv .ar{flex:0 0 22px;align-self:center;text-align:center;color:var(--muted)}
+.vals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.val{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;font-size:13px}
+.val.off{opacity:.55;border-style:dashed}
+.val.signed{border-color:var(--ok)}
+.val label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+.txc{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--surface)}
+.txc.ok{border-color:var(--ok)}.txc.bad{border-color:var(--bad)}
+.txc .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.txlist{display:grid;gap:8px}
+.gate{display:none}
+.locked-step .gate{display:block}
+td input[type=number]{width:96px;padding:5px 8px}
+td input[type=checkbox]{width:16px;height:16px}
+.pill{display:inline-block;font:600 11.5px var(--f-body);padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--zero-bg);color:var(--zero-ink)}
+
+/* Bài tập */
+.quiz{display:grid;gap:14px}
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.q p.qt{margin:0 0 8px;font-weight:600}
+.q label{display:flex;gap:8px;align-items:flex-start;font-size:14px;padding:3px 0;cursor:pointer}
+.q label input{margin-top:4px}
+.q .fb{margin-top:8px;font-size:13.5px;border-radius:8px;padding:8px 10px}
+.q.right{border-color:var(--ok)}.q.wrong{border-color:var(--bad)}
+.q.right .fb{background:var(--ok-bg)}.q.wrong .fb{background:var(--bad-bg)}
+.q .lab{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.score{font:700 26px var(--f-mono)}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.prac{display:grid;gap:10px}
+.prac .pi{display:grid;gap:5px;font-size:14px}
+@media print{
+  header.top,nav.steps,.navbtns,.foot,.noprint{display:none!important}
+  .step{display:block!important}.step[hidden]{display:none!important}
+  body{background:#fff;color:#000}.q,.panel{break-inside:avoid;border-color:#999}
+}
+
+/* ===== Thành phần dùng chung ===== */
+.parties{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.party{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);display:grid;gap:3px;font-size:13px}
+.party b{font-size:14px}
+.party .r{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ta{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);min-width:0}
+.ta h5{margin:0;padding:8px 12px;background:var(--sunk);font-size:13px}
+.ta table td,.ta table th{white-space:normal}
+.ta .tot td{font-weight:700;border-top:2px solid var(--line)}
+.neg{color:var(--bad)}.pos{color:var(--ok)}
+.bar{height:24px;border-radius:7px;overflow:hidden;background:var(--sunk);display:flex}
+.bar span{display:grid;place-items:center;color:#fff;font:600 11.5px var(--f-body);overflow:hidden;white-space:nowrap;transition:width .3s}
+.b1{background:#1d5cf0}.b2{background:#11805a}.b3{background:#c8770a}.b4{background:#7c3aed}
+.code{font:12px/1.6 var(--f-mono);background:var(--sunk);border-radius:8px;padding:10px 12px;white-space:pre-wrap;word-break:break-all;margin:0}
+.code .k{color:var(--accent);font-weight:600}.code .c{color:var(--muted)}
+.dg{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13px;margin:0}
+.dg dt{color:var(--muted)}.dg dd{margin:0;font-family:var(--f-mono);font-size:12.5px;word-break:break-all}
+.tx{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface);display:grid;gap:6px;font-size:13px}
+.tx.ok{border-color:var(--ok)}.tx.bad{border-color:var(--bad)}
+.tx .hd{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ba{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}
+.ba .ar{color:var(--muted);font-size:18px}
+@media (max-width:560px){.ba{grid-template-columns:minmax(0,1fr)}.ba .ar{display:none}}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.sp2{height:2px}
+.big{font:700 22px var(--f-mono)}
+.panel>div,.panel>div>div{min-width:0}
+.panel>div:not(:empty){display:grid;gap:12px}
+.panel>div>div:not([class]):not(:empty){display:grid;gap:10px}
+.tl li{opacity:1}
+.checks .mono,.callout .mono{word-break:break-all}
+.ta{overflow-x:auto}
+
+/* ===== Trang mBridge ===== */
+.logo.mb{background:linear-gradient(135deg,#c8102e,#da251d 45%,#ffcd00)}
+.hyp{border:1.5px dashed var(--zero-ink);background:var(--zero-bg);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.route{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px}
+.route .hop{border:1px solid var(--line);border-radius:8px;padding:6px 9px;background:var(--surface);display:grid;gap:1px;min-width:0}
+.route .hop small{color:var(--muted);font-size:11px}
+.route .hop.cb{border-color:var(--accent);background:var(--accent-soft)}
+.route .ar{color:var(--muted)}
+.nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.node{border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12.5px;display:grid;gap:4px;background:var(--surface)}
+.node.hyp2{border-style:dashed}
+.node.off{opacity:.5}
+.node.yes{border-color:var(--ok);background:var(--ok-bg)}
+.node.no{border-color:var(--bad);background:var(--bad-bg)}
+.node label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+.node b{font-size:13px}
+.lock{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);gap:8px;align-items:center}
+.lock .side{border:1.5px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:3px;font-size:13px;background:var(--surface);transition:border-color .3s,background .3s}
+.lock .side.locked{border-color:var(--zero-ink);background:var(--zero-bg)}
+.lock .side.done{border-color:var(--ok);background:var(--ok-bg)}
+.lock .side.fail{border-color:var(--bad);background:var(--bad-bg)}
+.lock .side .cur{justify-self:start}
+.lock .mid{text-align:center;font-size:22px;color:var(--muted)}
+@media (max-width:560px){.lock{grid-template-columns:minmax(0,1fr)}.lock .mid{transform:rotate(90deg)}}
+.mask{color:var(--muted);font-style:italic}
+.vtbl td{white-space:normal;vertical-align:top}
+.cmp td{white-space:normal}
+.cur{font:600 11px var(--f-mono);padding:1px 6px;border-radius:5px;background:var(--sunk)}
+.cur.vnd{color:#c8102e}.cur.cny{color:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cur.vnd{color:#ff8a8a}:root:not([data-theme="light"]) .cur.cny{color:#fbbf24}}
+:root[data-theme="dark"] .cur.vnd{color:#ff8a8a}:root[data-theme="dark"] .cur.cny{color:#fbbf24}
+.quote{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:4px;background:var(--surface);font-size:13px}
+.quote.best{border-color:var(--ok)}
+.quote.sel{border-color:var(--accent);background:var(--accent-soft)}
+.quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+/* bài tập */
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--surface)}
+.quiz{display:grid;gap:10px}
+</style>
+<script src="./nav.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo mb" aria-hidden="true">⇄</div>
+  <div class="ttl"><h1>mBridge: thanh toán e-VND ↔ e-CNY</h1><div class="sub">Kịch bản giả định · phát hành CBDC bán buôn · lệnh khách hàng · báo giá FX · PvP nguyên tử · chi trả · quyền xem dữ liệu · hoàn đổi</div></div>
+  <div class="sp"></div>
+  <button class="btnlink" id="themeBtn" type="button">Sáng/Tối</button>
+</div></header>
+
+<nav class="steps wrap" role="tablist" aria-label="Các bước">
+  <button role="tab" data-go="1" aria-selected="true"><span class="n">1</span>Kiến trúc &amp; các bên</button>
+  <button role="tab" data-go="2" aria-selected="false"><span class="n">2</span>Phát hành CBDC</button>
+  <button role="tab" data-go="3" aria-selected="false"><span class="n">3</span>Lệnh của doanh nghiệp</button>
+  <button role="tab" data-go="4" aria-selected="false"><span class="n">4</span>Báo giá FX</button>
+  <button role="tab" data-go="5" aria-selected="false"><span class="n">5</span>PvP &amp; đồng thuận</button>
+  <button role="tab" data-go="6" aria-selected="false"><span class="n">6</span>Chi trả người bán</button>
+  <button role="tab" data-go="7" aria-selected="false"><span class="n">7</span>Quyền xem dữ liệu</button>
+  <button role="tab" data-go="8" aria-selected="false"><span class="n">8</span>Hoàn đổi &amp; đối soát</button>
+  <button role="tab" data-go="9" aria-selected="false"><span class="n">9</span>Bài tập</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ========== BƯỚC 1 ========== -->
+<section class="step" id="s1">
+  <div class="explain">
+    <h2>Bước 1. mBridge là gì và kịch bản giả định</h2>
+    <p>mBridge là nền tảng đa CBDC dùng chung: các ngân hàng trung ương phát hành CBDC bán buôn của mình trên cùng một sổ cái (mBridge Ledger), ngân hàng thương mại tham gia giữ ví trên đó và thanh toán, chuyển đổi ngoại tệ trực tiếp với nhau, thay vì đi qua chuỗi ngân hàng đại lý. Dự án khởi động năm 2021 giữa BIS Innovation Hub, Ngân hàng Trung ương Thái Lan, Ngân hàng Trung ương UAE, Viện Tiền số của Ngân hàng Nhân dân Trung Hoa (PBoC) và Cơ quan Tiền tệ Hồng Kông; đợt thí điểm giá trị thật năm 2022 có 20 ngân hàng thương mại, hơn 160 giao dịch thanh toán và PvP ngoại hối, tổng hơn 22 triệu USD (BIS, 2022).</p>
+    <p>Dự án đạt giai đoạn sản phẩm khả thi tối thiểu (MVP) giữa năm 2024; BIS rút khỏi dự án tháng 10/2024 và các ngân hàng trung ương tham gia tiếp tục vận hành. Ả Rập Xê Út gia nhập năm 2024 nhưng theo FT đã rút lui; Cơ quan Tiền tệ Ma Cao và Ngân hàng Trung ương Mông Cổ gia nhập năm 2026.</p>
+    <div class="hyp"><b>Kịch bản giả định.</b> Việt Nam hiện không phải thành viên mBridge và chưa có e-VND. Quyết định 1413/QĐ-TTg (27/7/2026) chỉ định hướng nghiên cứu, thử nghiệm CBDC giai đoạn 2029–2030. Mô phỏng giả định NHNN gia nhập mBridge và phát hành e-VND bán buôn; mọi ngân hàng, doanh nghiệp, tỷ giá và số liệu giao dịch đều giả định.</div>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Nhập giá trị hợp đồng nhập khẩu (CNY) và tỷ giá tham chiếu giả định.</li>
+      <li>So sánh đường đi của tiền qua ngân hàng đại lý và qua mBridge.</li>
+      <li>Bấm <b>Kết nạp các bên lên mBridge</b>.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Mỗi ngân hàng trung ương vận hành một <b>nút xác thực</b>; ngân hàng thương mại giữ ví nhưng không xác thực khối.</li>
+      <li>CBDC trên mBridge là <b>bán buôn</b>: chỉ ngân hàng được ngân hàng trung ương của mình kết nạp mới giữ được; doanh nghiệp vẫn dùng tài khoản tiền gửi thông thường.</li>
+    </ul>
+    <p class="src">Nguồn: BIS (2022), <i>Project mBridge: Connecting economies through CBDC</i>; BIS (2024), thông cáo ngày 05/6/2024; Bank of Mongolia (2026), thông cáo ngày 11/6/2026; Quyết định 1413/QĐ-TTg.</p>
+  </div>
+  <div class="panel"><div id="c1"></div></div>
+</section>
+
+<!-- ========== BƯỚC 2 ========== -->
+<section class="step" id="s2" hidden>
+  <div class="explain">
+    <h2>Bước 2. Phát hành e-VND và e-CNY bán buôn</h2>
+    <p>Ngân hàng thương mại đổi tiền gửi dự trữ tại ngân hàng trung ương của mình lấy CBDC trên mBridge. Với ngân hàng trung ương, đây chỉ là <b>đổi dạng nợ phải trả</b>: tiền dự trữ của ngân hàng giảm, CBDC đang lưu hành tăng một lượng bằng nhau; tổng tiền cơ sở không đổi.</p>
+    <ul>
+      <li>Biển Xanh đề nghị NHNN: ghi nợ tài khoản dự trữ VND, đúc e-VND vào ví Biển Xanh trên mBridge.</li>
+      <li>Trường Giang đề nghị PBoC: ghi nợ tài khoản dự trữ CNY, đúc e-CNY vào ví Trường Giang.</li>
+      <li>Ngân hàng Cảng Thơm (Hồng Kông) đã có sẵn e-CNY từ trước, đóng vai nhà tạo lập thị trường.</li>
+    </ul>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Giữ hoặc sửa số e-VND Biển Xanh cần phát hành (mặc định dư khoảng 2% so với giá trị hợp đồng).</li>
+      <li>Bấm hai nút phát hành và quan sát bảng cân đối của hai ngân hàng trung ương.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Chỉ ngân hàng trung ương phát hành mới đúc hoặc hủy được đồng tiền của mình; NHNN không đúc được e-CNY và ngược lại.</li>
+      <li>Giao dịch phát hành cũng phải được các nút xác thực đồng thuận trước khi ghi vào sổ.</li>
+    </ul>
+    <p class="src">Nguồn: BIS (2022), mục chức năng phát hành và hoàn đổi; số dư dự trữ trong mô phỏng là giả định.</p>
+  </div>
+  <div class="panel"><div id="c2"></div><div id="o2"></div></div>
+</section>
+
+<!-- ========== BƯỚC 3 ========== -->
+<section class="step" id="s3" hidden>
+  <div class="explain">
+    <h2>Bước 3. Doanh nghiệp Việt Nam đặt lệnh thanh toán nhập khẩu</h2>
+    <p>Công ty Dệt may Khánh Hòa nhập vải của Công ty Dệt Thiệu Hưng (Chiết Giang) và cần trả tiền hàng bằng CNY. Doanh nghiệp vẫn làm việc với ngân hàng như hiện nay: lập lệnh chuyển tiền, nộp hợp đồng và hóa đơn; ngân hàng kiểm tra chứng từ, sàng lọc chống rửa tiền, rồi tạm phong tỏa số VND ước tính.</p>
+    <p>Doanh nghiệp <b>không giữ e-CNY</b>; mBridge chỉ thay phần thanh toán liên ngân hàng phía sau.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Chọn bộ chứng từ: đầy đủ, hoặc thiếu hóa đơn.</li>
+      <li>Bấm <b>Gửi lệnh chuyển tiền</b>.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Thiếu chứng từ chứng minh mục đích thanh toán thì lệnh bị trả lại ngay tại ngân hàng, trước khi có bất cứ thứ gì trên mBridge.</li>
+      <li>Căn cứ kiểm tra chứng từ là quy định quản lý ngoại hối hiện hành; mô phỏng chỉ minh họa nguyên tắc, cần kiểm tra văn bản cụ thể khi áp dụng.</li>
+    </ul>
+    <p class="src">Tên doanh nghiệp, số dư và chứng từ trong mô phỏng là giả định.</p>
+  </div>
+  <div class="panel"><div id="c3"></div><div id="o3"></div></div>
+</section>
+
+<!-- ========== BƯỚC 4 ========== -->
+<section class="step" id="s4" hidden>
+  <div class="explain">
+    <h2>Bước 4. Hỏi giá và chọn báo giá e-VND/e-CNY</h2>
+    <p>Biển Xanh có e-VND nhưng cần e-CNY. Trên mBridge, ngân hàng gửi yêu cầu báo giá; các ngân hàng có e-CNY (nhà cung cấp thanh khoản) trả giá kèm thời hạn hiệu lực. Biển Xanh chọn giá tốt nhất rồi báo tỷ giá cho khách hàng, cộng biên lợi nhuận.</p>
+    <p>Hai ngân hàng chưa có quan hệ đại lý trực tiếp vẫn giao dịch được, vì cả hai cùng thanh toán trên một sổ cái bằng tiền ngân hàng trung ương.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>Gửi yêu cầu báo giá</b>.</li>
+      <li>So sánh hai báo giá rồi chọn một.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Báo giá tốt hơn là báo giá cần ít e-VND hơn cho cùng số e-CNY.</li>
+      <li>Tỷ giá khách hàng chịu = tỷ giá đã chọn × (1 + biên 0,2%, giả định).</li>
+    </ul>
+    <p class="src">Tỷ giá, biên lợi nhuận và tên ngân hàng là giả định; thời hạn hiệu lực báo giá chỉ để minh họa.</p>
+  </div>
+  <div class="panel"><div id="c4"></div><div id="o4"></div></div>
+</section>
+
+<!-- ========== BƯỚC 5 ========== -->
+<section class="step" id="s5" hidden>
+  <div class="explain">
+    <h2>Bước 5. PvP nguyên tử và đồng thuận giữa các ngân hàng trung ương</h2>
+    <p><b>PvP</b> (<i>payment versus payment</i>): hai đồng tiền đổi chủ trong cùng một giao dịch; hoặc cả hai chân cùng thực hiện, hoặc không chân nào thực hiện. Như vậy loại bỏ rủi ro thanh toán ngoại hối kiểu Herstatt, khi một bên đã trả mà chưa nhận được đồng tiền kia.</p>
+    <p>Hợp đồng PvP khóa e-VND của Biển Xanh và e-CNY của bên bán; khi cả hai đã khóa thì hoán đổi rồi mở khóa. Giao dịch chỉ được ghi khi đủ ngưỡng phiếu của các nút xác thực theo cơ chế đồng thuận chịu lỗi Byzantine (BFT): với n nút cần ít nhất ⌊2n/3⌋ + 1 phiếu. Thí điểm 2022 dùng HotStuff+, sau đó dự án thử nghiệm giao thức Dashing.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>Thực hiện PvP</b> và theo dõi khóa, hoán đổi, bỏ phiếu.</li>
+      <li>Thử lỗi: tích “bên bán chỉ còn 50% e-CNY”, chạy lại và quan sát cả hai chân cùng bị hủy.</li>
+      <li>Thử tắt bớt nút xác thực cho đến khi không đủ ngưỡng.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Khi một chân thất bại, e-VND đã khóa được trả lại nguyên vẹn cho Biển Xanh.</li>
+      <li>Không đủ ngưỡng phiếu thì khối không được chốt và không tài sản nào di chuyển.</li>
+    </ul>
+    <p class="src">Nguồn: BIS (2022); BIS (2023), cập nhật dự án về giao thức Dashing. Danh sách nút xác thực trong mô phỏng là minh họa; nút NHNN là giả định.</p>
+  </div>
+  <div class="panel"><div id="c5"></div><div id="o5"></div></div>
+</section>
+
+<!-- ========== BƯỚC 6 ========== -->
+<section class="step" id="s6" hidden>
+  <div class="explain">
+    <h2>Bước 6. Chuyển e-CNY cho ngân hàng người bán và ghi có</h2>
+    <p>Biển Xanh chuyển e-CNY vừa mua cho Ngân hàng Trường Giang (ngân hàng của người bán) bằng một giao dịch thanh toán trên mBridge. Trường Giang nhận tiền ngân hàng trung ương có giá trị cuối cùng ngay khi khối được chốt, rồi ghi có tài khoản CNY của Công ty Dệt Thiệu Hưng.</p>
+    <p>Các ngân hàng trung ương tham gia thử nghiệm đã thống nhất <b>không dùng CBDC nước ngoài để thanh toán trong nước</b>, vì lo ngại hiệu ứng thay thế tiền tệ ảnh hưởng đến chính sách tiền tệ. Mô phỏng cài quy tắc này vào hợp đồng.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Bấm <b>Chuyển e-CNY cho Trường Giang</b>.</li>
+      <li>Thử <b>chi e-CNY cho một doanh nghiệp trong nước</b> để thấy quy tắc chặn giao dịch.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Người bán nhận đủ số CNY trên hợp đồng; người mua chịu toàn bộ chênh lệch tỷ giá và phí (mô phỏng giả định phí OUR).</li>
+    </ul>
+    <p class="src">Nguồn: phát biểu của đại diện Ngân hàng Trung ương Thái Lan tại Hong Kong Fintech Week (Forkast; cần kiểm tra thời điểm phát biểu).</p>
+  </div>
+  <div class="panel"><div id="c6"></div><div id="o6"></div></div>
+</section>
+
+<!-- ========== BƯỚC 7 ========== -->
+<section class="step" id="s7" hidden>
+  <div class="explain">
+    <h2>Bước 7. Ai thấy gì trên sổ cái chung</h2>
+    <p>Sổ cái dùng chung không có nghĩa mọi bên thấy mọi giao dịch. Theo nguyên tắc thiết kế của mBridge, mỗi ngân hàng trung ương giám sát giao dịch thuộc thẩm quyền của mình, còn các bên không liên quan chỉ thấy dữ liệu đủ để xác thực.</p>
+    <p>Mô phỏng áp dụng quy tắc đơn giản: ngân hàng là bên giao dịch thấy toàn bộ; ngân hàng trung ương thấy toàn bộ nếu có một bên thuộc thẩm quyền của mình; các bên còn lại chỉ thấy loại giao dịch, thời điểm và mã băm.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Đổi vai trò người xem và so sánh bảng giao dịch.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Ngân hàng Trung ương Thái Lan vận hành nút xác thực nhưng không thấy số tiền hay tên doanh nghiệp trong giao dịch Việt Nam – Trung Quốc.</li>
+      <li>Câu hỏi chính sách: mức độ hiển thị nào cân bằng được quyền riêng tư, giám sát chống rửa tiền và chủ quyền dữ liệu?</li>
+    </ul>
+    <p class="src">Quy tắc hiển thị là mô hình minh họa; cách thực thi cụ thể của mBridge (mã hóa, chữ ký ẩn danh tạm thời) cần đối chiếu BIS (2022), phụ lục thiết kế kỹ thuật.</p>
+  </div>
+  <div class="panel"><div id="c7"></div></div>
+</section>
+
+<!-- ========== BƯỚC 8 ========== -->
+<section class="step" id="s8" hidden>
+  <div class="explain">
+    <h2>Bước 8. Hoàn đổi CBDC và đối soát toàn bộ giao dịch</h2>
+    <p>Ngân hàng không cần giữ CBDC lâu: ngân hàng có thể hoàn đổi đồng tiền <b>của nước mình</b> về tài khoản dự trữ tại ngân hàng trung ương, khi đó CBDC bị hủy trên sổ cái. Ngân hàng nước ngoài đang giữ e-VND không hoàn đổi được tại PBoC; muốn thoát vị thế, ngân hàng đó phải bán lại e-VND trên mBridge.</p>
+    <p>Cuối cùng đối chiếu: số CBDC lưu hành của từng đồng tiền bằng tổng số dư trên sổ cái; tổng dự trữ cộng CBDC của mỗi ngân hàng trung ương không đổi; người bán nhận đúng số CNY trên hợp đồng.</p>
+    <h3>Việc cần làm</h3>
+    <ol>
+      <li>Hoàn đổi e-VND dư của Biển Xanh và e-CNY của Trường Giang.</li>
+      <li>Đọc phần đối soát, bảng so sánh với ngân hàng đại lý và bấm <b>Kiểm tra chuỗi băm</b>.</li>
+    </ol>
+    <h3>Quan sát</h3>
+    <ul>
+      <li>Theo số liệu được báo chí dẫn lại, mBridge đã xử lý giao dịch hàng chục tỷ USD, phần lớn bằng e-CNY; các con số này chưa được các ngân hàng trung ương công bố chính thức đầy đủ.</li>
+    </ul>
+    <p class="src">Nguồn: Reuters, qua The Block (01/2026); BIS (2022). Thời gian và chi phí của kênh ngân hàng đại lý trong bảng so sánh là giả định minh họa.</p>
+  </div>
+  <div class="panel"><div id="c8"></div><div id="o8"></div></div>
+</section>
+
+<!-- ========== BƯỚC 9 ========== -->
+<section class="step" id="s9" hidden>
+  <div class="explain">
+    <h2>Bước 9. Bài tập</h2>
+    <p><b>Phần I</b> ghi kết quả thực hành từ Bước 1–8. <b>Phần II</b> gồm 12 câu trắc nghiệm, chấm tự động và có giải thích.</p>
+    <p>Làm xong, bấm <b>"Nộp và chấm"</b>, rồi <b>"In / lưu PDF"</b> để nộp cho giảng viên.</p>
+    <h3>Gợi ý cho giảng viên</h3>
+    <ul>
+      <li>Thời lượng: khoảng 60 phút (35 phút thực hành, 25 phút thảo luận).</li>
+      <li>Chia nhóm 4: NHNN, PBoC, Biển Xanh, Trường Giang; mỗi nhóm trình bày lợi ích và rủi ro từ góc nhìn của mình.</li>
+      <li>Câu thảo luận mở: Việt Nam nên tham gia mBridge, Agorá hay kết nối thanh toán khu vực ASEAN? Cân nhắc thương mại với Trung Quốc, quan hệ với hệ thống USD và lộ trình CBDC 2029–2030.</li>
+    </ul>
+    <p class="src">Bài làm chỉ lưu trên trình duyệt của học viên, không gửi đi đâu.</p>
+  </div>
+  <div class="panel">
+    <div class="who">
+      <label class="f">Họ và tên<input type="text" id="stName" autocomplete="name"></label>
+      <label class="f">MSSV<input type="text" id="stId"></label>
+      <label class="f">Lớp / nhóm<input type="text" id="stClass"></label>
+    </div>
+    <h4>Phần I. Kết quả thực hành</h4>
+    <div class="prac" id="pracList"></div>
+    <h4>Phần II. Trắc nghiệm</h4>
+    <div class="quiz" id="quiz"></div>
+    <div class="row noprint">
+      <button class="btn primary" id="grade">Nộp và chấm</button>
+      <button class="btn" id="printBtn">In / lưu PDF</button>
+      <button class="btn" id="clearQuiz">Làm lại</button>
+    </div>
+    <div class="row"><span>Điểm:</span><span class="score" id="scoreOut">–</span><span class="note" id="scoreTime"></span></div>
+  </div>
+</section>
+
+<div class="navbtns"><button class="btn" id="prevStep">← Bước trước</button><button class="btn primary" id="nextStep">Bước tiếp →</button></div>
+</main>
+<footer class="wrap foot">Mô phỏng chạy hoàn toàn trong trình duyệt, dùng SHA-256 thật cho mã giao dịch và nhật ký. Việt Nam không phải thành viên mBridge và e-VND chưa tồn tại: toàn bộ phần liên quan đến NHNN, e-VND, các ngân hàng thương mại, doanh nghiệp, tỷ giá và số liệu là giả định để quan sát; quy tắc đồng thuận và hiển thị dữ liệu được đơn giản hóa. Đây là mô phỏng giảng dạy. Tài liệu: BIS (2022) <i>Project mBridge: Connecting economies through CBDC</i>, bis.org/publ/othp59.pdf; BIS (2024) <i>Project mBridge reaches minimum viable product stage</i>, thông cáo 05/6/2024; BIS (2023) <i>Project mBridge update</i>; Bank of Mongolia (2026), thông cáo 11/6/2026; Financial Times, qua Cointelegraph (09/2026), về việc Ả Rập Xê Út rút khỏi mBridge; Quyết định 1413/QĐ-TTg ngày 27/7/2026.</footer>
+<script>
+/* ---------- SHA-256 (FIPS 180-4) ---------- */
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const ENC=new TextEncoder();const W=new Uint32Array(64);
+function sha256(str){const m=ENC.encode(str),l=m.length,n=((l+9+63)>>6)<<6,buf=new Uint8Array(n);buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bl=l*8;dv.setUint32(n-4,bl>>>0);dv.setUint32(n-8,Math.floor(bl/4294967296));
+let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;
+for(let o=0;o<n;o+=64){for(let t=0;t<16;t++)W[t]=dv.getUint32(o+t*4);for(let t=16;t<64;t++){const a=W[t-15],b=W[t-2];const s0=((a>>>7)|(a<<25))^((a>>>18)|(a<<14))^(a>>>3);const s1=((b>>>17)|(b<<15))^((b>>>19)|(b<<13))^(b>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;
+for(let t=0;t<64;t++){const S1=((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7));const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;const S0=((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10));const mj=(a&b)^(a&c)^(b&c);const t2=(S0+mj)|0;h=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}
+h0=(h0+a)|0;h1=(h1+b)|0;h2=(h2+c)|0;h3=(h3+d)|0;h4=(h4+e)|0;h5=(h5+f)|0;h6=(h6+g)|0;h7=(h7+h)|0;}
+return [h0,h1,h2,h3,h4,h5,h6,h7].map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');}
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches||window.__NOWAIT;
+const wait=ms=>sleep(RM?0:ms);
+const short=h=>h.length>16?h.slice(0,10)+'…'+h.slice(-4):h;
+const V=x=>Math.round(x).toLocaleString('vi-VN');                    /* VND, đồng */
+const Y=f=>(f/100).toLocaleString('vi-VN',{minimumFractionDigits:2,maximumFractionDigits:2}); /* CNY từ fen */
+const pnum=v=>{const x=parseFloat(String(v).replace(/\./g,'').replace(',','.'));return isFinite(x)?x:NaN;};
+const stat=(l,v)=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`;
+const cv='<span class="cur vnd">e-VND</span>',cc='<span class="cur cny">e-CNY</span>';
+
+/* ---------- Các bên ---------- */
+const BK={
+  BX:{n:'Ngân hàng TMCP Biển Xanh',s:'Biển Xanh',j:'VN',cb:'SBV'},
+  CJ:{n:'Ngân hàng Trường Giang',s:'Trường Giang',j:'CN',cb:'PBOC'},
+  HK:{n:'Ngân hàng Cảng Thơm (Hồng Kông)',s:'Cảng Thơm',j:'HK',cb:'HKMA'}
+};
+const CB={SBV:{n:'Ngân hàng Nhà nước Việt Nam',s:'NHNN',cur:'VND',hyp:true},PBOC:{n:'Ngân hàng Nhân dân Trung Hoa (PBoC)',s:'PBoC',cur:'CNY'},HKMA:{n:'Cơ quan Tiền tệ Hồng Kông',s:'HKMA'},BOT:{n:'Ngân hàng Trung ương Thái Lan',s:'BoT'},CBUAE:{n:'Ngân hàng Trung ương UAE',s:'CBUAE'},AMCM:{n:'Cơ quan Tiền tệ Ma Cao',s:'AMCM'},BOM:{n:'Ngân hàng Trung ương Mông Cổ',s:'BoM'}};
+const NODES=['PBOC','HKMA','BOT','CBUAE','AMCM','BOM','SBV'];
+const CUS={n:'Công ty TNHH Dệt may Khánh Hòa',s:'Dệt may Khánh Hòa'},SUP={n:'Công ty Dệt Thiệu Hưng (Chiết Giang)',s:'Dệt Thiệu Hưng'};
+const SPREAD=0.002;
+
+/* ---------- Trạng thái ---------- */
+let S,busy=false;
+function fresh(){
+  S={amt:100000000,rate:3700,joined:false,wal:null,
+     res:{BX:200e9,CJ:50e6*100},              /* dự trữ: BX bằng đồng, CJ bằng fen */
+     out:{VND:0,CNY:500000000},               /* CBDC lưu hành; HK có sẵn 5.000.000,00 e-CNY */
+     bal:{BX:{VND:0,CNY:0},CJ:{VND:0,CNY:0},HK:{VND:0,CNY:500000000}},
+     cbTot:{SBV:200e9,PBOC:50e6*100+500000000},
+     cust:10e9,hold:0,custDebit:0,sup:0,docs:'ok',order:null,quotes:null,pick:null,pvp:null,paid:false,
+     on:Object.fromEntries(NODES.map(k=>[k,true])),lpShort:false,
+     txs:[],log:[],blk:0,t:0,viewer:'SBV',domTry:false};
+}
+fresh();
+const clk=()=>{const m=540+S.t,d=1+Math.floor(m/1440),r=m%1440;return 'Ngày '+d+' · '+String(Math.floor(r/60)).padStart(2,'0')+':'+String(r%60).padStart(2,'0');};
+function rec(step,msg,data){const prev=S.log.length?S.log[S.log.length-1].h:'0'.repeat(64);const e={n:S.log.length+1,step,t:clk(),msg,data:data||null,prev};e.h=sha256(JSON.stringify([e.n,e.step,e.t,e.msg,e.data,e.prev]));S.log.push(e);return e;}
+const addr=k=>'0x'+sha256('mbridge|'+k).slice(0,40);
+const need=()=>S.amt;                                            /* fen e-CNY cần mua */
+const quorum=()=>Math.floor(NODES.length*2/3)+1;
+const votes=()=>NODES.filter(k=>S.on[k]).length;
+function gate(id,msg,n){$(id).innerHTML=`<div class="callout warn">${msg} <button class="btn sm" data-act="go" data-v="${n}">Về Bước ${n}</button></div>`;}
+function alertMsg(id,t){const el=$(id);el.querySelector('.callout.bad.tmp')?.remove();el.insertAdjacentHTML('beforeend',`<div class="callout bad tmp">${esc(t)}</div>`);}
+async function runChecks(id,items){const box=$(id);box.innerHTML='';for(const [t,ok] of items){box.insertAdjacentHTML('beforeend',`<li class="${ok?'p':'f'}"><span class="m">${ok?'✓':'✗'}</span><span>${t}</span></li>`);await wait(300);}return items.every(x=>x[1]);}
+function txCard(ok,title,hash,lines){return `<div class="tx ${ok?'ok':'bad'}"><div class="hd"><b>${esc(title)}</b><span class="chip ${ok?'ok':'bad'}">${ok?'Đã chốt':'Không thực hiện'}</span></div><dl class="dg"><dt>Mã giao dịch</dt><dd>${esc(hash)}</dd>${lines.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`;}
+
+/* Đồng thuận: hiển thị phiếu của các nút, trả về true nếu đủ ngưỡng */
+async function consensus(id,hash){
+  const el=$(id);const q=quorum();
+  el.innerHTML=`<h4>Bỏ phiếu của các nút xác thực (cần ${q}/${NODES.length})</h4><div class="nodes">${NODES.map(k=>`<div class="node${CB[k].hyp?' hyp2':''}${S.on[k]?'':' off'}" id="${id}-${k}"><b>${CB[k].s}${CB[k].hyp?' (giả định)':''}</b><span class="note">${S.on[k]?'đang kiểm tra…':'ngoại tuyến'}</span></div>`).join('')}</div><div id="${id}-r"></div>`;
+  let v=0;
+  for(const k of NODES){await wait(160);const n=$(id+'-'+k);if(!S.on[k]){n.classList.add('no');continue;}v++;n.classList.add('yes');n.querySelector('.note').textContent='ký phiếu ✓';}
+  const ok=v>=q;
+  $(id+'-r').innerHTML=ok?`<div class="callout ok">Đủ ${v}/${NODES.length} phiếu: khối #${(S.blk+1).toLocaleString('vi-VN')} được chốt ngay, có giá trị cuối cùng (finality), chứa giao dịch ${short(hash)}.</div>`:`<div class="callout bad">Chỉ có ${v}/${NODES.length} phiếu, dưới ngưỡng ${q}. Khối không được chốt; giao dịch không thực hiện và không tài sản nào di chuyển.</div>`;
+  if(ok)S.blk++;
+  return ok;
+}
+function nodePanel(){
+  return `<h4>Nút xác thực (bật/tắt để thử ngưỡng đồng thuận)</h4><div class="nodes">${NODES.map(k=>`<div class="node${CB[k].hyp?' hyp2':''}${S.on[k]?'':' off'}"><b>${CB[k].s}${CB[k].hyp?' (giả định)':''}</b><label><input type="checkbox" data-node="${k}" ${S.on[k]?'checked':''}> đang hoạt động</label></div>`).join('')}</div>
+  <div class="note">Đang hoạt động: ${votes()}/${NODES.length}; ngưỡng BFT: ${quorum()} (chịu được tối đa ${NODES.length-quorum()} nút lỗi hoặc ngoại tuyến).</div>`;
+}
+function addTx(t){t.n=S.txs.length+1;t.time=clk();S.txs.push(t);return t;}
+function supplyOk(){const sv=Object.values(S.bal).reduce((a,b)=>a+b.VND,0)+(S.pvp&&S.pvp.lockV||0),sc=Object.values(S.bal).reduce((a,b)=>a+b.CNY,0)+(S.pvp&&S.pvp.lockC||0);return sv===S.out.VND&&sc===S.out.CNY;}
+
+/* ========== BƯỚC 1 ========== */
+function R1(){
+  const lock=S.joined,vnd=S.amt/100*S.rate;
+  $('c1').innerHTML=`<h4>Giao dịch mẫu</h4>
+  <div class="grid2f"><label class="f">Giá trị hợp đồng nhập khẩu (CNY)<input id="amt" inputmode="decimal" value="${(S.amt/100).toLocaleString('vi-VN')}" ${lock?'disabled':''}></label>
+  <label class="f">Tỷ giá tham chiếu giả định (VND/CNY)<input id="rate" inputmode="decimal" value="${S.rate.toLocaleString('vi-VN')}" ${lock?'disabled':''}></label></div>
+  <div class="stats">${stat('Giá trị quy đổi ước tính (VND)',V(vnd))}${stat('Người mua',CUS.s)}${stat('Người bán',SUP.s)}</div>
+  <h4>Kênh ngân hàng đại lý hiện nay (minh họa)</h4>
+  <div class="route"><div class="hop">${CUS.s}<small>ghi nợ VND</small></div><span class="ar">→</span><div class="hop">Biển Xanh<small>tài khoản nostro</small></div><span class="ar">→</span><div class="hop">Ngân hàng đại lý 1<small>thanh toán qua điện SWIFT</small></div><span class="ar">→</span><div class="hop">Ngân hàng đại lý 2<small>có thể qua USD</small></div><span class="ar">→</span><div class="hop">Trường Giang<small>ghi có CNY</small></div><span class="ar">→</span><div class="hop">${SUP.s}</div></div>
+  <div class="note">Mỗi chặng có thể thu phí, giữ tiền đến giờ chốt và cần duy trì số dư nostro trả trước; số chặng thực tế tùy quan hệ đại lý của từng ngân hàng.</div>
+  <h4>Qua mBridge (kịch bản giả định)</h4>
+  <div class="route"><div class="hop">${CUS.s}<small>ghi nợ VND</small></div><span class="ar">→</span><div class="hop cb">Biển Xanh<small>ví e-VND / e-CNY</small></div><span class="ar">⇄</span><div class="hop cb">mBridge Ledger<small>PvP + thanh toán, chốt ngay</small></div><span class="ar">⇄</span><div class="hop cb">Trường Giang<small>ví e-CNY</small></div><span class="ar">→</span><div class="hop">${SUP.s}<small>ghi có CNY</small></div></div>
+  <h4>Các bên trên mBridge</h4>
+  <div class="parties">
+    <div class="party"><span class="r">NHTW · nút xác thực</span><b>NHNN (giả định)</b>Phát hành và hoàn đổi e-VND; giám sát ngân hàng Việt Nam.</div>
+    <div class="party"><span class="r">NHTW · nút xác thực</span><b>PBoC</b>Phát hành và hoàn đổi e-CNY.</div>
+    <div class="party"><span class="r">NHTM Việt Nam</span><b>${BK.BX.n}</b>Ngân hàng của người mua (giả định).</div>
+    <div class="party"><span class="r">NHTM Trung Quốc</span><b>${BK.CJ.n}</b>Ngân hàng của người bán, cũng báo giá e-CNY (giả định).</div>
+    <div class="party"><span class="r">Nhà tạo lập thị trường</span><b>${BK.HK.n}</b>Có sẵn e-CNY, báo giá cạnh tranh (giả định).</div>
+    <div class="party"><span class="r">Nút xác thực khác</span><b>HKMA, BoT, CBUAE, AMCM, BoM</b>Xác thực khối, không thấy chi tiết giao dịch không liên quan.</div>
+  </div>
+  <div class="row"><button class="btn primary" data-act="join" ${lock?'disabled':''}>${lock?'Đã kết nạp':'Kết nạp các bên lên mBridge'}</button><button class="btn" data-act="reset">Làm lại từ đầu</button></div>
+  ${lock?`<ul class="checks">${['BX','CJ','HK'].map(k=>`<li class="p"><span class="m">✓</span><span>${BK[k].n}: được ${CB[BK[k].cb].s}${k==='BX'?' (giả định)':''} kết nạp, ví <span class="mono">${S.wal[k]}</span></span></li>`).join('')}</ul><div class="callout ok">Các bên đã sẵn sàng. Sang Bước 2 để phát hành CBDC.</div>`:''}`;
+}
+
+/* ========== BƯỚC 2 ========== */
+function cbSheet(){
+  const row=(l,v)=>`<tr><td>${l}</td><td class="num">${v}</td></tr>`;
+  return `<div class="two">
+  <div class="ta"><h5>NHNN (giả định) · nợ phải trả liên quan (VND)</h5><table>${row('Tiền gửi dự trữ của Biển Xanh',V(S.res.BX))}${row('e-VND đang lưu hành trên mBridge',V(S.out.VND))}<tr class="tot"><td>Tổng</td><td class="num">${V(S.res.BX+S.out.VND)}</td></tr></table></div>
+  <div class="ta"><h5>PBoC · nợ phải trả liên quan (CNY)</h5><table>${row('Tiền gửi dự trữ của Trường Giang',Y(S.res.CJ))}${row('e-CNY đang lưu hành trên mBridge',Y(S.out.CNY))}<tr class="tot"><td>Tổng</td><td class="num">${Y(S.res.CJ+S.out.CNY)}</td></tr></table></div></div>`;
+}
+function walTable(){
+  return `<div class="scroll"><table><tr><th>Ví trên mBridge</th><th class="num">e-VND</th><th class="num">e-CNY</th></tr>${['BX','CJ','HK'].map(k=>`<tr><td>${BK[k].s}</td><td class="num">${V(S.bal[k].VND)}</td><td class="num">${Y(S.bal[k].CNY)}</td></tr>`).join('')}</table></div>`;
+}
+function R2(){
+  if(!S.joined){gate('c2','Cần kết nạp các bên ở Bước 1 trước.',1);$('o2').innerHTML='';return;}
+  const defV=Math.ceil(S.amt/100*S.rate*1.02/1e6)*1e6;
+  $('c2').innerHTML=`<h4>Đề nghị phát hành</h4>
+  <div class="grid2f"><label class="f">Biển Xanh: số e-VND cần phát hành<input id="isV" inputmode="decimal" value="${V(Math.max(0,defV-S.bal.BX.VND))}"></label>
+  <label class="f">Trường Giang: số e-CNY cần phát hành<input id="isC" inputmode="decimal" value="${(2000000).toLocaleString('vi-VN')}"></label></div>
+  <div class="row"><button class="btn primary" data-act="issueV">NHNN phát hành e-VND cho Biển Xanh</button><button class="btn" data-act="issueC">PBoC phát hành e-CNY cho Trường Giang</button></div>
+  <h4>Bảng cân đối hai ngân hàng trung ương</h4>${cbSheet()}
+  <h4>Số dư ví</h4>${walTable()}`;
+}
+async function doIssue(cur){
+  if(busy)return;const isV=cur==='VND',inp=$(isV?'isV':'isC'),x=pnum(inp.value);
+  const k=isV?'BX':'CJ',cb=isV?'SBV':'PBOC',units=isV?Math.round(x):Math.round(x*100);
+  if(!(units>0)){alertMsg('c2','Nhập số tiền lớn hơn 0.');return;}
+  if(units>S.res[k]){alertMsg('c2',`${BK[k].s} không đủ tiền gửi dự trữ (còn ${isV?V(S.res[k]):Y(S.res[k])}).`);return;}
+  busy=true;$('o2').innerHTML=`<h4>Phát hành ${isV?'e-VND':'e-CNY'}</h4><ul class="checks" id="ck2"></ul><div id="cs2"></div><div id="tx2"></div>`;
+  await runChecks('ck2',[[`${BK[k].s} là ngân hàng được ${CB[cb].s} kết nạp`,true],[`Tài khoản dự trữ đủ ${isV?V(units)+' VND':Y(units)+' CNY'}`,true],[`Khóa phát hành của ${CB[cb].s} ký lệnh mint ${isV?'e-VND':'e-CNY'}`,true]]);
+  const h='0x'+sha256('issue|'+cur+'|'+S.txs.length+'|'+units);S.t+=2;
+  const ok=await consensus('cs2',h);
+  if(ok){S.res[k]-=units;S.out[cur]+=units;S.bal[k][cur]+=units;
+    addTx({type:'Phát hành',from:cb,to:k,cur,v:units,h,parties:[k],cbs:[cb]});
+    rec(2,`${CB[cb].s} phát hành ${isV?V(units)+' e-VND':Y(units)+' e-CNY'} cho ${BK[k].s}; dự trữ giảm tương ứng`,{cur,units,h});}
+  else rec(2,`Phát hành ${cur} cho ${BK[k].s} không chốt được (thiếu phiếu)`,{h});
+  $('tx2').innerHTML=txCard(ok,`mint ${isV?'e-VND':'e-CNY'} · ${CB[cb].s} → ${BK[k].s}`,h,[['Số lượng',isV?V(units)+' e-VND':Y(units)+' e-CNY'],['Ví nhận',S.wal[k]]]);
+  busy=false;const o=$('o2').innerHTML;R2();$('o2').innerHTML=o;
+}
+
+/* ========== BƯỚC 3 ========== */
+function R3(){
+  if(S.bal.BX.VND<=0&&!S.order){gate('c3','Biển Xanh cần có e-VND (Bước 2).',2);$('o3').innerHTML='';return;}
+  const est=Math.round(S.amt/100*S.rate*(1+SPREAD)*1.01);
+  $('c3').innerHTML=`<h4>Lệnh chuyển tiền của ${CUS.s}</h4>
+  <dl class="dg"><dt>Người hưởng</dt><dd>${SUP.n}</dd><dt>Ngân hàng người hưởng</dt><dd>${BK.CJ.n}</dd><dt>Số tiền</dt><dd>${Y(S.amt)} CNY</dd><dt>Nội dung</dt><dd>Thanh toán hợp đồng nhập khẩu vải số HĐ-2026/118 (giả định)</dd><dt>Phí</dt><dd>OUR: người chuyển chịu toàn bộ phí</dd></dl>
+  <label class="f">Bộ chứng từ nộp kèm<select id="docs" ${S.order?'disabled':''}><option value="ok" ${S.docs==='ok'?'selected':''}>Hợp đồng ngoại thương + hóa đơn thương mại + tờ khai hải quan</option><option value="bad" ${S.docs==='bad'?'selected':''}>Chỉ có hợp đồng, thiếu hóa đơn</option></select></label>
+  <div class="stats">${stat('Tài khoản VND của doanh nghiệp',V(S.cust))}${stat('Đang phong tỏa (VND)',V(S.hold))}${stat('Ước tính cần phong tỏa',V(est))}</div>
+  <div class="row"><button class="btn primary" data-act="order" ${S.order?'disabled':''}>Gửi lệnh chuyển tiền</button></div>`;
+}
+async function doOrder(){
+  if(busy||S.order)return;busy=true;S.docs=$('docs').value;const okD=S.docs==='ok';
+  const est=Math.round(S.amt/100*S.rate*(1+SPREAD)*1.01);
+  $('o3').innerHTML='<h4>Kiểm tra tại Biển Xanh</h4><ul class="checks" id="ck3"></ul><div id="m3"></div>';
+  const ok=await runChecks('ck3',[['Chữ ký số của doanh nghiệp trên lệnh hợp lệ',true],['Người hưởng và ngân hàng người hưởng không thuộc danh sách trừng phạt; sàng lọc chống rửa tiền đạt',true],[okD?'Chứng từ chứng minh mục đích thanh toán nhập khẩu đầy đủ':'Thiếu hóa đơn thương mại: chưa đủ cơ sở chứng minh mục đích chuyển tiền',okD],...(okD?[[`Số dư đủ để phong tỏa ước tính ${V(est)} VND`,S.cust>=est]]:[])]);
+  S.t+=10;
+  if(!ok){rec(3,'Lệnh chuyển tiền bị trả lại: thiếu chứng từ',{});$('m3').innerHTML='<div class="callout bad">Lệnh bị trả lại. Chưa có giao dịch nào trên mBridge. Chọn bộ chứng từ đầy đủ rồi gửi lại.</div>';busy=false;return;}
+  S.hold=est;S.cust-=est;S.order={est};
+  rec(3,`${CUS.s} lập lệnh trả ${Y(S.amt)} CNY cho ${SUP.s}; Biển Xanh phong tỏa ${V(est)} VND`,{amt:S.amt,est});
+  $('m3').innerHTML='<div class="callout ok">Lệnh hợp lệ. Biển Xanh tạm phong tỏa số VND ước tính (đã cộng dự phòng 1% cho biến động tỷ giá). Sang Bước 4 để mua e-CNY.</div>';
+  busy=false;const o=$('o3').innerHTML;R3();$('o3').innerHTML=o;
+}
+
+/* ========== BƯỚC 4 ========== */
+function R4(){
+  if(!S.order){gate('c4','Cần có lệnh chuyển tiền hợp lệ (Bước 3).',3);$('o4').innerHTML='';return;}
+  const q=S.quotes;
+  $('c4').innerHTML=`<h4>Yêu cầu báo giá trên mBridge</h4>
+  <dl class="dg"><dt>Bên hỏi</dt><dd>${BK.BX.n}</dd><dt>Cần mua</dt><dd>${Y(need())} e-CNY, trả bằng e-VND</dd><dt>Hình thức thanh toán</dt><dd>PvP trên mBridge</dd></dl>
+  <div class="row"><button class="btn primary" data-act="rfq" ${q||S.pvp?'disabled':''}>Gửi yêu cầu báo giá</button></div>
+  ${q?`<div class="quotes">${q.map((x,i)=>{const best=x.r===Math.min(...q.map(y=>y.r));return `<div class="quote${best?' best':''}${S.pick===i?' sel':''}"><b>${BK[x.k].n}</b><span>Giá bán: <b class="mono">${x.r.toLocaleString('vi-VN',{maximumFractionDigits:1})}</b> VND/CNY</span><span>Cần trả: <b class="mono">${V(Math.round(need()/100*x.r))}</b> e-VND</span><span class="note">Hiệu lực 30 giây · e-CNY sẵn có: ${Y(S.bal[x.k].CNY)}</span>${best?'<span class="chip ok">Giá tốt nhất</span>':''}<button class="btn sm${S.pick===i?' primary':''}" data-act="pick" data-v="${i}" ${S.pvp&&S.pvp.done?'disabled':''}>${S.pick===i?'Đã chọn':'Chọn báo giá này'}</button></div>`;}).join('')}</div>`:''}`;
+  if(S.pick!=null){const x=q[S.pick],cr=x.r*(1+SPREAD),cost=Math.round(need()/100*cr);
+    $('o4').innerHTML=`<h4>Báo tỷ giá cho khách hàng</h4><div class="stats">${stat('Tỷ giá liên ngân hàng (VND/CNY)',x.r.toLocaleString('vi-VN',{maximumFractionDigits:1}))}${stat('Tỷ giá cho khách (+0,2%)',cr.toLocaleString('vi-VN',{maximumFractionDigits:2}))}${stat('Doanh nghiệp sẽ bị ghi nợ (VND)',V(cost))}${stat('Biển Xanh trả trên mBridge (e-VND)',V(Math.round(need()/100*x.r)))}</div>
+    ${Math.round(need()/100*x.r)>S.bal.BX.VND?`<div class="callout bad">Biển Xanh chỉ có ${V(S.bal.BX.VND)} e-VND, chưa đủ. Về Bước 2 phát hành thêm. <button class="btn sm" data-act="go" data-v="2">Về Bước 2</button></div>`:'<div class="callout ok">Đã chọn báo giá. Sang Bước 5 để thực hiện PvP.</div>'}`;}
+  else $('o4').innerHTML='';
+}
+function doRfq(){
+  const b=S.rate;S.quotes=[{k:'CJ',r:Math.round(b*1.0016*10)/10},{k:'HK',r:Math.round(b*1.0008*10)/10}];S.pick=null;S.t+=1;
+  rec(4,`Biển Xanh hỏi giá ${Y(need())} e-CNY: Trường Giang ${S.quotes[0].r}, Cảng Thơm ${S.quotes[1].r} VND/CNY`,{q:S.quotes});R4();
+}
+function doPick(b){S.pick=+b.dataset.v;const x=S.quotes[S.pick];rec(4,`Biển Xanh chọn báo giá ${BK[x.k].s} ${x.r} VND/CNY`,{k:x.k,r:x.r});R4();}
+
+/* ========== BƯỚC 5 ========== */
+function R5(){
+  if(S.pick==null){gate('c5','Cần chọn báo giá (Bước 4).',4);$('o5').innerHTML='';return;}
+  const x=S.quotes[S.pick],v=Math.round(need()/100*x.r),done=S.pvp&&S.pvp.done;
+  $('c5').innerHTML=`<h4>Lệnh PvP</h4>
+  <div class="lock"><div class="side${done?' done':''}" id="sideA"><b>${BK.BX.s} trả</b><span class="mono">${V(v)}</span>${cv}</div><div class="mid">⇄</div><div class="side${done?' done':''}" id="sideB"><b>${BK[x.k].s} trả</b><span class="mono">${Y(need())}</span>${cc}</div></div>
+  <label class="flex small muted" style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)"><input type="checkbox" id="lpShort" ${S.lpShort?'checked':''} ${done?'disabled':''} style="width:auto"> Giả lập lỗi: bên bán chỉ còn 50% số e-CNY cần giao</label>
+  <div class="row"><button class="btn primary" data-act="pvp" ${done?'disabled':''}>${done?'PvP đã chốt':'Thực hiện PvP'}</button></div>
+  ${nodePanel()}
+  <h4>Số dư ví</h4>${walTable()}`;
+}
+async function doPvp(){
+  if(busy||(S.pvp&&S.pvp.done))return;busy=true;S.lpShort=$('lpShort').checked;
+  const x=S.quotes[S.pick],k=x.k,v=Math.round(need()/100*x.r),c=need();
+  const availC=S.lpShort?Math.floor(c/2):S.bal[k].CNY;
+  const h='0x'+sha256('pvp|'+S.txs.length+'|'+v+'|'+c+'|'+S.log.length);
+  $('o5').innerHTML='<h4>Thực thi hợp đồng PvP</h4><ul class="checks" id="ck5"></ul><div id="cs5"></div><div id="tx5"></div>';
+  const A=$('sideA'),B=$('sideB');A.className='side';B.className='side';
+  const ckA=S.bal.BX.VND>=v;
+  await runChecks('ck5',[['Báo giá còn hiệu lực, chữ ký của hai bên hợp lệ',true],[`Khóa ${V(v)} e-VND của Biển Xanh vào hợp đồng`,ckA]]);
+  if(!ckA){A.className='side fail';rec(5,'PvP hủy: Biển Xanh không đủ e-VND',{h});$('tx5').innerHTML=txCard(false,'PvP',h,[['Kết quả','Không khóa được e-VND; không có gì thay đổi']]);busy=false;return;}
+  S.bal.BX.VND-=v;S.pvp={lockV:v,lockC:0,done:false};A.className='side locked';await wait(350);
+  const ckB=availC>=c;
+  $('ck5').insertAdjacentHTML('beforeend',`<li class="${ckB?'p':'f'}"><span class="m">${ckB?'✓':'✗'}</span><span>Khóa ${Y(c)} e-CNY của ${BK[k].s}${ckB?'':': chỉ có '+Y(availC)+' e-CNY'}</span></li>`);await wait(300);
+  if(!ckB){B.className='side fail';S.bal.BX.VND+=v;S.pvp=null;A.className='side';
+    $('ck5').insertAdjacentHTML('beforeend',`<li class="f"><span class="m">↺</span><span>Hủy toàn bộ: mở khóa, trả lại ${V(v)} e-VND cho Biển Xanh</span></li>`);
+    rec(5,`PvP hủy nguyên tử: ${BK[k].s} không đủ e-CNY; e-VND đã khóa được trả lại`,{h});
+    $('tx5').innerHTML=txCard(false,'PvP e-VND ⇄ e-CNY',h,[['Kết quả','Cả hai chân không thực hiện; không bên nào chịu rủi ro đã trả mà chưa nhận']]);busy=false;R5Keep();return;}
+  S.bal[k].CNY-=c;S.pvp.lockC=c;B.className='side locked';await wait(300);
+  const ok=await consensus('cs5',h);
+  if(!ok){S.bal.BX.VND+=v;S.bal[k].CNY+=c;S.pvp=null;A.className='side';B.className='side';
+    rec(5,'PvP không chốt (thiếu phiếu đồng thuận); hai chân được mở khóa',{h});
+    $('tx5').innerHTML=txCard(false,'PvP e-VND ⇄ e-CNY',h,[['Kết quả','Khối không đạt ngưỡng; hai bên giữ nguyên số dư']]);busy=false;R5Keep();return;}
+  S.bal[k].VND+=v;S.bal.BX.CNY+=c;S.pvp={lockV:0,lockC:0,done:true,v,c,k,r:x.r,h};A.className='side done';B.className='side done';S.t+=1;
+  const cr=x.r*(1+SPREAD),cost=Math.round(c/100*cr);
+  S.custDebit=cost;S.cust+=S.hold-cost;S.hold=0;
+  addTx({type:'PvP',from:'BX',to:k,cur:'VND/CNY',v,c,h,parties:['BX',k],cbs:['SBV','PBOC']});
+  rec(5,`PvP chốt: Biển Xanh trả ${V(v)} e-VND, nhận ${Y(c)} e-CNY từ ${BK[k].s}; ghi nợ ${CUS.s} ${V(cost)} VND, giải tỏa phần dư`,{v,c,k,cost,h});
+  $('tx5').innerHTML=txCard(true,'PvP e-VND ⇄ e-CNY',h,[['Chân 1',`Biển Xanh → ${BK[k].s}: ${V(v)} e-VND`],['Chân 2',`${BK[k].s} → Biển Xanh: ${Y(c)} e-CNY`],['Tỷ giá',x.r.toLocaleString('vi-VN',{maximumFractionDigits:1})+' VND/CNY'],['Khách hàng bị ghi nợ',V(cost)+' VND (tỷ giá '+cr.toLocaleString('vi-VN',{maximumFractionDigits:2})+')']]);
+  busy=false;R5Keep();
+}
+function R5Keep(){const o=$('o5').innerHTML;R5();$('o5').innerHTML=o;}
+
+/* ========== BƯỚC 6 ========== */
+function R6(){
+  if(!(S.pvp&&S.pvp.done)){gate('c6','Cần hoàn tất PvP (Bước 5).',5);$('o6').innerHTML='';return;}
+  $('c6').innerHTML=`<h4>Thanh toán trên mBridge</h4>
+  <dl class="dg"><dt>Từ</dt><dd>${BK.BX.n} · ${S.wal.BX}</dd><dt>Đến</dt><dd>${BK.CJ.n} · ${S.wal.CJ}</dd><dt>Số tiền</dt><dd>${Y(need())} e-CNY</dd><dt>Thông tin chuyển tiếp</dt><dd>Ghi có ${SUP.n}, HĐ-2026/118</dd></dl>
+  <div class="row"><button class="btn primary" data-act="pay" ${S.paid?'disabled':''}>${S.paid?'Đã chuyển':'Chuyển e-CNY cho Trường Giang'}</button><button class="btn" data-act="dom">Thử: chi e-CNY cho doanh nghiệp trong nước</button></div>
+  <div class="stats">${stat('Biển Xanh còn (e-CNY)',Y(S.bal.BX.CNY))}${stat('Tài khoản CNY của người bán',Y(S.sup))}${stat('Doanh nghiệp VN đã bị ghi nợ (VND)',V(S.custDebit))}</div>
+  ${nodePanel()}`;
+}
+async function doPay(){
+  if(busy||S.paid)return;busy=true;const c=need();
+  const h='0x'+sha256('pay|'+S.txs.length+'|'+c);
+  $('o6').innerHTML='<h4>Giao dịch thanh toán</h4><ul class="checks" id="ck6"></ul><div id="cs6"></div><div id="tx6"></div>';
+  const ok1=await runChecks('ck6',[[`Biển Xanh đủ ${Y(c)} e-CNY`,S.bal.BX.CNY>=c],['Người nhận là ngân hàng tham gia mBridge thuộc thẩm quyền PBoC: giao dịch xuyên biên giới hợp lệ',true]]);
+  if(!ok1){busy=false;return;}
+  const ok=await consensus('cs6',h);
+  if(!ok){rec(6,'Thanh toán e-CNY chưa chốt (thiếu phiếu)',{h});$('tx6').innerHTML=txCard(false,'transfer e-CNY',h,[['Kết quả','Chưa chốt; bật thêm nút xác thực rồi thử lại']]);busy=false;return;}
+  S.bal.BX.CNY-=c;S.bal.CJ.CNY+=c;S.sup+=c;S.paid=true;S.t+=1;
+  addTx({type:'Thanh toán',from:'BX',to:'CJ',cur:'CNY',c,h,parties:['BX','CJ'],cbs:['SBV','PBOC']});
+  rec(6,`Biển Xanh chuyển ${Y(c)} e-CNY cho Trường Giang; Trường Giang ghi có ${SUP.s} ${Y(c)} CNY`,{c,h});
+  $('tx6').innerHTML=txCard(true,'transfer e-CNY · Biển Xanh → Trường Giang',h,[['Số lượng',Y(c)+' e-CNY'],['Ngoài chuỗi','Trường Giang ghi có tài khoản CNY của '+SUP.s+': +'+Y(c)]])+'<div class="callout ok">Người bán đã nhận tiền. Từ lúc chốt PvP đến khi ghi có chỉ cách vài khối, thay vì chờ qua nhiều ngân hàng đại lý.</div>';
+  busy=false;const o=$('o6').innerHTML;R6();$('o6').innerHTML=o;
+}
+function doDom(){
+  const h='0x'+sha256('dom|'+S.log.length);S.domTry=true;
+  rec(6,'Từ chối: Biển Xanh thử chi e-CNY cho doanh nghiệp tại Việt Nam (quy tắc không dùng CBDC nước ngoài trong nước)',{h});
+  $('o6').insertAdjacentHTML('afterbegin',txCard(false,'transfer e-CNY · Biển Xanh → Công ty Thương mại Hải Phòng (trong nước)',h,[['Lý do từ chối','Quy tắc nền tảng: e-CNY chỉ dùng thanh toán xuyên biên giới với ngân hàng thuộc thẩm quyền PBoC; không thanh toán trong nước tại Việt Nam'],['Ý nghĩa','Tránh thay thế tiền tệ, bảo vệ hiệu lực chính sách tiền tệ của NHNN']])+'<div class="sp2"></div>');
+}
+
+/* ========== BƯỚC 7 ========== */
+const VIEWERS=[['SBV','NHNN (giả định)'],['PBOC','PBoC'],['HKMA','HKMA'],['BOT','Ngân hàng Trung ương Thái Lan'],['BX','Biển Xanh'],['CJ','Trường Giang'],['HK','Cảng Thơm']];
+function canSee(t,v){if(BK[v])return t.parties.includes(v);const own={SBV:'VND',PBOC:'CNY'}[v];return t.parties.some(p=>BK[p].cb===v)||(own&&String(t.cur).includes(own));}
+function R7(){
+  const rows=S.txs.map(t=>{const ok=canSee(t,S.viewer);const nm=x=>BK[x]?BK[x].s:CB[x]?CB[x].s:x;
+    const amt=t.type==='PvP'?`${V(t.v)} e-VND ⇄ ${Y(t.c)} e-CNY`:t.cur==='VND'?V(t.v)+' e-VND':Y(t.c??t.v)+' e-CNY';
+    return `<tr><td>${t.n}</td><td>${t.time}</td><td>${t.type}</td><td>${ok?esc(nm(t.from)+' → '+nm(t.to)):'<span class="mask">ẩn</span>'}</td><td>${ok?amt:'<span class="mask">ẩn</span>'}</td><td class="mono">${short(t.h)}</td></tr>`;}).join('');
+  $('c7').innerHTML=`<h4>Xem sổ cái với vai trò</h4>
+  <div class="seg">${VIEWERS.map(([k,l])=>`<button data-act="view" data-v="${k}" aria-pressed="${S.viewer===k}">${l}</button>`).join('')}</div>
+  <div class="scroll"><table class="vtbl"><tr><th>#</th><th>Thời điểm</th><th>Loại</th><th>Các bên</th><th>Số tiền</th><th>Mã băm</th></tr>${rows||'<tr><td colspan="6">Chưa có giao dịch nào trên mBridge. Hoàn tất các bước 2–6 trước.</td></tr>'}</table></div>
+  <div class="note">Mọi nút xác thực đều lưu mã băm và có thể kiểm tra tính toàn vẹn; chỉ bên liên quan mới thấy các bên và số tiền.</div>
+  <h4>Ma trận giám sát</h4>
+  <div class="scroll"><table class="vtbl"><tr><th>Bên</th><th>Thấy</th><th>Mục đích</th></tr>
+  <tr><td>NHNN (giả định)</td><td>Mọi giao dịch có ngân hàng Việt Nam tham gia</td><td>Giám sát ngoại hối, chống rửa tiền, thống kê cán cân thanh toán</td></tr>
+  <tr><td>PBoC</td><td>Mọi giao dịch có e-CNY hoặc ngân hàng Trung Quốc tham gia</td><td>Quản lý lưu thông e-CNY, giám sát xuyên biên giới</td></tr>
+  <tr><td>Nút xác thực khác</td><td>Mã băm, loại giao dịch, thời điểm</td><td>Xác thực khối, không giám sát nghiệp vụ</td></tr>
+  <tr><td>Ngân hàng thương mại</td><td>Giao dịch của chính mình</td><td>Đối soát, báo cáo khách hàng</td></tr></table></div>`;
+}
+
+/* ========== BƯỚC 8 ========== */
+function R8(){
+  const k=S.pvp&&S.pvp.k;
+  $('c8').innerHTML=`<h4>Hoàn đổi CBDC</h4>
+  ${walTable()}
+  <div class="row"><button class="btn primary" data-act="redV" ${S.bal.BX.VND>0?'':'disabled'}>Biển Xanh hoàn đổi e-VND về NHNN</button><button class="btn" data-act="redC" ${S.bal.CJ.CNY>0?'':'disabled'}>Trường Giang hoàn đổi e-CNY về PBoC</button></div>
+  ${(S.bal.CJ.VND>0||S.bal.HK.VND>0)?`<div class="callout warn">${S.bal.CJ.VND>0?'Trường Giang':'Cảng Thơm'} đang giữ ${V(S.bal.CJ.VND+S.bal.HK.VND)} e-VND nhận từ PvP. Ngân hàng này không hoàn đổi được tại NHNN (không thuộc thẩm quyền) hay PBoC (không phải đồng tiền của PBoC); có thể giữ để bán cho ngân hàng khác cần e-VND, hoặc bán lại trên mBridge.</div>`:''}
+  <div id="r8"></div>`;
+  $('r8').innerHTML=reconHtml();
+}
+async function doRedeem(cur){
+  if(busy)return;const isV=cur==='VND',k=isV?'BX':'CJ',cb=isV?'SBV':'PBOC',u=S.bal[k][cur];if(u<=0)return;busy=true;
+  const h='0x'+sha256('redeem|'+cur+'|'+S.txs.length+'|'+u);
+  $('o8').innerHTML=`<h4>Hoàn đổi ${isV?'e-VND':'e-CNY'}</h4><div id="cs8"></div><div id="tx8"></div>`;
+  const ok=await consensus('cs8',h);
+  if(ok){S.bal[k][cur]-=u;S.out[cur]-=u;S.res[k]+=u;S.t+=2;
+    addTx({type:'Hoàn đổi',from:k,to:cb,cur,v:u,c:u,h,parties:[k],cbs:[cb]});
+    rec(8,`${BK[k].s} hoàn đổi ${isV?V(u)+' e-VND':Y(u)+' e-CNY'} về ${CB[cb].s}; CBDC bị hủy, dự trữ tăng`,{cur,u,h});}
+  $('tx8').innerHTML=txCard(ok,`burn ${isV?'e-VND':'e-CNY'} · ${BK[k].s} → ${CB[cb].s}`,h,[['Số lượng',isV?V(u)+' e-VND':Y(u)+' e-CNY'],['Kết quả',ok?'Ghi có tài khoản dự trữ của '+BK[k].s:'Chưa chốt (thiếu phiếu)']]);
+  busy=false;R8();
+}
+function reconHtml(){
+  const sv=Object.values(S.bal).reduce((a,b)=>a+b.VND,0),sc=Object.values(S.bal).reduce((a,b)=>a+b.CNY,0);
+  const chk=[
+    ['e-VND lưu hành = tổng số dư e-VND trên sổ cái',sv===S.out.VND,`${V(S.out.VND)} so với ${V(sv)}`],
+    ['e-CNY lưu hành = tổng số dư e-CNY trên sổ cái',sc===S.out.CNY,`${Y(S.out.CNY)} so với ${Y(sc)}`],
+    ['NHNN: dự trữ + e-VND không đổi (chỉ đổi dạng nợ)',S.res.BX+S.out.VND===S.cbTot.SBV,`${V(S.res.BX+S.out.VND)} so với ban đầu ${V(S.cbTot.SBV)}`],
+    ['PBoC: dự trữ + e-CNY không đổi',S.res.CJ+S.out.CNY===S.cbTot.PBOC,`${Y(S.res.CJ+S.out.CNY)} so với ban đầu ${Y(S.cbTot.PBOC)}`],
+    ['Người bán nhận đủ giá trị hợp đồng',S.paid?S.sup===S.amt:null,S.paid?`${Y(S.sup)} CNY so với hợp đồng ${Y(S.amt)} CNY`:'Chưa chi trả (Bước 6)']];
+  const mk=v=>v===true?['p','✓']:v===false?['f','✗']:['s','…'];
+  const p=S.pvp&&S.pvp.done?S.pvp:null,mid=S.rate*S.amt/100;
+  return `<h4>Đối soát</h4>
+  <ul class="checks">${chk.map(x=>{const m=mk(x[1]);return `<li class="${m[0]}"><span class="m">${m[1]}</span><span>${x[0]}<br><span class="note">${x[2]}</span></span></li>`;}).join('')}</ul>
+  ${p?`<div class="stats">${stat('Doanh nghiệp VN trả (VND)',V(S.custDebit))}${stat('Chi phí so với tỷ giá tham chiếu',((S.custDebit/mid-1)*100).toLocaleString('vi-VN',{maximumFractionDigits:2})+'%')}${stat('Biên của Biển Xanh (VND)',V(S.custDebit-p.v))}${stat('Số khối đã chốt',S.blk)}</div>`:''}
+  <h4>So sánh với kênh ngân hàng đại lý (minh họa, giả định)</h4>
+  <div class="scroll"><table class="cmp"><tr><th>Tiêu chí</th><th>Ngân hàng đại lý</th><th>mBridge (kịch bản)</th></tr>
+  <tr><td>Số trung gian</td><td>2–4 ngân hàng, tùy quan hệ đại lý</td><td>Không có trung gian; hai ngân hàng thanh toán trực tiếp</td></tr>
+  <tr><td>Tài sản thanh toán</td><td>Tiền gửi tại ngân hàng đại lý</td><td>Tiền ngân hàng trung ương (CBDC bán buôn)</td></tr>
+  <tr><td>Rủi ro thanh toán ngoại hối</td><td>Có, nếu hai chân thanh toán lệch thời điểm</td><td>Loại bỏ nhờ PvP nguyên tử</td></tr>
+  <tr><td>Thời gian ghi có</td><td>Vài giờ đến vài ngày làm việc</td><td>Vài giây sau khi khối được chốt</td></tr>
+  <tr><td>Vốn trả trước</td><td>Phải duy trì số dư nostro ở nhiều nơi</td><td>Chỉ cần CBDC khi giao dịch, hoàn đổi ngay sau đó</td></tr>
+  <tr><td>Rủi ro mới</td><td>–</td><td>Phụ thuộc quản trị nền tảng chung, rủi ro địa chính trị và trừng phạt, chủ quyền dữ liệu</td></tr></table></div>
+  <h4>Nhật ký kiểm toán nối băm (${S.log.length} sự kiện)</h4>
+  <div class="scroll"><table><tr><th>#</th><th>Bước</th><th>Thời điểm</th><th>Sự kiện</th><th>Mã băm</th></tr>${S.log.map(e=>`<tr><td>${e.n}</td><td>${e.step}</td><td>${e.t}</td><td style="white-space:normal;min-width:260px">${esc(e.msg)}</td><td class="mono">${short(e.h)}</td></tr>`).join('')||'<tr><td colspan="5">Chưa có sự kiện.</td></tr>'}</table></div>
+  <div class="row"><button class="btn" data-act="verify">Kiểm tra chuỗi băm</button><span id="vres" class="note"></span></div>`;
+}
+function doVerify(){let prev='0'.repeat(64),ok=true,bad=0;for(const e of S.log){const h=sha256(JSON.stringify([e.n,e.step,e.t,e.msg,e.data,prev]));if(h!==e.h||e.prev!==prev){ok=false;bad=e.n;break;}prev=e.h;}
+  $('vres').innerHTML=ok?`<span class="chip ok">Chuỗi nguyên vẹn (${S.log.length} mắt xích)</span>`:`<span class="chip bad">Phát hiện sai lệch tại sự kiện #${bad}</span>`;}
+
+/* ========== BƯỚC 9: Bài tập ========== */
+const PRAC=[
+  ['p1','Bước 1–2: Ghi số e-VND và e-CNY đã phát hành. Bảng cân đối của NHNN thay đổi thế nào? Vì sao tổng tiền cơ sở không đổi?'],
+  ['p2','Bước 3: Khi thiếu hóa đơn, lệnh dừng ở đâu? Có giao dịch nào trên mBridge không?'],
+  ['p3','Bước 4: Ghi hai báo giá và báo giá được chọn. Doanh nghiệp bị ghi nợ bao nhiêu VND? Chênh lệch so với tỷ giá tham chiếu là bao nhiêu phần trăm?'],
+  ['p4','Bước 5: Mô tả điều xảy ra khi bên bán chỉ còn 50% e-CNY. Khi tắt bao nhiêu nút thì khối không được chốt?'],
+  ['p5','Bước 6–7: Vì sao giao dịch chi e-CNY cho doanh nghiệp trong nước bị từ chối? Ngân hàng Trung ương Thái Lan thấy gì về giao dịch của bạn?'],
+  ['p6','Bước 8: Ngân hàng nào đang giữ e-VND sau PvP và vì sao không hoàn đổi được? Ghi kết quả bốn dòng đối soát đầu tiên.']
+];
+const QZ=[
+  {q:'CBDC phát hành trên mBridge thuộc loại nào?',o:['CBDC bán lẻ, người dân giữ trực tiếp','CBDC bán buôn, chỉ ngân hàng được kết nạp giữ','Stablecoin do ngân hàng thương mại phát hành','Tiền mã hóa phi tập trung'],a:1,e:'mBridge dùng CBDC bán buôn; doanh nghiệp vẫn dùng tài khoản tiền gửi tại ngân hàng.'},
+  {q:'Khi Biển Xanh đổi 3,8 tỷ đồng dự trữ lấy e-VND, bảng cân đối của NHNN:',o:['Tổng nợ phải trả tăng 3,8 tỷ','Tiền gửi dự trữ giảm và e-VND lưu hành tăng cùng 3,8 tỷ; tổng không đổi','Tài sản của NHNN giảm 3,8 tỷ','Không có gì thay đổi'],a:1,e:'Phát hành CBDC bán buôn chỉ là đổi dạng nợ của ngân hàng trung ương.'},
+  {q:'Ai được phép đúc e-CNY trên mBridge?',o:['Bất kỳ nút xác thực nào','Ngân hàng Trường Giang','Chỉ PBoC','NHNN, nếu được PBoC ủy quyền miệng'],a:2,e:'Mỗi ngân hàng trung ương chỉ phát hành và hoàn đổi đồng tiền của mình.'},
+  {q:'PvP nguyên tử loại bỏ rủi ro nào?',o:['Rủi ro tỷ giá trước khi giao dịch','Rủi ro một bên đã trả đồng tiền này mà chưa nhận đồng tiền kia (rủi ro Herstatt)','Rủi ro tín dụng của khách hàng nhập khẩu','Rủi ro lạm phát'],a:1,e:'Hai chân cùng thực hiện hoặc cùng không thực hiện.'},
+  {q:'Trong PvP, bên bán chỉ có 50% e-CNY cần giao. Kết quả:',o:['Giao 50%, phần còn lại giao sau','Biển Xanh mất e-VND đã khóa','Cả hai chân bị hủy; e-VND đã khóa được trả lại','Hợp đồng tự vay thêm e-CNY'],a:2,e:'Tính nguyên tử: không có trạng thái thanh toán nửa vời.'},
+  {q:'Với 7 nút xác thực và cơ chế BFT, cần tối thiểu bao nhiêu phiếu để chốt khối?',o:['4','5','6','7'],a:1,e:'⌊2×7/3⌋ + 1 = 5; hệ thống chịu được tối đa 2 nút lỗi.'},
+  {q:'Theo dự án, các thành viên mBridge thống nhất về việc dùng CBDC nước ngoài trong nước như thế nào?',o:['Khuyến khích để tăng thanh khoản','Không dùng để thanh toán trong nước, vì lo ngại thay thế tiền tệ','Chỉ dùng cho người nước ngoài','Bắt buộc dùng cho thương mại biên giới'],a:1,e:'Hiệu ứng thay thế tiền tệ có thể làm giảm hiệu lực chính sách tiền tệ.'},
+  {q:'Ngân hàng Trung ương Thái Lan vận hành nút xác thực. Đối với giao dịch Việt Nam – Trung Quốc trong mô phỏng, BoT thấy:',o:['Toàn bộ tên doanh nghiệp và số tiền','Mã băm, loại giao dịch, thời điểm','Không thấy gì kể cả mã băm','Chỉ số tiền'],a:1,e:'Bên không liên quan chỉ thấy dữ liệu đủ để xác thực.'},
+  {q:'Sau PvP, Cảng Thơm (Hồng Kông) giữ e-VND. Ngân hàng này có thể:',o:['Hoàn đổi tại PBoC','Hoàn đổi tại NHNN như ngân hàng Việt Nam','Giữ hoặc bán lại e-VND cho ngân hàng khác trên mBridge','Chuyển thành e-CNY bằng cách tự đúc'],a:2,e:'Chỉ ngân hàng thuộc thẩm quyền mới hoàn đổi CBDC với ngân hàng trung ương phát hành.'},
+  {q:'Doanh nghiệp nhập khẩu Việt Nam trong mô phỏng:',o:['Phải mở ví e-CNY trên mBridge','Lập lệnh chuyển tiền và nộp chứng từ như bình thường; ngân hàng xử lý phần mBridge','Mua e-CNY từ PBoC','Trả bằng tiền mặt'],a:1,e:'mBridge thay khâu thanh toán liên ngân hàng; giao diện với doanh nghiệp không đổi.'},
+  {q:'Năm 2024, sự kiện nào đã xảy ra với dự án mBridge?',o:['Dự án bị hủy','Đạt giai đoạn MVP và BIS rút khỏi dự án, các ngân hàng trung ương tiếp tục vận hành','Việt Nam trở thành thành viên sáng lập','Chuyển sang dùng Bitcoin'],a:1,e:'MVP giữa năm 2024; BIS rút khỏi dự án tháng 10/2024.'},
+  {q:'Căn cứ hiện hành về CBDC tại Việt Nam được nhắc trong mô phỏng là:',o:['Luật Ngân hàng Nhà nước quy định phát hành e-VND từ 2026','Quyết định 1413/QĐ-TTg định hướng nghiên cứu, thử nghiệm CBDC giai đoạn 2029–2030','Việt Nam đã phát hành e-VND năm 2025','Thông tư cho phép doanh nghiệp giữ e-CNY'],a:1,e:'e-VND trong mô phỏng hoàn toàn là giả định.'}
+];
+const SKEY='mbridge-baitap';
+function saveQ(){try{const d={n:$('stName').value,i:$('stId').value,c:$('stClass').value,p:{},q:{}};PRAC.forEach(([k])=>d.p[k]=$(k).value);QZ.forEach((_,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`);if(s)d.q[i]=s.value;});localStorage.setItem(SKEY,JSON.stringify(d));}catch(e){}}
+function buildQuiz(){
+  $('pracList').innerHTML=PRAC.map(([k,t],i)=>`<label class="pi"><span><b>${i+1}.</b> ${esc(t)}</span><textarea id="${k}" rows="2"></textarea></label>`).join('');
+  $('quiz').innerHTML=QZ.map((x,i)=>`<div class="q" id="qq${i}"><div class="lab">Câu ${i+1}</div><p class="qt">${esc(x.q)}</p>${x.o.map((o,j)=>`<label><input type="radio" name="q${i}" value="${j}"><span>${String.fromCharCode(65+j)}. ${esc(o)}</span></label>`).join('')}<div class="fb" hidden></div></div>`).join('');
+  let d=null;try{d=JSON.parse(localStorage.getItem(SKEY)||'null');}catch(e){}
+  if(d){$('stName').value=d.n||'';$('stId').value=d.i||'';$('stClass').value=d.c||'';PRAC.forEach(([k])=>{if(d.p&&d.p[k])$(k).value=d.p[k];});Object.entries(d.q||{}).forEach(([i,v])=>{const r=document.querySelector(`input[name=q${i}][value="${v}"]`);if(r)r.checked=true;});}
+  document.querySelectorAll('#s9 input,#s9 textarea').forEach(el=>el.addEventListener('input',saveQ));}
+$('grade').onclick=()=>{let ok=0,blank=0;QZ.forEach((x,i)=>{const s=document.querySelector(`input[name=q${i}]:checked`),box=$('qq'+i),fb=box.querySelector('.fb');box.classList.remove('right','wrong');
+  if(!s){blank++;fb.hidden=false;fb.textContent='Chưa chọn đáp án.';box.classList.add('wrong');return;}
+  const r=+s.value===x.a;if(r)ok++;box.classList.add(r?'right':'wrong');fb.hidden=false;fb.innerHTML=(r?'<b>Đúng.</b> ':`<b>Chưa đúng.</b> Đáp án: ${String.fromCharCode(65+x.a)}. `)+esc(x.e);});
+  const pt=ok/QZ.length*10;$('scoreOut').textContent=`${ok}/${QZ.length} câu · ${pt.toLocaleString('vi-VN',{maximumFractionDigits:1})} điểm`;
+  $('scoreTime').textContent=`Chấm lúc ${new Date().toLocaleString('vi-VN')}${blank?` · ${blank} câu bỏ trống`:''}`;saveQ();};
+$('printBtn').onclick=()=>window.print();
+$('clearQuiz').onclick=()=>{if(!confirm('Xóa toàn bộ bài làm trên trình duyệt này?'))return;try{localStorage.removeItem(SKEY);}catch(e){}buildQuiz();$('scoreOut').textContent='–';$('scoreTime').textContent='';};
+buildQuiz();
+
+/* ---------- Điều khiển ---------- */
+const ACT={
+  go:b=>go(+b.dataset.v),
+  join:()=>{const a=pnum($('amt').value),r=pnum($('rate').value);
+    if(!(a>=1&&a<=10000000)){alertMsg('c1','Giá trị hợp đồng phải từ 1 đến 10.000.000 CNY.');return;}
+    if(!(r>=1000&&r<=10000)){alertMsg('c1','Tỷ giá tham chiếu nên nằm trong khoảng 1.000–10.000 VND/CNY.');return;}
+    S.amt=Math.round(a*100);S.rate=r;S.joined=true;S.wal={BX:addr('BX'),CJ:addr('CJ'),HK:addr('HK')};
+    rec(1,`Kết nạp Biển Xanh (NHNN, giả định), Trường Giang (PBoC), Cảng Thơm (HKMA); hợp đồng ${Y(S.amt)} CNY, tỷ giá tham chiếu ${r} VND/CNY`,{amt:S.amt,r});R1();},
+  issueV:()=>doIssue('VND'),issueC:()=>doIssue('CNY'),order:doOrder,rfq:doRfq,pick:doPick,pvp:doPvp,pay:doPay,dom:doDom,
+  view:b=>{S.viewer=b.dataset.v;R7();},redV:()=>doRedeem('VND'),redC:()=>doRedeem('CNY'),verify:doVerify,
+  reset:()=>{if(busy)return;if(S.log.length&&!confirm('Xóa toàn bộ tiến trình mô phỏng và làm lại từ đầu?'))return;fresh();['o2','o3','o4','o5','o6','o8'].forEach(i=>$(i).innerHTML='');go(1);}
+};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(b&&!b.disabled&&!busy||b&&b.dataset.act==='go')ACT[b.dataset.act](b);});
+document.addEventListener('change',e=>{if(e.target.id==='lpShort'){S.lpShort=e.target.checked;return;}const k=e.target.dataset&&e.target.dataset.node;if(!k||busy)return;S.on[k]=e.target.checked;rec(cur,`Nút ${CB[k].s} ${S.on[k]?'hoạt động trở lại':'ngoại tuyến'}`,{k,on:S.on[k]});const keep=cur===5?R5Keep:cur===6?()=>{const o=$('o6').innerHTML;R6();$('o6').innerHTML=o;}:RENDER[cur];keep();});
+const RENDER={1:R1,2:R2,3:R3,4:R4,5:R5,6:R6,7:R7,8:R8,9:()=>{}};
+
+/* ---------- Điều hướng ---------- */
+let cur=1;const NS=9;
+function go(n){cur=Math.max(1,Math.min(NS,n));for(let i=1;i<=NS;i++)$('s'+i).hidden=i!==cur;
+  document.querySelectorAll('nav.steps button').forEach(b=>b.setAttribute('aria-selected',String(+b.dataset.go===cur)));
+  $('prevStep').disabled=cur===1;$('nextStep').disabled=cur===NS;
+  RENDER[cur]();
+  if(!window.__embedded){try{history.replaceState(null,'','#buoc'+cur)}catch(e){}}
+  window.scrollTo({top:0});}
+document.querySelectorAll('nav.steps button').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('prevStep').onclick=()=>go(cur-1);$('nextStep').onclick=()=>go(cur+1);
+$('themeBtn').onclick=()=>{const R=document.documentElement;const c=R.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';R.dataset.theme=n;try{localStorage.setItem('ltso-theme',n)}catch(e){}};
+(function(){const rx=/buoc([1-9])/;const h=()=>{const m=(location.hash||'').match(rx);if(m&&+m[1]!==cur)go(+m[1]);};const m=(location.hash||'').match(rx);go(m?+m[1]:1);addEventListener('hashchange',h);})();
+if(window.__embedded){const fit=()=>{try{window.frameElement.style.height=Math.ceil(document.body.getBoundingClientRect().height)+'px';}catch(e){}};
+  try{new ResizeObserver(fit).observe(document.body);}catch(e){setInterval(fit,500);}fit();}
+</script>
+</body>
+</html>

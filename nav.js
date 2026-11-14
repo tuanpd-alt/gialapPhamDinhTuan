@@ -30,7 +30,7 @@
         },
         {
           group: 'Chặng 2 · Vận hành nền kinh tế tiền số',
-          note: 'Bài 5 chạy trên mạng chung của lớp (đăng nhập bằng MSSV và mật khẩu giảng viên cấp); bài 6 chạy độc lập trong trình duyệt.',
+          note: 'Bài 5 chạy trên mạng chung của lớp (đăng nhập bằng MSSV và mật khẩu giảng viên cấp); bài 6 và 7 chạy độc lập trong trình duyệt.',
           items: [
             { n: '5', t: 'Làng Tiền Số', href: 'lang-tien-so.html', login: true, app: true,
               d: 'Thực hành trên mạng chung của lớp, đi từ ví cá nhân đến hợp đồng thông minh.',
@@ -38,17 +38,20 @@
               deepIds: ['vi', 'chuyen', 'dao', 'socai', 'pos', 'san', 'hd'] },
             { n: '6', t: 'Stablecoin USDC', href: 'stablecoin-usdc.html',
               d: 'Vòng đời một đồng stablecoin: nạp USD, đúc token trên blockchain, lưu thông, dự trữ, đốt và rút USD.',
-              parts: ['Các bên & ví', 'Nạp USD', 'Đối chiếu & ghi có', 'Đúc on-chain', 'Lưu thông', 'Dự trữ', 'Gửi về & đốt', 'Rút USD & đối soát'], deep: 'buoc' }
+              parts: ['Các bên & ví', 'Nạp USD', 'Đối chiếu & ghi có', 'Đúc on-chain', 'Lưu thông', 'Dự trữ', 'Gửi về & đốt', 'Rút USD & đối soát'], deep: 'buoc' },
+            { n: '7', t: 'mBridge e-VND ↔ e-CNY', href: 'mbridge.html',
+              d: 'Kịch bản giả định: NHTM Việt Nam trả tiền hàng cho Trung Quốc qua nền tảng đa CBDC, PvP nguyên tử và đồng thuận giữa các NHTW.',
+              parts: ['Kiến trúc & các bên', 'Phát hành CBDC', 'Lệnh của doanh nghiệp', 'Báo giá FX', 'PvP & đồng thuận', 'Chi trả người bán', 'Quyền xem dữ liệu', 'Hoàn đổi & đối soát'], deep: 'buoc' }
           ]
         },
         {
           group: 'Chặng 3 · Token hóa và tài sản số',
           note: 'Vận dụng chuỗi liên minh cho tài sản thực: từ một NFT đơn lẻ đến tài sản phân mảnh có giao dịch thứ cấp.',
           items: [
-            { n: '7', t: 'NFT văn bằng', href: 'nft-van-bang.html',
+            { n: '8', t: 'NFT văn bằng', href: 'nft-van-bang.html',
               d: 'Số hóa bằng đại học thành NFT không chuyển nhượng và cổng xác minh cho nhà tuyển dụng.',
               parts: ['Quét văn bằng', 'Chuẩn hóa & bảo vệ dữ liệu', 'Ký số nhà trường', 'Ví sinh viên', 'Đúc NFT & chuyển giao', 'Lưu trữ hệ thống', 'Ghi lên blockchain', 'Kiểm tra độc nhất'], deep: 'buoc' },
-            { n: '8', t: 'Token hóa tài sản', href: 'token-hoa-tai-san.html',
+            { n: '9', t: 'Token hóa tài sản', href: 'token-hoa-tai-san.html',
               d: 'Token hóa một sổ đỏ: SPV, NFT tài sản, phân mảnh, chào bán DvP và vòng đời token.',
               parts: ['Quét sổ đỏ', 'Thẩm định & SPV', 'Đúc NFT tài sản', 'Danh tính & tuân thủ', 'Phân mảnh token', 'Chào bán & đặt lệnh', 'Ghi lên blockchain', 'Vòng đời'], deep: 'buoc' }
           ]
@@ -59,9 +62,11 @@
           d: '12 câu tự chấm, in được.' },
         { n: 'BT2', t: 'Phiếu bài tập: Stablecoin USDC', href: 'stablecoin-usdc.html#buoc9', after: '6',
           d: '12 câu tự chấm, in được.' },
-        { n: 'BT3', t: 'Phiếu bài tập: NFT văn bằng', href: 'nft-van-bang.html#buoc9', after: '7',
+        { n: 'BT3', t: 'Phiếu bài tập: mBridge', href: 'mbridge.html#buoc9', after: '7',
           d: '12 câu tự chấm, in được.' },
-        { n: 'BT4', t: 'Phiếu bài tập: Token hóa tài sản', href: 'token-hoa-tai-san.html#buoc9', after: '8',
+        { n: 'BT4', t: 'Phiếu bài tập: NFT văn bằng', href: 'nft-van-bang.html#buoc9', after: '8',
+          d: '12 câu tự chấm, in được.' },
+        { n: 'BT5', t: 'Phiếu bài tập: Token hóa tài sản', href: 'token-hoa-tai-san.html#buoc9', after: '9',
           d: '13 câu tự chấm, in được.' },
         { n: 'KT', t: 'Bài kiểm tra tổng hợp', href: 'kiem-tra.html', login: true, final: true,
           d: '40 câu trắc nghiệm sinh riêng theo MSSV, 0,25 điểm/câu, chấm ngay khi nộp.' }

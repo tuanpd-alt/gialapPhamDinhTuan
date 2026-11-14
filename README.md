@@ -4,8 +4,8 @@ Trang chủ https://tuanpd-alt.github.io/gialapPhamDinhTuan/ là Bảng tổng, 
 
 Danh mục bài nằm trong một tệp duy nhất `nav.js` (biến `MAP`). Thêm, bớt hay đổi thứ tự bài chỉ cần sửa tệp này.
 
-- Tài chính · Học tập: (1) Tạo lập Blockchain → (2) Khóa và chữ ký → (3) Luồng giao dịch → (4) Đào và đồng thuận → (5) Làng Tiền Số → (6) Stablecoin USDC → (7) NFT văn bằng → (8) Token hóa tài sản
-- Tài chính · Bài tập: phiếu Đào và đồng thuận, phiếu Stablecoin USDC, phiếu NFT văn bằng, phiếu Token hóa tài sản, Bài kiểm tra tổng hợp
+- Tài chính · Học tập: (1) Tạo lập Blockchain → (2) Khóa và chữ ký → (3) Luồng giao dịch → (4) Đào và đồng thuận → (5) Làng Tiền Số → (6) Stablecoin USDC → (7) mBridge e-VND ↔ e-CNY → (8) NFT văn bằng → (9) Token hóa tài sản
+- Tài chính · Bài tập: phiếu Đào và đồng thuận, phiếu Stablecoin USDC, phiếu mBridge, phiếu NFT văn bằng, phiếu Token hóa tài sản, Bài kiểm tra tổng hợp
 - Kế toán · Học tập: (1) ERP Lab HTTTKT → (2) Sổ cái doanh nghiệp
 - Kế toán · Bài tập: Tình huống thực hành ERP (ZCASE)
 
@@ -46,6 +46,12 @@ Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/dao-va-dong-thuan.ht
 Mô phỏng vòng đời một stablecoin pháp định qua 8 bước, bám quy trình Circle Mint: chọn blockchain (Ethereum, Base, Solana), KYB và đăng ký ví; nạp USD qua chuyển khoản ngân hàng vào tài khoản thu (kèm tình huống sai tên người gửi bị hoàn trả); đối chiếu, ghi có số dư USDC ngoài chuỗi và điều phối dự trữ; rút ra ví và đúc trên chuỗi (kiểm tra `mint` của hợp đồng hoặc lệnh `MintTo` của SPL Token, sự kiện, xác nhận khối, totalSupply tăng); lưu thông ví-ví, phí mạng, danh sách đen/đóng băng; bảng cân đối dự trữ, báo cáo xác nhận giả định và kịch bản SVB 3/2023; gửi USDC về Circle rồi đốt (`burn`), rút USD về ngân hàng, đối soát và nhật ký kiểm toán nối băm SHA-256. Có kiểm tra bất biến dự trữ = tổng cung + số dư Mint ở mọi bước. Có phiếu bài tập 12 câu tự chấm và in được. Ngân hàng, số dư, ví, số khối và phí là giả định; địa chỉ hợp đồng và cơ cấu dự trữ theo công bố của Circle (cần đối chiếu lại trước khi trích dẫn).
 
 Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/stablecoin-usdc.html (thêm `#buoc2` … `#buoc8` để vào thẳng từng bước, `#buoc9` cho phần bài tập)
+
+# mBridge e-VND ↔ e-CNY
+
+Mô phỏng một giao dịch thanh toán nhập khẩu Việt Nam – Trung Quốc trên nền tảng đa CBDC mBridge, theo **kịch bản giả định** NHNN gia nhập mBridge và phát hành e-VND bán buôn (Việt Nam hiện không phải thành viên; QĐ 1413/QĐ-TTg định hướng thử nghiệm CBDC 2029–2030). 8 bước: kiến trúc và các bên (so sánh kênh ngân hàng đại lý); NHNN và PBoC phát hành CBDC bán buôn (bảng cân đối NHTW); doanh nghiệp lập lệnh, kiểm tra chứng từ; hỏi giá và chọn báo giá e-VND/e-CNY; PvP nguyên tử (thử bên bán thiếu e-CNY) và đồng thuận BFT 7 nút (bật/tắt nút); chuyển e-CNY cho ngân hàng người bán, quy tắc không dùng CBDC nước ngoài trong nước; quyền xem dữ liệu theo vai trò; hoàn đổi, đối soát, so sánh với ngân hàng đại lý và nhật ký nối băm. Có phiếu bài tập 12 câu tự chấm và in được. Mọi ngân hàng thương mại, doanh nghiệp, tỷ giá, số liệu là giả định.
+
+Mở trang: https://tuanpd-alt.github.io/gialapPhamDinhTuan/mbridge.html (thêm `#buoc2` … `#buoc9` để vào thẳng từng bước)
 
 # Token hóa tài sản
 
